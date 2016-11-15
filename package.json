@@ -1,0 +1,23 @@
+{
+  "name": "sso-poc",
+  "version": "1.0.0",
+  "description": "NEW SSO POC",
+  "main": "server/index.js",
+  "dependencies": {
+    "aws-sdk": "^2.7.1",
+    "hapi": "^15.2.0",
+    "inert": "^4.0.2",
+    "joi": "^9.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node $npm_package_main",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/BerlingskeMedia/sso-poc"
+  },
+  "author": "Daniel Kokott",
+  "license": "ISC"
+}

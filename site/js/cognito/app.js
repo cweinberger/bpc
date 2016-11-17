@@ -29,9 +29,9 @@ function loginAws(){
       console.log('session validity: ' + session.isValid());
 
       /*Use the idToken for Logins Map when Federating User Pools with Cognito Identity or when passing through an Authorization Header to an API Gateway Authorizer*/
-      console.log('accessToken + ' + currentUser.signInUserSession.accessToken.jwtToken);
-      console.log('idToken + ' + currentUser.signInUserSession.idToken.jwtToken);
-      console.log('refreshToken + ' + currentUser.signInUserSession.refreshToken.token);
+      // console.log('accessToken + ' + currentUser.signInUserSession.accessToken.jwtToken);
+      // console.log('idToken + ' + currentUser.signInUserSession.idToken.jwtToken);
+      // console.log('refreshToken + ' + currentUser.signInUserSession.refreshToken.token);
 
       $('#aws-currentuser').text(currentUser.username);
       $('#aws-loginForm').hide();

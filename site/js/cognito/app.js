@@ -34,22 +34,24 @@ function loginAws(){
       console.log('idToken + ' + currentUser.signInUserSession.idToken.jwtToken);
       console.log('refreshToken + ' + currentUser.signInUserSession.refreshToken.token);
 
-      $('#aws-currentuser').html('<p>Username: ' + currentUser.username + '</p>');
-      checkPermissionsOnBackend(currentUser.username, currentUser.signInUserSession.accessToken.jwtToken, function(){
+      $('#aws-currentuser').text(currentUser.username);
+      $('#aws-loginForm').hide();
+      $('#aws-logoutButton').show();
+      checkAwsPermissionsOnBackend(currentUser.username, currentUser.signInUserSession.accessToken.jwtToken, function(){
       });
     });
   } else {
-    var awsLoginForm = document.getElementById('aws-login-form');
+    $('#aws-loginForm').show();
+    $('#aws-logoutButton').hide();
   }
 }
 
 
-function loginAwsByUsernameAndPassword(){
-
+function loginAwsByUsernameAndPassword(e){
+  e.preventDefault();
+  
   var awsUsername = document.getElementById('aws-username').value;
   var awsPassword = document.getElementById('aws-password').value;
-  awsUsername = 'dako';
-  awsPassword = '87654321';
   var newPassword = '87654321';
 
   var userData = {
@@ -69,8 +71,10 @@ function loginAwsByUsernameAndPassword(){
   cognitoUser.authenticateUser(authenticationDetails, {
     onSuccess: function (result) {
       console.log('AWS authentication success');
-      $('#aws-currentuser').html('<p>Username: ' + awsUsername + '</p>');
-      checkPermissionsOnBackend(awsUsername, result.accessToken.jwtToken);
+      $('#aws-currentuser').text(awsUsername);
+      $('#aws-loginForm').hide();
+      $('#aws-logoutButton').show();
+      checkAwsPermissionsOnBackend(awsUsername, result.accessToken.jwtToken);
       // console.log('accessToken + ' + result.accessToken.jwtToken);
       /*Use the idToken for Logins Map when Federating User Pools with Cognito Identity or when passing through an Authorization Header to an API Gateway Authorizer*/
       // console.log('idToken + ' + result.idToken.jwtToken);
@@ -99,7 +103,7 @@ function loginAwsByUsernameAndPassword(){
 }
 
 
-function checkPermissionsOnBackend(username, accessToken, callback){
+function checkAwsPermissionsOnBackend(username, accessToken, callback){
 
   var payload = {
     username: username,
@@ -117,7 +121,7 @@ function checkPermissionsOnBackend(username, accessToken, callback){
     success: [
       function(data, status, jqXHR) {
         // console.log(data, status);
-        $('#aws-currentuserpermissions').html('<p>Permissions OK</p>');
+        $('#aws-currentuserpermissions').text('OK');
       },
       callback
     ],
@@ -125,20 +129,6 @@ function checkPermissionsOnBackend(username, accessToken, callback){
       console.error(textStatus, err.toString());
     }
   });
-
-  // $.ajax({
-  //     url: '/permissions',
-  //     dataType: 'json',
-  //     cache: true,
-  //     success: [
-  //       function(xhr, status, err) {
-  //         console.error(xhr, status, err.toString());
-  //       }
-  //     ],
-  //     error: function(xhr, status, err) {
-  //       console.error(xhr, status, err.toString());
-  //     }
-  //   });
 }
 
 
@@ -154,8 +144,11 @@ function signoutAws(callback){
 
   cognitoUser.signOut();
 
-  $('#aws-currentuser').html('<p>Username: </p>');
-  $('#aws-currentuserpermissions').html('<p></p>');
+  $('#aws-currentuser').text('');
+  $('#aws-currentuserpermissions').text('');
+
+  $('#aws-loginForm').show();
+  $('#aws-logoutButton').hide();
 
   if (callback !== undefined && typeof callback === 'function'){
     callback();

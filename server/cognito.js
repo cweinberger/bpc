@@ -40,7 +40,7 @@ var params = {
 
 var cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
 
-//Call to Amazon Cognito, get the credentials for our user
+// Call to Amazon Cognito, get the credentials for our user
 // AWS.config.credentials.get(err,data){…}
 
 module.exports.register = function (server, options, next) {
@@ -66,8 +66,8 @@ module.exports.register = function (server, options, next) {
         } else if (data.Username !== request.payload.username) {
           return reply(Boom.unauthorized());
         } else {
-          if (request.payload.permissions.indexOf('read:*') > -1) {
-          }
+          // if (request.payload.permissions.indexOf('read:*') > -1) {
+          // }
           reply();
         }
       });

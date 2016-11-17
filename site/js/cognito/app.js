@@ -3,7 +3,6 @@
   // AmazonCognitoIdentity
 
 $( document ).ready(function() {
-    console.log( "ready!" );
     loginAws();
 });
 
@@ -49,7 +48,7 @@ function loginAws(){
 
 function loginAwsByUsernameAndPassword(e){
   e.preventDefault();
-  
+
   var awsUsername = document.getElementById('aws-username').value;
   var awsPassword = document.getElementById('aws-password').value;
   var newPassword = '87654321';

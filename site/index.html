@@ -29,6 +29,8 @@
 
     <script type="text/javascript" src="https://cdns.gigya.com/js/gigya.js?apikey=3_Pax_srwZ6L6thNGQ4d8nFGSnCU5AxIrsQo6oR0SQD-yYibdLPKCPl_iZiWVr_0Wu"></script>
     <script src="/js/gigya/app.js"></script>
+
+    <script src="/js/main.js"></script>
   </head>
   <body>
     <div class="container">
@@ -48,8 +50,11 @@
         </div>
         <button type="submit" class="btn btn-default">Login</button>
       </form>
-
+      <br/>
       <button id="aws-logoutButton" type="button" class="btn btn-warning" onclick="signoutAws();">Sign out</button>
+
+      <button id="aws-loginButton2" type="button" class="btn btn-default" onclick="gotoSso1();">Login berlingske-poc.local/</button>
+      <button id="aws-loginButton3" type="button" class="btn btn-default" onclick="gotoSso2();">Login berlingske-poc.local/cognito</button>
 
 
       <h2>Gigya</h2>

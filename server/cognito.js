@@ -40,6 +40,13 @@ var params = {
 
 var cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
 
+var poolData = {
+  UserPoolId : COGNITO_IDENTITY_POOL_ID,
+  ClientId : '5tv5te4df577992koo6mo7t6me',
+  Paranoia : 7
+};
+
+
 // Call to Amazon Cognito, get the credentials for our user
 // AWS.config.credentials.get(err,data){…}
 
@@ -48,8 +55,32 @@ module.exports.register = function (server, options, next) {
   server.route({
     method: 'GET',
     path: '/',
+    config: {
+      state: {
+          parse: true, // parse and store in request.state
+          failAction: 'error' // may also be 'ignore' or 'log'
+        }
+      },
     handler: function (request, reply) {
-      reply('Hello cognito!');
+      console.log('state', request.state);
+      console.log('query', request.query);
+
+      if (request.state.awsAccessToken && request.query.returnUrl){
+        console.log('redirecting with a cookie');
+        reply
+        .redirect(request.query.returnUrl.concat('?awsAccessToken=', request.state.awsAccessToken,'&awsIdToken=', request.state.awsIdToken))
+        .header('X-AWS-ACCESS-TOKEN', request.state.awsAccessToken)
+        .header('X-AWS-ID-TOKEN', request.state.awsIdToken);
+        // .state('accessToken', request.state.accessToken)
+        // .state('sjfhkgsdjkhfgsdjkhfg', 'fdfdfd')
+
+      } else if (request.query.returnUrl) {
+        reply.redirect('/?returnUrl='.concat(request.query.returnUrl));
+      } else {
+        reply.redirect('/');
+      }
+
+      // reply('Hello!');
     }
   });
 
@@ -57,6 +88,22 @@ module.exports.register = function (server, options, next) {
     method: 'POST',
     path: '/permissions',
     handler: function (request, reply) {
+
+
+      // TODO: Validate accessToken
+      // - Check the iss claim. It should match your user pool. For example, a user pool created in the us-east-1 region will have an iss value of https://cognito-idp.us-east-1.amazonaws.com/{userPoolId}.
+      // - Check the token_use claim.
+
+      //   If you are only accepting the access token in your web APIs, its value must be access.
+      //   If you are only using the ID token, its value must be id.
+      //   If you are using both tokens, the value is either id or access.
+
+      // - Verify the signature of the decoded JWT token.
+      // - Check the exp claim and make sure the token is not expired.
+
+      // See "To verify a signature for ID and access tokens" on https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-with-identity-providers.html
+
+
       getUser(request.payload.accessToken, function(err, data){
         if (err) {
           console.error(err, data);

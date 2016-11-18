@@ -3,7 +3,57 @@
   // AmazonCognitoIdentity
 
 $( document ).ready(function() {
-    loginAws();
+
+  $('#aws-loginForm').show();
+  $('#aws-logoutButton').hide();
+
+  var awsAccessToken = getUrlVar('awsAccessToken');
+  var awsIdToken = getUrlVar('awsIdToken');
+  var currentUser = userPool.getCurrentUser();
+  console.log('currentUser', currentUser);
+
+
+  if (awsAccessToken){
+
+    createCookie('awsAccessToken', awsAccessToken, 30);
+    createCookie('awsIdToken', awsIdToken, 30);
+    loginAwsByAccessToken(awsAccessToken, awsIdToken);
+
+  } else if (currentUser != null) {
+
+    currentUser.getSession(function(err, session) {
+      if (err) {
+        alert(err);
+        return;
+      }
+      console.log('session', session);
+      console.log('session validity: ' + session.isValid());
+
+      var returnUrl = getUrlVar('returnUrl');
+      if (returnUrl) {
+        console.log('returnUrl returning', returnUrl);
+        window.location.href = decodeURI(returnUrl.concat('?awsAccessToken=', currentUser.signInUserSession.accessToken.jwtToken, '&awsIdToken=', currentUser.signInUserSession.idToken.jwtToken));
+        return;
+      }
+
+      /*Use the idToken for Logins Map when Federating User Pools with Cognito Identity or when passing through an Authorization Header to an API Gateway Authorizer*/
+      // console.log('accessToken + ' + currentUser.signInUserSession.accessToken.jwtToken);
+      // console.log('idToken + ' + currentUser.signInUserSession.idToken.jwtToken);
+      // console.log('refreshToken + ' + currentUser.signInUserSession.refreshToken.token);
+
+      createCookie('awsAccessToken', currentUser.signInUserSession.accessToken.jwtToken, 30);
+      createCookie('awsIdToken', currentUser.signInUserSession.idToken.jwtToken, 30);
+
+      disableLoginControls();
+      // $('#aws-currentuser').text(currentUser.username);
+      // $('#aws-loginForm').hide();
+      // $('#aws-loginButton2').hide();
+      // $('#aws-loginButton3').hide();
+      // $('#aws-logoutButton').show();
+      checkAwsPermissionsOnBackend(currentUser.username, currentUser.signInUserSession.accessToken.jwtToken, function(){
+      });
+    });
+  }
 });
 
 var poolData = {
@@ -14,35 +64,66 @@ var poolData = {
 
 var userPool = new AWSCognito.CognitoIdentityServiceProvider.CognitoUserPool(poolData);
 
+function gotoSso1(){
+  window.location.href = 'http://berlingske-poc.local:8084?returnUrl=' + window.location.origin + '/' + window.location.pathname;
+}
 
-function loginAws(){
+function gotoSso2(){
+  window.location.href = 'http://berlingske-poc.local:8084/cognito?returnUrl=' + window.location.origin + '/' + window.location.pathname;
+}
+
+function disableLoginControls(){
   var currentUser = userPool.getCurrentUser();
-  console.log('currentUser', currentUser);
+  $('#aws-currentuser').text(currentUser.username);
+  $('#aws-loginForm').hide();
+  $('#aws-loginButton2').hide();
+  $('#aws-loginButton3').hide();
+  $('#aws-logoutButton').show();
+}
 
-  if (currentUser != null) {
-    currentUser.getSession(function(err, session) {
-      if (err) {
-        alert(err);
-        return;
-      }
-      console.log('session', session);
-      console.log('session validity: ' + session.isValid());
+function disableLogoutControls(){
+  $('#aws-currentuser').text('');
+  $('#aws-currentuserpermissions').text('');
+  $('#aws-loginForm').show();
+  $('#aws-loginButton2').show();
+  $('#aws-loginButton3').show();
+  $('#aws-logoutButton').hide();
+}
 
-      /*Use the idToken for Logins Map when Federating User Pools with Cognito Identity or when passing through an Authorization Header to an API Gateway Authorizer*/
-      // console.log('accessToken + ' + currentUser.signInUserSession.accessToken.jwtToken);
-      // console.log('idToken + ' + currentUser.signInUserSession.idToken.jwtToken);
-      // console.log('refreshToken + ' + currentUser.signInUserSession.refreshToken.token);
+function loginAwsByAccessToken(awsAccessToken, awsIdToken){
 
-      $('#aws-currentuser').text(currentUser.username);
-      $('#aws-loginForm').hide();
-      $('#aws-logoutButton').show();
-      checkAwsPermissionsOnBackend(currentUser.username, currentUser.signInUserSession.accessToken.jwtToken, function(){
-      });
-    });
-  } else {
-    $('#aws-loginForm').show();
-    $('#aws-logoutButton').hide();
-  }
+  createCookie('awsAccessToken', awsAccessToken, 30);
+  createCookie('awsIdToken', awsIdToken, 30);
+  console.log('awsAccessToken', awsAccessToken);
+  console.log('awsIdToken', awsIdToken);
+
+  const payload = awsAccessToken.split('.')[1];
+  const expiration = JSON.parse(sjcl.codec.utf8String.fromBits(sjcl.codec.base64url.toBits(payload)));
+
+  var cognitoAccessToken = new AWSCognito.CognitoIdentityServiceProvider.CognitoAccessToken({ AccessToken: awsAccessToken });
+  var cognitoIdToken = new AWSCognito.CognitoIdentityServiceProvider.CognitoIdToken({ IdToken: awsIdToken });
+  var cognitoRefreshToken = new AWSCognito.CognitoIdentityServiceProvider.CognitoRefreshToken({ RefreshToken : '' });
+  var cognitoUserSession = new AWSCognito.CognitoIdentityServiceProvider.CognitoUserSession({ IdToken: cognitoIdToken, RefreshToken: cognitoRefreshToken, AccessToken: cognitoAccessToken });
+  console.log('cognitoUserSession is valid', cognitoUserSession.isValid());
+
+  var userData = {
+    Username : expiration.username,
+    Pool : userPool
+  };
+
+  var cognitoUser = new AWSCognito.CognitoIdentityServiceProvider.CognitoUser(userData);
+  console.log('cognitoUser', cognitoUser);
+  cognitoUser.signInUserSession = cognitoUserSession;
+  cognitoUser.cacheTokens();
+  console.log('cognitoUser2', cognitoUser);
+
+  var currentUser = userPool.getCurrentUser();
+  console.log('currentUser 2', currentUser);
+
+  disableLoginControls();
+
+  checkAwsPermissionsOnBackend(expiration.username, awsAccessToken, function(){
+  });
 }
 
 
@@ -70,9 +151,25 @@ function loginAwsByUsernameAndPassword(e){
   cognitoUser.authenticateUser(authenticationDetails, {
     onSuccess: function (result) {
       console.log('AWS authentication success');
-      $('#aws-currentuser').text(awsUsername);
-      $('#aws-loginForm').hide();
-      $('#aws-logoutButton').show();
+
+      var returnUrl = getUrlVar('returnUrl');
+      if (returnUrl) {
+        console.log('returnUrl returning', returnUrl);
+        window.location.href = decodeURI(returnUrl.concat('?awsAccessToken=', result.accessToken.jwtToken, '&awsIdToken=', result.idToken.jwtToken));
+        return;
+      }
+
+      disableLoginControls();
+      // $('#aws-currentuser').text(awsUsername);
+      // $('#aws-loginForm').hide();
+      // $('#aws-loginButton2').hide();
+      // $('#aws-loginButton3').hide();
+      // $('#aws-logoutButton').show();
+
+      createCookie('awsAccessToken', result.accessToken.jwtToken, 30);
+      createCookie('awsIdToken', result.idToken.jwtToken, 30);
+      console.log('awsAccessToken + ' + result.accessToken.jwtToken);
+
       checkAwsPermissionsOnBackend(awsUsername, result.accessToken.jwtToken);
       // console.log('accessToken + ' + result.accessToken.jwtToken);
       /*Use the idToken for Logins Map when Federating User Pools with Cognito Identity or when passing through an Authorization Header to an API Gateway Authorizer*/
@@ -102,12 +199,12 @@ function loginAwsByUsernameAndPassword(e){
 }
 
 
-function checkAwsPermissionsOnBackend(username, accessToken, callback){
+function checkAwsPermissionsOnBackend(awsUsername, awsAccessToken, callback){
 
   var payload = {
-    username: username,
+    username: awsUsername,
     // idToken: currentUser.signInUserSession.idToken.jwtToken,
-    accessToken: accessToken,
+    accessToken: awsAccessToken,
     // refreshToken: currentUser.signInUserSession.refreshToken.token,
     permissions: ['read:*']
   };
@@ -142,12 +239,14 @@ function signoutAws(callback){
   var cognitoUser = new AWSCognito.CognitoIdentityServiceProvider.CognitoUser(userData);
 
   cognitoUser.signOut();
-
-  $('#aws-currentuser').text('');
-  $('#aws-currentuserpermissions').text('');
-
-  $('#aws-loginForm').show();
-  $('#aws-logoutButton').hide();
+  disableLogoutControls();
+  // $('#aws-currentuser').text('');
+  // $('#aws-currentuserpermissions').text('');
+  //
+  // $('#aws-loginForm').show();
+  // $('#aws-loginButton2').show();
+  // $('#aws-loginButton3').show();
+  // $('#aws-logoutButton').hide();
 
   if (callback !== undefined && typeof callback === 'function'){
     callback();

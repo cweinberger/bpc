@@ -222,6 +222,11 @@ function validateUser(request, reply) {
       reply(Boom.unauthorized());
     } else {
 
+      var ads = {
+
+      };
+
+
       var params = {
         IdentityId: data.IdentityId,
         // CustomRoleArn: 'STRING_VALUE',
@@ -232,6 +237,10 @@ function validateUser(request, reply) {
         //   /* anotherKey: ... */
         // }
       };
+
+      cognitoIdentity.getOpenIdToken(params, function(err, data) {
+        console.log('getOpenIdToken', err, data);
+      });
 
       cognitoIdentity.getCredentialsForIdentity(params, function(err, data) {
         console.log('getCredentialsForIdentity', err, data);

@@ -7,7 +7,8 @@
     "aws-sdk": "^2.7.1",
     "hapi": "^15.2.0",
     "inert": "^4.0.2",
-    "joi": "^9.2.0"
+    "joi": "^9.2.0",
+    "oz": "^4.0.4"
   },
   "devDependencies": {},
   "scripts": {

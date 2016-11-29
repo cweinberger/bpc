@@ -31,9 +31,6 @@
     <script src="/js/cognito/amazon-cognito-identity.min.js"></script>
     <script src="/js/cognito/app.js"></script>
 
-    <script type="text/javascript" src="https://cdns.gigya.com/js/gigya.js?apikey=3_Pax_srwZ6L6thNGQ4d8nFGSnCU5AxIrsQo6oR0SQD-yYibdLPKCPl_iZiWVr_0Wu"></script>
-    <script src="/js/gigya/app.js"></script>
-
     <script src="/js/tools.js"></script>
   </head>
   <body>
@@ -48,9 +45,8 @@
     }(document, 'script', 'facebook-jssdk'));</script>
 
     <div class="container">
-      <h1>SSO POC</h1>
+      <h1>SSO POC - AWS Cognito</h1>
 
-      <h2>AWS Cognito</h2>
       <h3>Ad hoc user (User Pool)</h3>
       <div>Username: <span id="aws-currentuser"></span></div>
       <div>Permissions: <span id="aws-currentuserpermissions"></span></div>
@@ -87,12 +83,6 @@
       <div id="aws-loginButtonFacebook" class="fb-login-button" data-max-rows="1" data-size="xlarge" data-show-faces="false" data-auto-logout-link="false" onlogin="awsFacebookLoginDone"></div>
 
 
-
-      <h2>Gigya</h2>
-      <div>Username: <span id="gigya-currentuser"></span></div>
-      <div>Permissions: <span id="gigya-currentuserpermissions"></span></div>
-      <button id="gigya-loginButton" type="button" class="btn btn-default" onclick="gigya.accounts.showScreenSet({screenSet:'Default-RegistrationLogin'});">Login</button>
-      <button id="gigya-logoutButton" type="button" class="btn btn-warning" onclick="logoutGigya();">Log out</button>
     </div>
   </body>
 </html>

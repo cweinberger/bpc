@@ -1,3 +1,4 @@
+
 $( document ).ready(function() {
     getGigyaAccountInfo();
 });
@@ -12,8 +13,6 @@ function onLoginEventHandler(response) {
   console.log('onLoginEventHandler', response);
 
   getGigyaAccountInfo();
-  checkGigyaPermissionsOnBackend(response.UID, response.UIDSignature, response.signatureTimestamp);
-
 }
 
 function onLogoutEventHandler(response){
@@ -24,12 +23,23 @@ function onLogoutEventHandler(response){
 function getGigyaAccountInfo(){
   gigya.accounts.getAccountInfo({
     callback: function(response){
+
       console.log('getAccountInfo', response);
+
       if (response.status === 'OK') {
         $('#gigya-currentuser').text(response.profile.email);
         $('#gigya-loginButton').hide();
         $('#gigya-logoutButton').show();
-        checkGigyaPermissionsOnBackend(response.UID, response.UIDSignature, response.signatureTimestamp);
+
+        var payload = {
+          UID: response.UID,
+          UIDSignature: response.UIDSignature,
+          signatureTimestamp: response.signatureTimestamp,
+          permissions: ['read:*']
+        };
+
+        checkGigyaPermissionsOnBackend(payload);
+
       } else if (response.status === 'FAIL') {
         $('#gigya-logoutButton').hide();
       }
@@ -42,17 +52,10 @@ gigya.accounts.addEventHandlers({ onLogin: onLoginEventHandler});
 gigya.accounts.addEventHandlers({ onLogout: onLogoutEventHandler});
 
 
-function checkGigyaPermissionsOnBackend(UID, UIDSignature, signatureTimestamp, callback){
-  var payload = {
-    UID: UID,
-    UIDSignature: UIDSignature,
-    signatureTimestamp: signatureTimestamp,
-    permissions: ['read:*']
-  };
-
+function checkGigyaPermissionsOnBackend(payload, callback){
   $.ajax({
     type: 'POST',
-    url: '/gigya/permissions',
+    url: '/gigya',
     data: JSON.stringify(payload),
     contentType: "application/json; charset=utf-8",
     success: [

@@ -7,15 +7,15 @@ const crypto = require('crypto');
 const AWS = require('aws-sdk');
 
 //Declaration of all properties linked to the environment (beanstalk configuration)
-var AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID;
-var AWS_REGION = process.env.AWS_REGION;
-var COGNITO_IDENTITY_POOL_ID = process.env.COGNITO_IDENTITY_POOL_ID;
-var IAM_ROLE_ARN = process.env.IAM_ROLE_ARN;
-var COGNITO_DATASET_NAME = process.env.COGNITO_DATASET_NAME;
-var COGNITO_KEY_NAME = process.env.COGNITO_KEY_NAME;
-var CALLBACKURL = process.env.CALLBACKURL;
-// var AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
-// var AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID;
+const AWS_REGION = process.env.AWS_REGION;
+const COGNITO_IDENTITY_POOL_ID = process.env.COGNITO_IDENTITY_POOL_ID;
+const IAM_ROLE_ARN = process.env.IAM_ROLE_ARN;
+const COGNITO_DATASET_NAME = process.env.COGNITO_DATASET_NAME;
+const COGNITO_KEY_NAME = process.env.COGNITO_KEY_NAME;
+const CALLBACKURL = process.env.CALLBACKURL;
+// const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
+// const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 
 
 // if (process.env.AWS_ACCESS_KEY_ID === undefined || process.env.AWS_SECRET_ACCESS_KEY === undefined){

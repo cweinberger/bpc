@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <meta property="fb:app_id" content="1864072863822447" />
+    <!-- <meta property="fb:app_id" content="1864072863822447" /> -->
 
     <script
       src="https://code.jquery.com/jquery-3.1.1.min.js"
@@ -28,14 +28,6 @@
   </head>
   <body>
 
-    <div id="fb-root"></div>
-    <script>(function(d, s, id) {
-      var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
-      js = d.createElement(s); js.id = id;
-      js.src = "//connect.facebook.net/da_DK/sdk.js#xfbml=1&version=v2.8&appId=1864072863822447";
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));</script>
 
     <div class="container">
       <h1>SSO POC - Gigya</h1>
@@ -45,9 +37,6 @@
       <button id="gigya-loginButton" type="button" class="btn btn-default" onclick="gigya.accounts.showScreenSet({screenSet:'Default-RegistrationLogin'});">Login</button>
       <button id="gigya-logoutButton" type="button" class="btn btn-warning" onclick="logoutGigya();">Log out</button>
       <br />
-      <br />
-      <h3>Facebook user</h3>
-      <div id="aws-loginButtonFacebook" class="fb-login-button" data-max-rows="1" data-size="xlarge" data-show-faces="false" data-auto-logout-link="false" onlogin="gigyaFacebookLoginDone"></div>
     </div>
   </body>
 </html>

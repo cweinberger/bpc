@@ -1,9 +1,9 @@
 /*jshint node: true */
 'use strict';
 
-var http = require('http'),
-    https = require('https'),
-    Boom = require('boom');
+const http = require('http');
+const https = require('https');
+const Boom = require('boom');
 
 const GIGYA_APP_KEY = process.env.GIGYA_APP_KEY;
 const GIGYA_USER_KEY = process.env.GIGYA_USER_KEY;
@@ -21,9 +21,16 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/permissions',
+    path: '/',
+    config: {
+      cors: true,
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'log' // may also be 'ignore' or 'log'
+      }
+    },
     handler: function (request, reply) {
-
+console.log('STATE', request.state);
       var parameters = request.payload.regToken ?
       {
         regToken: request.payload.regToken
@@ -34,8 +41,8 @@ module.exports.register = function (server, options, next) {
       };
 
       callGigyaRestApi('GET', '/accounts.getAccountInfo', parameters, function(err, data){
+        console.error('callGigyaRestApi', err, data);
         if (err) {
-          console.error(err, data);
           return reply(err);
         } else if (data === null) {
           return reply(Boom.unauthorized());

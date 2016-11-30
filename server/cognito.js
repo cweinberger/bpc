@@ -5,6 +5,7 @@ const Boom = require('boom');
 const Oz = require('oz');
 const crypto = require('crypto');
 const AWS = require('aws-sdk');
+const Facebook = require('./facebook');
 
 //Declaration of all properties linked to the environment (beanstalk configuration)
 const AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID;
@@ -28,6 +29,8 @@ AWS.config.update({region: AWS_REGION});
 
 var cognitoIdentity = new AWS.CognitoIdentity();
 var cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
+
+var temp_users = {};
 
 //Params for making the API call
 // var params = {
@@ -89,6 +92,12 @@ module.exports.register = function (server, options, next) {
         reply.redirect('/');
       }
     }
+  });
+
+  server.route({
+    method: 'PUT',
+    path: '/',
+    handler: createUser
   });
 
   server.route({
@@ -179,9 +188,50 @@ module.exports.register.attributes = {
 
 
 
+function createUser(request, reply) {
+
+  var user = request.payload;
+  var IdentityId = request.payload.IdentityId;
+
+  if (temp_users[IdentityId] === undefined || temp_users[IdentityId] === null){
+    temp_users[IdentityId] = {
+      IdentityId: IdentityId,
+      permissions: [
+        '*:read'
+      ]
+    };
+  }
+
+  var params = {
+    IdentityId: request.payload.IdentityId,
+    Logins: request.payload.Logins
+  };
+
+  // cognitoIdentity.getOpenIdToken(params, function(err, data) {
+  //   console.log('getOpenIdToken', err, data);
+  // });
+
+  cognitoIdentity.getCredentialsForIdentity(params, function(err, data) {
+
+    if (request.payload.SessionToken !== data.Credentials.SessionToken){
+      // return reply(Boom.unauthorized());
+    }
+
+    temp_users[IdentityId].CognitoIdentityCredentials = data.Credentials;
+
+    Facebook.getProfile({access_token: params.Logins['graph.facebook.com']}, function(err, response){
+      temp_users[IdentityId].FacebookProfile = response;
+    });
+
+
+    reply();
+  });
+}
+
+
 function validateUser(request, reply) {
 
-  console.log('GET /permissions');
+  console.log('POST /permissions');
   // console.log('PAYLOAD', request.payload);
   // console.log('STATE', request.state);
 

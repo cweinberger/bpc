@@ -2,6 +2,8 @@
   // AWSCognito
   // AmazonCognitoIdentity
 
+AWS.config.region = 'eu-west-1';
+
 var poolData = {
   UserPoolId : 'eu-west-1_hS9hPyLgW',
   ClientId : '5tv5te4df577992koo6mo7t6me',
@@ -10,50 +12,16 @@ var poolData = {
 
 var userPool = new AWSCognito.CognitoIdentityServiceProvider.CognitoUserPool(poolData);
 
-AWS.config.region = 'eu-west-1';
-AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-  IdentityPoolId: 'eu-west-1:2add6c33-59e3-4b5d-96d9-6285378c5922',
-});
+// AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+//   IdentityPoolId: 'eu-west-1:2add6c33-59e3-4b5d-96d9-6285378c5922',
+// });
 
 
 $(document).ready(function() {
   // $('#aws-loginForm').show();
   // $('#aws-logoutButton').hide();
-  checkLoggedinUser();
 });
 
-
-function checkLoggedinUser(){
-
-  console.log('AWS.config.credentials', AWS.config.credentials);
-
-  if (AWS.config.credentials.params.IdentityId){
-
-    disableLoginControls();
-
-    $('#aws-currentuser').text(AWS.config.credentials.params.IdentityId);
-
-    // Obtain AWS credentials
-    AWS.config.credentials.get(function(){
-      // Access AWS resources here.
-      var accessKeyId = AWS.config.credentials.accessKeyId;
-      var secretAccessKey = AWS.config.credentials.secretAccessKey;
-      var sessionToken = AWS.config.credentials.sessionToken;
-      var identityId = AWS.config.credentials.identityId;
-      console.log('AWS.config.credentials User Pool', AWS.config.credentials);
-
-      // var p = {
-      //   accessToken: currentUser.signInUserSession.accessToken.jwtToken,
-      //   idToken: currentUser.signInUserSession.idToken.jwtToken,
-      //   Logins: AWS.config.credentials.params.Logins
-      // };
-      //
-      // checkAwsPermissionsOnBackend(p);
-    });
-  } else {
-    disableLogoutControls();
-  }
-}
 
 var currentUser = userPool.getCurrentUser();
 if (currentUser != null) {
@@ -67,6 +35,9 @@ if (currentUser != null) {
 
     console.log('AWS session', session);
     console.log('AWS session validity: ' + session.isValid());
+
+    setUserPoolIdentityToken(currentUser.signInUserSession.idToken.jwtToken);
+    checkAwsPermissionsOnBackend();
   });
 }
 
@@ -74,6 +45,10 @@ window.fbAsyncInit = function() {
   FB.getLoginStatus(function(response) {
      console.log('getFBLoginStatus', response);
      if (response.status === 'connected') {
+
+       setFacebookIdentityToken(response.authResponse.accessToken);
+       checkAwsPermissionsOnBackend();
+
         // Logged into your app and Facebook.
         // $('#aws-loginButtonFacebook').hide();
         FB.api('/me', function(response) {
@@ -87,16 +62,6 @@ window.fbAsyncInit = function() {
       }
   });
 };
-
-
-
-function awsFacebookLoginDone(response){
-  console.log('awsFacebookLoginDone', response);
-  // Add the Facebook access token to the Cognito credentials login map.
-  setFacebookIdentityToken(response.authResponse.accessToken);
-  disableLoginControls();
-}
-
 
 
 function loginAwsByUsernameAndPassword(e){
@@ -122,9 +87,8 @@ function loginAwsByUsernameAndPassword(e){
 
   cognitoUser.authenticateUser(authenticationDetails, {
     onSuccess: function (result) {
-      console.log('AWS authentication success', result);
+      console.log('Cognito authentication success', result);
       setUserPoolIdentityToken(result.idToken.jwtToken);
-      disableLoginControls();
     },
 
     onFailure: function(err) {
@@ -149,35 +113,82 @@ function loginAwsByUsernameAndPassword(e){
 }
 
 
+function awsFacebookLoginDone(response){
+  console.log('awsFacebookLoginDone', response);
+  // Add the Facebook access token to the Cognito credentials login map.
+  setFacebookIdentityToken(response.authResponse.accessToken);
+}
+
+
 function setFacebookIdentityToken(accessToken){
   AWS.config.credentials = new AWS.CognitoIdentityCredentials({
     IdentityPoolId: 'eu-west-1:2add6c33-59e3-4b5d-96d9-6285378c5922',
-    RoleSessionName: 'web',
+    // RoleSessionName: 'web',
     Logins: {
       'graph.facebook.com': accessToken
     }
   });
+  AWS.config.credentials.get(credentialsGetCallback);
 }
+
 
 function updateFacebookIdentityToken(accessToken){
   AWS.config.credentials.params.Logins['graph.facebook.com'] = accessToken;
   AWS.config.credentials.refresh(credentialsRefreshCallback);
 }
 
+
 function setUserPoolIdentityToken(idToken){
   AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 		IdentityPoolId: 'eu-west-1:2add6c33-59e3-4b5d-96d9-6285378c5922',
-    RoleSessionName: 'web',
+    // RoleSessionName: 'web',
 		Logins: {
 			'cognito-idp.eu-west-1.amazonaws.com/eu-west-1_hS9hPyLgW': idToken
 		}
 	});
+  AWS.config.credentials.get(credentialsGetCallback);
 }
+
 
 function updateUserPoolIdentityToken(idToken){
   AWS.config.credentials.params.Logins['cognito-idp.eu-west-1.amazonaws.com/eu-west-1_hS9hPyLgW'] = idToken;
   AWS.config.credentials.refresh(credentialsRefreshCallback);
 }
+
+
+function credentialsGetCallback(error){
+  if (error) {
+    console.error(error);
+  } else {
+    console.log('Successfully logged!');
+    console.log('AWS.config.credentials', AWS.config.credentials);
+    disableLoginControls();
+    $('#aws-currentuser').text(AWS.config.credentials.identityId);
+
+    // var payload = response.authResponse;
+    // payload.Logins = AWS.config.credentials.params.Logins['graph.facebook.com'];
+    var payload = {
+      Logins: AWS.config.credentials.params.Logins,
+      IdentityId: AWS.config.credentials.identityId,
+      SessionToken:AWS.config.credentials.sessionToken
+    }
+
+    $.ajax({
+      type: 'PUT',
+      url: '/cognito',
+      contentType: "application/json; charset=utf-8",
+      data: JSON.stringify(payload),
+      success: [
+        function(data, status, jqXHR) {
+        }
+      ],
+      error: function(jqXHR, textStatus, err) {
+        console.error(textStatus, err.toString());
+      }
+    });
+  }
+}
+
 
 function credentialsRefreshCallback(error){
   if (error) {
@@ -186,6 +197,7 @@ function credentialsRefreshCallback(error){
     console.log('Successfully logged!');
   }
 }
+
 
 function checkAwsPermissionsOnBackend(payload, callback){
   $.ajax({
@@ -208,7 +220,6 @@ function checkAwsPermissionsOnBackend(payload, callback){
     }
   });
 }
-
 
 
 

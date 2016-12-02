@@ -44,12 +44,16 @@
       fjs.parentNode.insertBefore(js, fjs);
     }(document, 'script', 'facebook-jssdk'));</script>
 
+
     <div class="container">
-      <h1>SSO POC - AWS Cognito</h1>
+      <div>
+        <a href="/cognito.html">Cognito</a>
+        <a href="/gigya.html">Gigya</a>
+      </div>
+      <h1>SSO POC - Cognito</h1>
 
       <div>Username: <span id="aws-currentuser"></span></div>
       <div>Permissions: <span id="aws-currentuserpermissions"></span></div>
-      <button id="aws-logoutButton" type="button" class="btn btn-warning" onclick="signoutAws();">Sign out</button>
 
       <br />
 
@@ -65,10 +69,12 @@
         </div>
         <button type="submit" class="btn btn-default">Login</button>
       </form>
+      <button id="aws-logoutButton" type="button" class="btn btn-warning" onclick="signoutAws();">Sign out</button>
 
       <br />
       <h3>Facebook user</h3>
       <div id="aws-loginButtonFacebook" class="fb-login-button" data-max-rows="1" data-size="xlarge" data-show-faces="false" data-auto-logout-link="false" onlogin="awsFacebookLoginDone"></div>
+      <button id="aws-logoutButtonFacebook" type="button" class="btn btn-warning" onclick="signoutFacebook();">Sign out</button>
 
     </div>
   </body>

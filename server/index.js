@@ -67,7 +67,7 @@ client.route({
   path: '/{param*}',
   handler: {
     directory: {
-      path: './site',
+      path: './client',
       redirectToSlash: true,
       index: true
     }

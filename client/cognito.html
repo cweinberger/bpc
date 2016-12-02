@@ -4,67 +4,36 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <meta property="fb:app_id" content="1864072863822447" />
-
     <script
       src="https://code.jquery.com/jquery-3.1.1.min.js"
       integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
       crossorigin="anonymous"></script>
-
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
     <!-- Optional theme -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
     <!-- Latest compiled and minified JavaScript -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.12.min.js"></script>
-
-    <script src="/js/cognito/jsbn.js"></script>
-    <script src="/js/cognito/jsbn2.js"></script>
-    <script src="/js/cognito/sjcl.js"></script>
-    <script src="/js/cognito/moment-with-locales.min.js"></script>
-    <script src="/js/cognito/aws-cognito-sdk.min.js"></script>
-    <script src="/js/cognito/amazon-cognito-identity.min.js"></script>
-    <script src="/js/cognito/app.js"></script>
-
     <script src="/js/tools.js"></script>
+    <script src="/js/cognito/app.js"></script>
   </head>
   <body>
 
-    <div id="fb-root"></div>
-    <script>(function(d, s, id) {
-      var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
-      js = d.createElement(s); js.id = id;
-      js.src = "//connect.facebook.net/da_DK/sdk.js#xfbml=1&version=v2.8&appId=1864072863822447";
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));</script>
 
     <div class="container">
-      <h1>SSO POC - AWS Cognito</h1>
+      <div>
+        <a href="/cognito.html">Cognito</a>
+        <a href="/gigya.html">Gigya</a>
+      </div>
+      
+      <h1>Client POC - Cognito</h1>
 
-      <h3>Ad hoc user (User Pool)</h3>
       <div>Username: <span id="aws-currentuser"></span></div>
       <div>Permissions: <span id="aws-currentuserpermissions"></span></div>
-      <form id="aws-loginForm" onsubmit="loginAwsByUsernameAndPassword(event);">
-        <div class="form-group">
-          <label for="aws-username">Username</label>
-          <input type="text" class="form-control" id="aws-username" placeholder="Email">
-        </div>
-        <div class="form-group">
-          <label for="aws-password">Password</label>
-          <input type="password" class="form-control" id="aws-password" placeholder="Password">
-        </div>
-        <button type="submit" class="btn btn-default">Login</button>
-      </form>
-      <br/>
-      <button id="aws-logoutButton" type="button" class="btn btn-warning" onclick="signoutAws();">Sign out</button>
 
-      <a id="aws-loginButton2" href="#" class="">Login berlingske-poc.local</a>
+      <a id="aws-loginButton2" href="#" class="">Login berlingske-poc.local browser</a>
+      <a id="aws-loginButton3" href="#" class="">Login berlingske-poc.local backend</a>
       <!-- <button id="aws-loginButton3" type="button" class="btn btn-default" onclick="gotoSso2();">Login berlingske-poc.local/cognito</button> -->
       <button id="aws-loginButton4" type="button" class="btn btn-default" onclick="postToSso();">Login POST berlingske-poc.local/cognito</button>
 
@@ -76,12 +45,6 @@
         <input type="hidden" name="scope" value="read"><br>
         <input type="submit" value="Login by form POST">
       </form> -->
-
-      <br />
-      <br />
-      <h3>Facebook user</h3>
-      <div id="aws-loginButtonFacebook" class="fb-login-button" data-max-rows="1" data-size="xlarge" data-show-faces="false" data-auto-logout-link="false" onlogin="awsFacebookLoginDone"></div>
-
 
     </div>
   </body>

@@ -234,7 +234,12 @@ function checkAwsPermissionsOnBackend(callback){
     success: [
       function(data, status, jqXHR) {
         // console.log(data, status);
-        $('#aws-currentuserpermissions').text(data);
+        if (data.IdentityId){
+          $('#aws-currentuser').text(data.IdentityId)
+        }
+        if (data.Permissions){
+          $('#aws-currentuserpermissions').text(data.Permissions)
+        }
       },
       callback
     ],

@@ -62,7 +62,12 @@ function checkPermissionsOnBackend(payload, callback){
 }
 
 
-function postToSso(callback){
+function postToSso(path, callback){
+  if (callback === undefined && typeof path === 'function'){
+    callback = path;
+    path = '';
+  }
+
   var payload = {
     id: 'Mickey',
     scope: 'read',
@@ -71,7 +76,7 @@ function postToSso(callback){
 
   $.ajax({
     type: 'POST',
-    url: 'http://berlingske-poc.local:8084/cognito/permissions',
+    url: 'http://berlingske-poc.local:8084/cognito'.concat(path),
     contentType: "application/json; charset=utf-8",
     data: JSON.stringify(payload),
     xhrFields: {
@@ -79,8 +84,13 @@ function postToSso(callback){
     },
     success: [
       function(data, status, jqXHR) {
-        console.log(data, status);
-        translateRsvp(data);
+        console.log(path, data, status);
+        if (data.IdentityId){
+          $('#aws-currentuser').text(data.IdentityId)
+        }
+        if (data.Permissions){
+          $('#aws-currentuserpermissions').text(data.Permissions)
+        }
       },
       callback
     ],

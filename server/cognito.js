@@ -87,7 +87,6 @@ module.exports.register = function (server, options, next) {
     encoding: 'base64json'
   });
 
-
   server.route({
     method: 'GET',
     path: '/',
@@ -132,6 +131,26 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
+    path: '/signout',
+    config: {
+      cors: {
+        credentials: true,
+        origin: ['*'],
+        // access-control-allow-methods:POST
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+        maxAge: 86400
+      },
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'log' // may also be 'ignore' or 'log'
+      }
+    },
+    handler: signout
+  });
+
+  server.route({
+    method: 'POST',
     path: '/permissions',
     config: {
       cors: {
@@ -148,6 +167,26 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: validateUser
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/auth',
+    config: {
+      cors: {
+        credentials: true,
+        origin: ['*'],
+        // access-control-allow-methods:POST
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+        maxAge: 86400
+      },
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'log' // may also be 'ignore' or 'log'
+      }
+    },
+    handler: authUser
   });
 
   server.route({
@@ -262,14 +301,12 @@ function createUser(request, reply) {
 
       if (temp_users[IdentityId] === undefined || temp_users[IdentityId] === null){
         temp_users[IdentityId] = {
+          IdentityId: IdentityId,
           Permissions: [
             '*:read'
           ]
         };
       }
-
-      var onemonth = 1000 * 60 * 60 * 24 * 30;
-      // var cookie_options = {path: '/', ttl: onemonth, encoding: 'base64json'};
 
       reply()
         .state('ii', IdentityId)
@@ -366,7 +403,7 @@ function validateUser(request, reply) {
   console.log('');
   console.log('validateUser');
   // console.log('PAYLOAD', request.payload);
-  console.log('STATE', request.state);
+  // console.log('STATE', request.state);
 
   // TODO: Validate accessToken
   // - Check the iss claim. It should match your user pool. For example, a user pool created in the us-east-1 region will have an iss value of https://cognito-idp.us-east-1.amazonaws.com/{userPoolId}.
@@ -415,7 +452,10 @@ function validateUser(request, reply) {
       if (user === undefined || user.Permissions === undefined){
         reply(Boom.unauthorized());
       } else {
-        reply(user.Permissions);
+
+        reply(user);
+
+
       }
     }
   });
@@ -506,4 +546,41 @@ function validateUser(request, reply) {
   //     }
   //   });
   // }
+}
+
+
+function authUser(request, reply){
+
+  console.log('');
+  console.log('authUser');
+
+  var logins;
+  if (request.state.ll){
+    logins = request.state.ll;
+  } else if (request.payload.Logins){
+    logins = request.payload.Logins;
+  } else {
+    return reply(Boom.unauthorized());
+  }
+
+  console.log('logins', logins);
+
+  var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
+    IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+    Logins: logins
+  });
+
+  cognitoIdentityCredentials.get(function(err){
+    if (err) {
+      return reply(Boom.unauthorized());
+    }
+
+    reply(cognitoIdentityCredentials);
+  });
+}
+
+function signout(request, reply){
+
+  reply().
+    unstate('ll');
 }

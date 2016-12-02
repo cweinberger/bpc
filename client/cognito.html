@@ -26,16 +26,24 @@
         <a href="/cognito.html">Cognito</a>
         <a href="/gigya.html">Gigya</a>
       </div>
-      
+
       <h1>Client POC - Cognito</h1>
 
       <div>Username: <span id="aws-currentuser"></span></div>
       <div>Permissions: <span id="aws-currentuserpermissions"></span></div>
+      <br/>
+      <br/>
 
       <a id="aws-loginButton2" href="#" class="">Login berlingske-poc.local browser</a>
+      <br/>
       <a id="aws-loginButton3" href="#" class="">Login berlingske-poc.local backend</a>
       <!-- <button id="aws-loginButton3" type="button" class="btn btn-default" onclick="gotoSso2();">Login berlingske-poc.local/cognito</button> -->
-      <button id="aws-loginButton4" type="button" class="btn btn-default" onclick="postToSso();">Login POST berlingske-poc.local/cognito</button>
+      <br/>
+      <button id="aws-loginButton4" type="button" class="btn btn-default" onclick="postToSso('/permissions');">POST permissions</button>
+      <br/>
+      <button id="aws-loginButton5" type="button" class="btn btn-default" onclick="postToSso('/auth');">POST auth</button>
+      <br/>
+      <button id="aws-loginButton6" type="button" class="btn btn-default" onclick="postToSso('/signout');">POST signout</button>
 
       <br/>
       <br/>

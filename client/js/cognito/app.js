@@ -61,18 +61,35 @@ function checkPermissionsOnBackend(payload, callback){
   });
 }
 
+function loginPost(){
+  postToSso('/auth', {});
+}
 
-function postToSso(path, callback){
+function getPermissionsPost(){
+  var accessKeyId = readCookie('aws_accessKeyId');
+  var secretKey = readCookie('aws_secretKey');
+  var sessionToken = readCookie('aws_sessionToken');
+  var identityId = readCookie('aws_identityId');
+  var payload = {
+    identityId: identityId,
+    accessKeyId: accessKeyId,
+    secretKey: secretKey,
+    sessionToken: sessionToken
+    id: 'Mickey',
+    scope: 'read',
+    secret: 'fakesecret'
+  };
+  postToSso('/permissions', payload, function(data, status, jqXHR){
+
+  });
+}
+
+function postToSso(path, payload, callback){
   if (callback === undefined && typeof path === 'function'){
     callback = path;
     path = '';
   }
 
-  var payload = {
-    id: 'Mickey',
-    scope: 'read',
-    secret: 'fakesecret'
-  };
 
   $.ajax({
     type: 'POST',
@@ -87,9 +104,15 @@ function postToSso(path, callback){
         console.log(path, data, status);
         if (data.IdentityId){
           $('#aws-currentuser').text(data.IdentityId)
+          createCookie('aws_identityId', data.IdentityId)
         }
         if (data.Permissions){
           $('#aws-currentuserpermissions').text(data.Permissions)
+        }
+        if(data.sessionToken){
+          createCookie('aws_accessKeyId', data.data.Credentials.AccessKeyId)
+          createCookie('aws_secretKey', data.data.Credentials.SecretKey)
+          createCookie('aws_sessionToken', data.sessionToken)
         }
       },
       callback

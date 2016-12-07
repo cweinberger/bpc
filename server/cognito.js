@@ -69,6 +69,7 @@ module.exports.register = function (server, options, next) {
     ttl: oneday,
     isHttpOnly: false,
     isSecure: false,
+    isSameSite: false,
     path: '/'
   });
 
@@ -76,6 +77,7 @@ module.exports.register = function (server, options, next) {
     ttl: oneday,
     isHttpOnly: false,
     isSecure: false,
+    isSameSite: false,
     path: '/'
   });
 
@@ -83,6 +85,7 @@ module.exports.register = function (server, options, next) {
     ttl: oneday,
     isHttpOnly: false,
     isSecure: false,
+    isSameSite: false,
     path: '/',
     encoding: 'base64json'
   });
@@ -177,7 +180,7 @@ module.exports.register = function (server, options, next) {
         credentials: true,
         origin: ['*'],
         // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match', 'Cookie'],
         exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
         maxAge: 86400
       },
@@ -388,7 +391,7 @@ function createUser(request, reply) {
   //
   //   temp_users[IdentityId].CognitoIdentityCredentials = data.Credentials;
   //
-  //   Facebook.getProfile({access_token: params.Logins['graph.facebook.com']}, function(err, response){
+  //   Facebook.getProfiles({access_token: params.Logins['graph.facebook.com']}, function(err, response){
   //     temp_users[IdentityId].FacebookProfile = response;
   //   });
   //
@@ -402,7 +405,7 @@ function validateUser(request, reply) {
 
   console.log('');
   console.log('validateUser');
-  // console.log('PAYLOAD', request.payload);
+  console.log('PAYLOAD', request.payload);
   // console.log('STATE', request.state);
 
   // TODO: Validate accessToken
@@ -421,6 +424,20 @@ function validateUser(request, reply) {
 
   // var accessToken = request.payload.accessToken;
   // var idToken = request.payload.idToken;
+
+  if (request.payload.sessionToken){
+    var accessKeyId = request.payload.accessKeyId ? request.payload.accessKeyId : '';
+    var secretKey = request.payload.secretKey ? request.payload.secretKey : '';
+    var creds = new AWS.Credentials(accessKeyId, secretKey, request.payload.sessionToken);
+    console.log('creds', creds);
+
+    if(creds.expired){
+      return reply(Boom.unauthorized());
+    }
+
+    getUser(request.payload.identityId, reply);
+
+  }
 
   var logins;
   if (request.state.ll){
@@ -448,17 +465,18 @@ function validateUser(request, reply) {
     } else if (data.IdentityId !== request.state.ii) {
       reply(Boom.unauthorized());
     } else {
-      var user = temp_users[data.IdentityId];
-      if (user === undefined || user.Permissions === undefined){
-        reply(Boom.unauthorized());
-      } else {
-
-        reply(user);
-
-
-      }
+      getUser(data.IdentityId, reply);
     }
   });
+
+  function getUser(IdentityId, callback){
+    var user = temp_users[IdentityId];
+    if (user === undefined || user.Permissions === undefined){
+      reply(Boom.unauthorized());
+    } else {
+      callback(null, user);
+    }
+  }
 
 
 
@@ -578,6 +596,7 @@ function authUser(request, reply){
     reply(cognitoIdentityCredentials);
   });
 }
+
 
 function signout(request, reply){
 

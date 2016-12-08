@@ -49,34 +49,3 @@ function cb (err) {
     server.stop();
   }
 }
-
-
-const client = new Hapi.Server();
-client.connection({ port: process.env.PORT ? parseInt(process.env.PORT) + 1 : 8000 + 1 });
-client.register(Inert, () => {});
-client.route({
-  method: 'GET',
-  path: '/favicon.ico',
-  handler: function(request, reply){
-    reply();
-  }
-});
-
-client.route({
-  method: 'GET',
-  path: '/{param*}',
-  handler: {
-    directory: {
-      path: './client',
-      redirectToSlash: true,
-      index: true
-    }
-  }
-});
-
-client.start((err) => {
-  if (err) {
-    throw err;
-  }
-  console.log(`Client running at: ${client.info.uri}`);
-});

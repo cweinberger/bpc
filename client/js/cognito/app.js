@@ -74,7 +74,7 @@ function getPermissionsPost(){
     identityId: identityId,
     accessKeyId: accessKeyId,
     secretKey: secretKey,
-    sessionToken: sessionToken
+    sessionToken: sessionToken,
     id: 'Mickey',
     scope: 'read',
     secret: 'fakesecret'
@@ -105,6 +105,10 @@ function postToSso(path, payload, callback){
         if (data.IdentityId){
           $('#aws-currentuser').text(data.IdentityId)
           createCookie('aws_identityId', data.IdentityId)
+        }
+        if (data.identityId){
+          $('#aws-currentuser').text(data.identityId)
+          createCookie('aws_identityId', data.identityId)
         }
         if (data.Permissions){
           $('#aws-currentuserpermissions').text(data.Permissions)

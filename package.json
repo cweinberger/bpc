@@ -8,6 +8,7 @@
     "hapi": "^15.2.0",
     "inert": "^4.0.2",
     "joi": "^9.2.0",
+    "mongodb": "^2.2.12",
     "oz": "^4.0.4"
   },
   "devDependencies": {},

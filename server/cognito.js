@@ -134,6 +134,26 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
+    path: '/auth',
+    config: {
+      cors: {
+        credentials: true,
+        origin: ['*'],
+        // access-control-allow-methods:POST
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match', 'Cookie'],
+        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+        maxAge: 86400
+      },
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'log' // may also be 'ignore' or 'log'
+      }
+    },
+    handler: authUser
+  });
+
+  server.route({
+    method: 'POST',
     path: '/signout',
     config: {
       cors: {
@@ -170,26 +190,6 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: validateUser
-  });
-
-  server.route({
-    method: 'POST',
-    path: '/auth',
-    config: {
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match', 'Cookie'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
-      state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
-      }
-    },
-    handler: authUser
   });
 
   server.route({

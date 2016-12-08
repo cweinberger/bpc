@@ -84,6 +84,7 @@ function getPermissionsPost(){
   });
 }
 
+
 function postToSso(path, payload, callback){
   if (callback === undefined && typeof path === 'function'){
     callback = path;
@@ -118,6 +119,27 @@ function postToSso(path, payload, callback){
           createCookie('aws_secretKey', data.data.Credentials.SecretKey)
           createCookie('aws_sessionToken', data.sessionToken)
         }
+      },
+      callback
+    ],
+    error: function(jqXHR, textStatus, err) {
+      console.error(textStatus, err.toString());
+    }
+  });
+}
+
+
+function getResources(callback){
+  $.ajax({
+    type: 'GET',
+    url: '/resources',
+    contentType: "application/json; charset=utf-8",
+    xhrFields: {
+      withCredentials: true
+    },
+    success: [
+      function(data, status, jqXHR) {
+        console.log(data, status);
       },
       callback
     ],

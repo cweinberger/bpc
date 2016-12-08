@@ -2,6 +2,7 @@
   // AWSCognito
   // AmazonCognitoIdentity
 $(document).ready(function() {
+  $('#aws-logoutButton').hide();
 });
 
 
@@ -250,10 +251,29 @@ function checkAwsPermissionsOnBackend(callback){
 }
 
 
+function signout(){
+  $.ajax({
+    type: 'POST',
+    url: '/cognito/signout',
+    contentType: "application/json; charset=utf-8",
+    success: [
+      function(data, status, jqXHR) {
+        console.log('signout success');
+        signoutFacebook();
+        signoutAws();
+        disableLogoutControls();
+      }
+    ],
+    error: function(jqXHR, textStatus, err) {
+      console.error(textStatus, err.toString());
+    }
+  });
+}
+
+
 function signoutFacebook(callback){
   FB.logout(function(response){
     console.log('FB.logout', response);
-    disableLogoutControls();
 
     if (callback !== undefined && typeof callback === 'function'){
       callback(response);
@@ -265,6 +285,10 @@ function signoutFacebook(callback){
 function signoutAws(callback){
   var currentUser = userPool.getCurrentUser();
 
+  if(currentUser === null){
+    return;
+  }
+
   var userData = {
     Username : currentUser.username,
     Pool : userPool
@@ -273,8 +297,6 @@ function signoutAws(callback){
   var cognitoUser = new AWSCognito.CognitoIdentityServiceProvider.CognitoUser(userData);
 
   cognitoUser.signOut();
-
-  disableLogoutControls();
 
   if (callback !== undefined && typeof callback === 'function'){
     callback();

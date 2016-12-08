@@ -320,6 +320,7 @@ function createUser(request, reply) {
               console.log(err);
               reply(Boom.badImplementation());
             } else if(result.ok !== 1){
+              console.log('result', result);
               reply(Boom.badImplementation());
             } else {
               done()
@@ -446,9 +447,13 @@ function validateUser(request, reply) {
   // var accessToken = request.payload.accessToken;
   // var idToken = request.payload.idToken;
 
-  if (request.payload.identityId === undefined || request.payload.identityId === null){
+  var identityId = request.payload.IdentityId !== undefined && request.payload.IdentityId !== null ? request.payload.IdentityId :
+                   request.payload.identityId !== undefined && request.payload.identityId !== null ? request.payload.identityId : null;
+
+  if (identityId === null){
     return reply(Boom.badRequest('IdentityId missing'));
   }
+
 
   if (request.payload.sessionToken) {
     var accessKeyId = request.payload.accessKeyId ? request.payload.accessKeyId : '';
@@ -459,7 +464,7 @@ function validateUser(request, reply) {
     if(creds.expired){
       reply(Boom.unauthorized());
     } else {
-      getUserPermissions(request.payload.identityId, reply);
+      getUserPermissions(identityId, reply);
     }
   } else {
 

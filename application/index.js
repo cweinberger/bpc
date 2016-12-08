@@ -4,7 +4,7 @@
 const Hapi = require('hapi');
 const Inert = require('inert');
 const Joi = require('joi');
-
+const Resources = require('./resources');
 
 
 
@@ -12,7 +12,7 @@ const application = new Hapi.Server();
 application.connection({ port: process.env.PORT ? parseInt(process.env.PORT) + 1 : 8000 + 1 });
 
 application.register(Inert, () => {});
-
+application.register(Resources, { routes: { prefix: '/resources' } }, cb);
 
 
 

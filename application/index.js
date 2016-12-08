@@ -29,7 +29,7 @@ application.route({
   path: '/{param*}',
   handler: {
     directory: {
-      path: './client',
+      path: './application/client',
       redirectToSlash: true,
       index: true
     }

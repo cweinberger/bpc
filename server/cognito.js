@@ -90,6 +90,9 @@ module.exports.register = function (server, options, next) {
     encoding: 'base64json'
   });
 
+
+
+
   server.route({
     method: 'GET',
     path: '/',
@@ -126,16 +129,179 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+
+
+
+
   server.route({
     method: 'POST',
-    path: '/create',
-    handler: createUser
+    path: '/register',
+    config: {
+      auth: false
+    },
+    handler: function(request, reply) {
+
+      console.log('');
+      console.log('registerUser', request.payload);
+
+      // if (request.payload.IdentityId === undefined || request.payload.IdentityId === null){
+      //   return reply(Boom.badRequest('Parameter IdentityId missing'));
+      // }
+
+      if (request.payload.Logins === undefined || request.payload.Logins === null){
+        return reply(Boom.badRequest('Parameter Logins missing'));
+      }
+
+      // if (request.payload.AccessToken === undefined || request.payload.AccessToken === null){
+      //   return reply(Boom.badRequest('Parameter AccessToken missing'));
+      // }
+
+      var logins = request.payload.Logins;
+
+      var params = {
+        IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+        AccountId: AWS_ACCOUNT_ID,
+        Logins: logins
+      };
+
+      cognitoIdentity.getId(params, function(err, data) {
+        if (err) {
+          console.log(err);
+          reply(Boom.unauthorized('Error getting IdentityId'));
+        } else if (data.IdentityId === undefined || data.IdentityId === null) {
+          reply(Boom.unauthorized('IdentityId could not be found'));
+        } else {
+
+          var IdentityId = data.IdentityId;
+
+          MongoDB.collection('users').findOne({IdentityId: IdentityId}, {fields:{IdentityId:1, Permissions: 1}}, function(err, user) {
+            if (err) {
+              console.log(err);
+              reply(Boom.badImplementation());
+            } else if(user === null){
+              MongoDB.collection('users').insertOne({
+                IdentityId: IdentityId,
+                IdentityProvider: Object.keys(logins)[0],
+                Logins: JSON.stringify(logins),
+                Permissions: [
+                  '*:read'
+                ]
+              }, function(err, result){
+                if (err) {
+                  console.log(err);
+                  reply(Boom.badImplementation());
+                } else if(result.ok !== 1){
+                  console.log('result', result);
+                  reply(Boom.badImplementation());
+                } else {
+                  done()
+                }
+              });
+            } else {
+              done();
+            }
+          });
+
+          function done(){
+            reply()
+            .state('ii', IdentityId)
+            .state('il', Object.keys(logins)[0])
+            .state('ll', logins);
+          }
+        }
+      });
+
+      // var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
+      //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+      //   Logins: logins
+      // });
+      //
+      // cognitoIdentityCredentials.get(function(err){
+      //   if (err) {
+      //     return reply(Boom.unauthorized());
+      //   }
+      //
+      //   var IdentityId = cognitoIdentityCredentials.identityId;
+      //
+      //   if (temp_users[IdentityId] === undefined || temp_users[IdentityId] === null){
+      //     temp_users[IdentityId] = {};
+      //   }
+      //
+      //   temp_users[IdentityId].CognitoIdentityCredentials = cognitoIdentityCredentials;
+      //
+      //   temp_users[IdentityId].Permissions = [
+      //     '*:read'
+      //   ];
+
+
+
+
+        // We need AccessToken to get the profile data
+
+        // if (logins['graph.facebook.com']){
+        //   Facebook.getProfile({access_token: cognitoIdentityCredentials.params.Logins['graph.facebook.com']}, function(err, response){
+        //     temp_users[IdentityId].FacebookProfile = response;
+        //   });
+        // }
+        //
+        // var cognitoLogin = Object.keys(logins).find((k) => {return k.indexOf('cognito') > -1;});
+        // console.log('cognitoLogin', cognitoLogin);
+        // if(cognitoLogin){
+        //   cognitoIdentityServiceProvider.getUser({AccessToken: cognitoIdentityCredentials.params.Logins[cognitoLogin]}, function(err, data){
+        //     console.log('getUser', err, data);
+        //     if (err) {
+        //       // return reply(err);
+        //     } else if (data === null) {
+        //       // return reply(Boom.unauthorized());
+        //       // } else if (data.Username !== request.payload.username) {
+        //       //   return reply(Boom.unauthorized());
+        //     } else {
+        //       temp_users[IdentityId].CognitoUser = data;
+        //     }
+        //   });
+        // }
+
+
+      // });
+
+      //
+      // var params = {
+      //   IdentityId: request.payload.IdentityId,
+      //   Logins: request.payload.Logins
+      // };
+      //
+      // // cognitoIdentity.getOpenIdToken(params, function(err, data) {
+      // //   console.log('getOpenIdToken', err, data);
+      // // });
+      //
+      // cognitoIdentity.getCredentialsForIdentity(params, function(err, data) {
+      //   console.log('getCredentialsForIdentity', data, err);
+      //   if (err) {
+      //     return reply(Boom.unauthorized());
+      //   } else if (request.payload.SessionToken !== data.Credentials.SessionToken){
+      //     // return reply(Boom.unauthorized());
+      //   }
+      //
+      //   temp_users[IdentityId].CognitoIdentityCredentials = data.Credentials;
+      //
+      //   Facebook.getProfiles({access_token: params.Logins['graph.facebook.com']}, function(err, response){
+      //     temp_users[IdentityId].FacebookProfile = response;
+      //   });
+      //
+      //
+      //   reply();
+      // });
+    }
   });
+
+
+
 
   server.route({
     method: 'POST',
     path: '/auth',
     config: {
+      auth: false,
       cors: {
         credentials: true,
         origin: ['*'],
@@ -149,8 +315,40 @@ module.exports.register = function (server, options, next) {
         failAction: 'log' // may also be 'ignore' or 'log'
       }
     },
-    handler: authUser
+    handler: function(request, reply){
+
+      console.log('');
+      console.log('authUser');
+
+      var logins;
+      if (request.state.ll){
+        logins = request.state.ll;
+      } else if (request.payload.Logins){
+        logins = request.payload.Logins;
+      } else {
+        return reply(Boom.unauthorized());
+      }
+
+      console.log('logins', logins);
+
+      var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
+        IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+        Logins: logins
+      });
+
+      cognitoIdentityCredentials.get(function(err){
+        if (err) {
+          console.error(err);
+          reply(Boom.unauthorized(err.message));
+        } else {
+          reply(cognitoIdentityCredentials);
+        }
+      });
+    }
   });
+
+
+
 
   server.route({
     method: 'POST',
@@ -169,8 +367,38 @@ module.exports.register = function (server, options, next) {
         failAction: 'log' // may also be 'ignore' or 'log'
       }
     },
-    handler: signout
+    handler: function(request, reply){
+      reply()
+        .unstate('ii')
+        .unstate('il')
+        .unstate('ll');
+    }
   });
+
+
+  server.route({
+    method: 'POST',
+    path: '/validateuserticket',
+    config: {
+      cors: {
+        credentials: true,
+        origin: ['*'],
+        // access-control-allow-methods:POST
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+        maxAge: 86400
+      },
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'log' // may also be 'ignore' or 'log'
+      }
+    },
+    handler: function(request, reply) {
+      console.log('validateuserticket');
+      reply({});
+    }
+  });
+
 
   server.route({
     method: 'POST',
@@ -189,13 +417,195 @@ module.exports.register = function (server, options, next) {
         failAction: 'log' // may also be 'ignore' or 'log'
       }
     },
-    handler: validateUser
+    handler: function(request, reply) {
+
+      console.log('');
+      console.log('validateUser');
+      console.log('PAYLOAD', request.payload);
+      // console.log('STATE', request.state);
+
+      // TODO: Validate accessToken
+      // - Check the iss claim. It should match your user pool. For example, a user pool created in the us-east-1 region will have an iss value of https://cognito-idp.us-east-1.amazonaws.com/{userPoolId}.
+      // - Check the token_use claim.
+
+      //   If you are only accepting the access token in your web APIs, its value must be access.
+      //   If you are only using the ID token, its value must be id.
+      //   If you are using both tokens, the value is either id or access.
+
+      // - Verify the signature of the decoded JWT token.
+      // - Check the exp claim and make sure the token is not expired.
+
+      // See "To verify a signature for ID and access tokens" on https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-with-identity-providers.html
+
+
+      // var accessToken = request.payload.accessToken;
+      // var idToken = request.payload.idToken;
+
+      if (request.payload === null){
+        return reply(Boom.unauthorized('Payload missing'));
+      }
+
+      var identityId = request.payload.IdentityId !== undefined && request.payload.IdentityId !== null ? request.payload.IdentityId :
+                       request.payload.identityId !== undefined && request.payload.identityId !== null ? request.payload.identityId : null;
+
+      if (identityId === null){
+        return reply(Boom.unauthorized('IdentityId missing'));
+      }
+
+
+      if (request.payload.sessionToken) {
+        var accessKeyId = request.payload.accessKeyId ? request.payload.accessKeyId : '';
+        var secretKey = request.payload.secretKey ? request.payload.secretKey : '';
+        var creds = new AWS.Credentials(accessKeyId, secretKey, request.payload.sessionToken);
+        console.log('creds', creds);
+
+        if(creds.expired){
+          reply(Boom.unauthorized());
+        } else {
+          getUserPermissions(identityId, reply);
+        }
+      } else {
+
+        var logins;
+
+        if (request.state.ll) {
+          logins = request.state.ll;
+        } else if (request.payload.Logins) {
+          logins = request.payload.Logins;
+        } else {
+          return reply(Boom.unauthorized());
+        }
+
+        console.log('logins', logins);
+
+        var params = {
+          IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+          AccountId: AWS_ACCOUNT_ID,
+          Logins: logins
+        };
+
+        cognitoIdentity.getId(params, function(err, data) {
+          console.log('getId', err, data);
+          if (err) {
+            console.log(err);
+            reply(Boom.unauthorized());
+          } else if (data.IdentityId === undefined || data.IdentityId === null) {
+            reply(Boom.unauthorized('user not found'));
+          } else if (data.IdentityId !== request.state.ii) {
+            reply(Boom.unauthorized('cookie mismatch'));
+          } else {
+            getUserPermissions(data.IdentityId, reply);
+          }
+        });
+      }
+
+      function getUserPermissions(IdentityId, callback){
+        MongoDB.collection('users').findOne({IdentityId: IdentityId}, {fields: {_id: 0, Permissions: 1}}, function (err, result){
+          if (err) {
+            console.log(err);
+            callback(Boom.unauthorized());
+          } else {
+            callback(null, result);
+          }
+        });
+      }
+
+
+      // var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
+      //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+      //   Logins: logins
+      // });
+      //
+      // cognitoIdentityCredentials.get(function(err){
+      //   if (err) {
+      //     return reply(Boom.unauthorized());
+      //   }
+      //
+      //   if (new Date(cognitoIdentityCredentials.Expiration) < Date.now()) {
+      //     reply(Boom.unauthorized('Session expired'));
+      //   } else {
+      //
+      //     var user = temp_users[cognitoIdentityCredentials.identityId];
+      //
+      //     reply(user);
+      //   }
+      // });
+
+
+
+
+      // var params = {
+      //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+      //   AccountId: AWS_ACCOUNT_ID,
+      //   Logins: logins
+      // };
+      //
+      // cognitoIdentity.getId(params, function(err, data) {
+      //   console.log('getId', err, data); // successful response
+      //   if (err) {
+      //     reply(Boom.unauthorized());
+      //   } else if (data.IdentityId === undefined || data.IdentityId === null) {
+      //     reply(Boom.unauthorized());
+      //   } else {
+      //
+      //     var params = {
+      //       IdentityId: data.IdentityId,
+      //       Logins: logins
+      //     };
+      //
+      //     cognitoIdentity.getOpenIdToken(params, function(err, data) {
+      //       console.log('getOpenIdToken', err, data);
+      //     });
+      //
+      //     cognitoIdentity.getCredentialsForIdentity(params, function(err, data) {
+      //       console.log('getCredentialsForIdentity', err, data);
+      //       if (err) {
+      //         reply(Boom.unauthorized());
+      //       } else {
+      //         // TODO
+      //         if (new Date(data.Expiration) < Date.now()) {
+      //           reply(Boom.unauthorized('Session expired'));
+      //         } else {
+      //
+      //           var user = temp_users[data.IdentityId];
+      //           console.log('user', user);
+      //
+      //           reply(user);
+      //         }
+      //       }
+      //     });
+      //   }
+      // });
+
+      // if(Object.keys(logins).some((k) => {return k.indexOf('facebook') > -1;})){
+      //
+      // } else if(Object.keys(logins).some((k) => {return k.indexOf('cognito') > -1;})){
+      //   cognitoIdentityServiceProvider.getUser({AccessToken: accessToken}, function(err, data){
+      //     console.log('getUser', err, data);
+      //     if (err) {
+      //       // return reply(err);
+      //     } else if (data === null) {
+      //       // return reply(Boom.unauthorized());
+      //       // } else if (data.Username !== request.payload.username) {
+      //       //   return reply(Boom.unauthorized());
+      //     } else {
+      //       // if (request.payload.permissions.indexOf('read:*') > -1) {
+      //       // }
+      //       // reply();
+      //     }
+      //   });
+      // }
+    }
   });
+
+
+
 
   server.route({
     method: 'POST',
-    path: '/oztest',
+    path: '/tokensignin',
     config: {
+      auth: false,
       cors: {
         credentials: true,
         origin: ['*'],
@@ -210,56 +620,68 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function (request, reply) {
-      console.log('POST state', request.state);
-      console.log('POST headers', request.headers);
-      console.log('POST payload', request.payload);
+      console.log('POST tokensignin headers', request.headers);
+      console.log('POST tokensignin payload', request.payload);
 
-      if (request.state.awsAccessToken) {
+      var logins;
+      if (request.state.ll){
+        logins = request.state.ll;
+      } else if (request.payload.Logins){
+        logins = request.payload.Logins;
+      } else {
+        return reply(Boom.unauthorized());
+      }
 
-        // TODO: Validate the app ID (request.payload.id) exists.
-        // And validate that the key is the real secret.
+      var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
+        IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+        Logins: logins
+      });
 
-        cognitoIdentityServiceProvider.getUser({ AccessToken: request.state.awsAccessToken}, function(err, user){
-          console.log('getUser', err, user);
+      cognitoIdentityCredentials.get(function(err){
+        if (err) {
+          console.error(err);
+          return reply(Boom.unauthorized(err.message));
+        }
 
-          var app = {
-            id: request.payload.id, // - the application identifier.
-            scope: [request.payload.scope], // - an array with the default application scope.
-            delegate: false, // - if true, the application is allowed to delegate a ticket to another application. Defaults to false.
-            key: 'fakesecret', // - the shared secret used to authenticate.
-            algorithm: 'sha256' // - the HMAC algorithm used to authenticate (e.g. HMAC-SHA256).
-          };
+        MongoDB.collection('applications').findOne({id: request.payload.app}, {fields: {_id: 0}}, function(err, app){
+          if (err) {
+            console.error(err);
+            return reply(Boom.unauthorized(err.message));
+          } else if (app === null){
+            return reply(Boom.unauthorized('Unknown application'));
+          }
 
-          var grant = {
-            id: 'fakegrant', // - the grant identifier.
-            app: request.payload.id, // - the application identifier.
-            user: user.Username, // - the user identifier.
-            exp: Oz.hawk.utils.now() + (6000 * 60 * 24), // - grant expiration time in milliseconds since 1/1/1970.
-            scope: ['read'] // - an array with the scope granted by the user to the application.
-          };
+          MongoDB.collection('grants').findOne({user: cognitoIdentityCredentials.identityId}, {fields: {_id: 0}}, function(err, grant){
+            if (err) {
+              console.error(err);
+              return reply(Boom.unauthorized(err.message));
+            } else if (grant === null){
+              return reply(Boom.unauthorized('Missing grant'));
+            }
 
-          Oz.ticket.rsvp(app, grant, process.env.ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
-            // After granting app access, the user returns to the app with the rsvp
-            reply(rsvp)
-            .header('X-RSVP-TOKEN', rsvp);
+            grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
+
+            Oz.ticket.rsvp(app, grant, process.env.ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
+              if (err){
+                return reply(err);
+              }
+              // After granting app access, the user returns to the app with the rsvp
+              reply(rsvp)
+              .header('X-RSVP-TOKEN', rsvp);
+            });
           });
         });
+      });
+      // TODO: Find the user and the grant
 
-        // reply()
-        // .state('test', 'test', {isSameSite: ''})
-        // .header('X-AWS-ACCESS-TOKEN', 'TODO')
-        // .header('X-AWS-ID-TOKEN', 'TODO')
-        // .header('X-AWS-REFRESH-TOKEN', 'TODO');
-      } else {
-        console.log('redirecting to main page with returnUrl');
-        reply.redirect('/?returnUrl='.concat(request.headers.referer));
-        // reply(Boom.unauthorized());
-      }
+      // TODO: Validate the app ID (request.payload.id) exists.
+      // And validate that the key is the real secret.
     }
   });
 
   next();
 };
+
 
 module.exports.register.attributes = {
   name: 'cognito',
@@ -267,394 +689,30 @@ module.exports.register.attributes = {
 };
 
 
-
-function createUser(request, reply) {
-
-  console.log('');
-  console.log('createUser', request.payload);
-
-  // if (request.payload.IdentityId === undefined || request.payload.IdentityId === null){
-  //   return reply(Boom.badRequest('Parameter IdentityId missing'));
-  // }
-
-  if (request.payload.Logins === undefined || request.payload.Logins === null){
-    return reply(Boom.badRequest('Parameter Logins missing'));
-  }
-
-  // if (request.payload.AccessToken === undefined || request.payload.AccessToken === null){
-  //   return reply(Boom.badRequest('Parameter AccessToken missing'));
-  // }
-
-  var logins = request.payload.Logins;
-
-  var params = {
-    IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-    AccountId: AWS_ACCOUNT_ID,
-    Logins: logins
-  };
-
-  cognitoIdentity.getId(params, function(err, data) {
+module.exports.loadAppFunc = function(id, callback) {
+  console.log('loadAppFunc', id);
+  MongoDB.collection('applications').findOne({id:id}, {fields: {_id: 0}}, function(err, app) {
     if (err) {
-      console.log(err);
-      reply(Boom.unauthorized());
-    } else if (data.IdentityId === undefined || data.IdentityId === null) {
-      reply(Boom.unauthorized());
+      return callback(err);
+    } else if (app === null){
+      callback(Boom.unauthorized('Unknown application'));
     } else {
-
-      var IdentityId = data.IdentityId;
-
-      MongoDB.collection('users').findOne({IdentityId: IdentityId}, {fields:{IdentityId:1, Permissions: 1}}, function(err, user) {
-        if (err) {
-          console.log(err);
-          reply(Boom.badImplementation());
-        } else if(user === null){
-          MongoDB.collection('users').insertOne({
-            IdentityId: IdentityId,
-            IdentityProvider: Object.keys(logins)[0],
-            Logins: JSON.stringify(logins),
-            Permissions: [
-              '*:read'
-            ]
-          }, function(err, result){
-            if (err) {
-              console.log(err);
-              reply(Boom.badImplementation());
-            } else if(result.ok !== 1){
-              console.log('result', result);
-              reply(Boom.badImplementation());
-            } else {
-              done()
-            }
-          });
-        } else {
-          done();
-        }
-      });
-
-      function done(){
-        reply()
-        .state('ii', IdentityId)
-        .state('il', Object.keys(logins)[0])
-        .state('ll', logins);
-      }
+      callback(null, app);
     }
   });
-
-  // var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
-  //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-  //   Logins: logins
-  // });
-  //
-  // cognitoIdentityCredentials.get(function(err){
-  //   if (err) {
-  //     return reply(Boom.unauthorized());
-  //   }
-  //
-  //   var IdentityId = cognitoIdentityCredentials.identityId;
-  //
-  //   if (temp_users[IdentityId] === undefined || temp_users[IdentityId] === null){
-  //     temp_users[IdentityId] = {};
-  //   }
-  //
-  //   temp_users[IdentityId].CognitoIdentityCredentials = cognitoIdentityCredentials;
-  //
-  //   temp_users[IdentityId].Permissions = [
-  //     '*:read'
-  //   ];
+};
 
 
-
-
-    // We need AccessToken to get the profile data
-
-    // if (logins['graph.facebook.com']){
-    //   Facebook.getProfile({access_token: cognitoIdentityCredentials.params.Logins['graph.facebook.com']}, function(err, response){
-    //     temp_users[IdentityId].FacebookProfile = response;
-    //   });
-    // }
-    //
-    // var cognitoLogin = Object.keys(logins).find((k) => {return k.indexOf('cognito') > -1;});
-    // console.log('cognitoLogin', cognitoLogin);
-    // if(cognitoLogin){
-    //   cognitoIdentityServiceProvider.getUser({AccessToken: cognitoIdentityCredentials.params.Logins[cognitoLogin]}, function(err, data){
-    //     console.log('getUser', err, data);
-    //     if (err) {
-    //       // return reply(err);
-    //     } else if (data === null) {
-    //       // return reply(Boom.unauthorized());
-    //       // } else if (data.Username !== request.payload.username) {
-    //       //   return reply(Boom.unauthorized());
-    //     } else {
-    //       temp_users[IdentityId].CognitoUser = data;
-    //     }
-    //   });
-    // }
-
-
-  // });
-
-  //
-  // var params = {
-  //   IdentityId: request.payload.IdentityId,
-  //   Logins: request.payload.Logins
-  // };
-  //
-  // // cognitoIdentity.getOpenIdToken(params, function(err, data) {
-  // //   console.log('getOpenIdToken', err, data);
-  // // });
-  //
-  // cognitoIdentity.getCredentialsForIdentity(params, function(err, data) {
-  //   console.log('getCredentialsForIdentity', data, err);
-  //   if (err) {
-  //     return reply(Boom.unauthorized());
-  //   } else if (request.payload.SessionToken !== data.Credentials.SessionToken){
-  //     // return reply(Boom.unauthorized());
-  //   }
-  //
-  //   temp_users[IdentityId].CognitoIdentityCredentials = data.Credentials;
-  //
-  //   Facebook.getProfiles({access_token: params.Logins['graph.facebook.com']}, function(err, response){
-  //     temp_users[IdentityId].FacebookProfile = response;
-  //   });
-  //
-  //
-  //   reply();
-  // });
-}
-
-
-function validateUser(request, reply) {
-
-  console.log('');
-  console.log('validateUser');
-  console.log('PAYLOAD', request.payload);
-  // console.log('STATE', request.state);
-
-  // TODO: Validate accessToken
-  // - Check the iss claim. It should match your user pool. For example, a user pool created in the us-east-1 region will have an iss value of https://cognito-idp.us-east-1.amazonaws.com/{userPoolId}.
-  // - Check the token_use claim.
-
-  //   If you are only accepting the access token in your web APIs, its value must be access.
-  //   If you are only using the ID token, its value must be id.
-  //   If you are using both tokens, the value is either id or access.
-
-  // - Verify the signature of the decoded JWT token.
-  // - Check the exp claim and make sure the token is not expired.
-
-  // See "To verify a signature for ID and access tokens" on https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-with-identity-providers.html
-
-
-  // var accessToken = request.payload.accessToken;
-  // var idToken = request.payload.idToken;
-
-  var identityId = request.payload.IdentityId !== undefined && request.payload.IdentityId !== null ? request.payload.IdentityId :
-                   request.payload.identityId !== undefined && request.payload.identityId !== null ? request.payload.identityId : null;
-
-  if (identityId === null){
-    return reply(Boom.badRequest('IdentityId missing'));
-  }
-
-
-  if (request.payload.sessionToken) {
-    var accessKeyId = request.payload.accessKeyId ? request.payload.accessKeyId : '';
-    var secretKey = request.payload.secretKey ? request.payload.secretKey : '';
-    var creds = new AWS.Credentials(accessKeyId, secretKey, request.payload.sessionToken);
-    console.log('creds', creds);
-
-    if(creds.expired){
-      reply(Boom.unauthorized());
-    } else {
-      getUserPermissions(identityId, reply);
-    }
-  } else {
-
-    var logins;
-
-    if (request.state.ll) {
-      logins = request.state.ll;
-    } else if (request.payload.Logins) {
-      logins = request.payload.Logins;
-    } else {
-      return reply(Boom.unauthorized());
-    }
-
-    console.log('logins', logins);
-
-    var params = {
-      IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-      AccountId: AWS_ACCOUNT_ID,
-      Logins: logins
-    };
-
-    cognitoIdentity.getId(params, function(err, data) {
-      console.log('getId', err, data);
-      if (err) {
-        console.log(err);
-        reply(Boom.unauthorized());
-      } else if (data.IdentityId === undefined || data.IdentityId === null) {
-        reply(Boom.unauthorized('user not found'));
-      } else if (data.IdentityId !== request.state.ii) {
-        reply(Boom.unauthorized('cookie mismatch'));
-      } else {
-        getUserPermissions(data.IdentityId, reply);
-      }
-    });
-  }
-
-  function getUserPermissions(IdentityId, callback){
-    MongoDB.collection('users').findOne({IdentityId: IdentityId}, {fields: {_id: 0, Permissions: 1}}, function (err, result){
-      if (err) {
-        console.log(err);
-        callback(Boom.unauthorized());
-      } else {
-        callback(null, result);
-      }
-    });
-  }
-
-
-  // var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
-  //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-  //   Logins: logins
-  // });
-  //
-  // cognitoIdentityCredentials.get(function(err){
-  //   if (err) {
-  //     return reply(Boom.unauthorized());
-  //   }
-  //
-  //   if (new Date(cognitoIdentityCredentials.Expiration) < Date.now()) {
-  //     reply(Boom.unauthorized('Session expired'));
-  //   } else {
-  //
-  //     var user = temp_users[cognitoIdentityCredentials.identityId];
-  //
-  //     reply(user);
-  //   }
-  // });
-
-
-
-
-  // var params = {
-  //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-  //   AccountId: AWS_ACCOUNT_ID,
-  //   Logins: logins
-  // };
-  //
-  // cognitoIdentity.getId(params, function(err, data) {
-  //   console.log('getId', err, data); // successful response
-  //   if (err) {
-  //     reply(Boom.unauthorized());
-  //   } else if (data.IdentityId === undefined || data.IdentityId === null) {
-  //     reply(Boom.unauthorized());
-  //   } else {
-  //
-  //     var params = {
-  //       IdentityId: data.IdentityId,
-  //       Logins: logins
-  //     };
-  //
-  //     cognitoIdentity.getOpenIdToken(params, function(err, data) {
-  //       console.log('getOpenIdToken', err, data);
-  //     });
-  //
-  //     cognitoIdentity.getCredentialsForIdentity(params, function(err, data) {
-  //       console.log('getCredentialsForIdentity', err, data);
-  //       if (err) {
-  //         reply(Boom.unauthorized());
-  //       } else {
-  //         // TODO
-  //         if (new Date(data.Expiration) < Date.now()) {
-  //           reply(Boom.unauthorized('Session expired'));
-  //         } else {
-  //
-  //           var user = temp_users[data.IdentityId];
-  //           console.log('user', user);
-  //
-  //           reply(user);
-  //         }
-  //       }
-  //     });
-  //   }
-  // });
-
-  // if(Object.keys(logins).some((k) => {return k.indexOf('facebook') > -1;})){
-  //
-  // } else if(Object.keys(logins).some((k) => {return k.indexOf('cognito') > -1;})){
-  //   cognitoIdentityServiceProvider.getUser({AccessToken: accessToken}, function(err, data){
-  //     console.log('getUser', err, data);
-  //     if (err) {
-  //       // return reply(err);
-  //     } else if (data === null) {
-  //       // return reply(Boom.unauthorized());
-  //       // } else if (data.Username !== request.payload.username) {
-  //       //   return reply(Boom.unauthorized());
-  //     } else {
-  //       // if (request.payload.permissions.indexOf('read:*') > -1) {
-  //       // }
-  //       // reply();
-  //     }
-  //   });
-  // }
-}
-
-
-function authUser(request, reply){
-
-  console.log('');
-  console.log('authUser');
-
-  var logins;
-  if (request.state.ll){
-    logins = request.state.ll;
-  } else if (request.payload.Logins){
-    logins = request.payload.Logins;
-  } else {
-    return reply(Boom.unauthorized());
-  }
-
-  console.log('logins', logins);
-
-  var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-    Logins: logins
-  });
-
-  cognitoIdentityCredentials.get(function(err){
+module.exports.loadGrantFunc = function(id, next) {
+  console.log('loadGrantFunc', id);
+  MongoDB.collection('grants').findOne({id:id}, {fields: {_id: 0}}, function(err, grant) {
     if (err) {
-      console.log(err);
-      return reply(Boom.unauthorized());
+      return next(err);
+    } else if (grant === null) {
+      next(Boom.unauthorized('Missing grant'));
+    } else {
+      grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
+      next(null, grant);
     }
-
-    // var params = {
-    //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-    //   AccountId: AWS_ACCOUNT_ID,
-    //   Logins: logins
-    // };
-    //
-    // cognitoIdentity.getId(params, function(err, data) {
-    //   console.log('getId', err, data);
-    //   if (err) {
-    //     console.log(err);
-    //     reply(Boom.unauthorized());
-    //   } else if (data.IdentityId === undefined || data.IdentityId === null) {
-    //     reply(Boom.unauthorized('user not found'));
-    //   } else if (data.IdentityId !== request.state.ii) {
-    //     reply(Boom.unauthorized('cookie mismatch'));
-    //   } else {
-    //     getUserPermissions(data.IdentityId, reply);
-    //   }
-    // });
-
-    reply(cognitoIdentityCredentials);
   });
-}
-
-
-function signout(request, reply){
-  reply()
-    .unstate('ii')
-    .unstate('il')
-    .unstate('ll');
-}
+};

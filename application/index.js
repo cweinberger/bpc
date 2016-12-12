@@ -5,6 +5,7 @@ const Hapi = require('hapi');
 const Inert = require('inert');
 const Joi = require('joi');
 const Resources = require('./resources');
+const Login = require('./login');
 
 
 
@@ -13,6 +14,7 @@ application.connection({ port: process.env.PORT ? parseInt(process.env.PORT) + 1
 
 application.register(Inert, () => {});
 application.register(Resources, { routes: { prefix: '/resources' } }, cb);
+application.register(Login, { routes: { prefix: '/login' } }, cb);
 
 
 

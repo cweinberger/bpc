@@ -3,14 +3,13 @@
 
 const Boom = require('boom');
 const Hawk = require('hawk');
-const Oz = require('oz');
 const http = require('http');
 const https = require('https');
 
 module.exports.register = function (server, options, next) {
 
   server.route({
-    method: 'GET',
+    method: 'POST',
     path: '/',
     config: {
       cors: false,
@@ -20,47 +19,32 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('getResources state', request.state);
-      console.log('getResources payload', request.payload);
 
-      var payload = {
-        identityId: request.state.aws_identityId,
-        accessKeyId: request.state.aws_accessKeyId,
-        secretKey: request.state.aws_secretKey,
-        sessionToken: request.state.aws_sessionToken
+      var app = {
+        id: process.env.POC_APPLICATION_APP_ID,
+        key: process.env.POC_APPLICATION_APP_SECRET,
+        algorithm: 'sha256'
       };
 
-      getAppTicket();
-
-      callSsoServer('POST', '/cognito/permissions', payload, {}, function (err, response){
-        console.log('callSsoServer', err, response);
-        if (err) {
-          reply(err);
-        } else {
-          reply({content: 'This is some protected resources'});
-        }
-      });
-    }
-  });
-
-  server.route({
-    method: 'POST',
-    path: '/userp',
-    handler: function(request, reply) {
-      console.log('userp state', request.state);
-      console.log('userp payload', request.payload);
-
-
-      // Oz.client.header()
-      callSsoServer('POST', '/cognito/validateuserticket', {}, request.payload, function (err, response){
+      // Getting application ticket
+      callSsoServer('POST', '/oz/app', {}, app, function (err, appTicket){
+        console.log('getAppTicket', err, appTicket);
         if (err){
           return reply(err);
         }
 
-        // reply({message: 'public resource'});
-        reply({message: 'protected resource'});
-      });
+        console.log('getting User Ticket using rsvp', request.payload.rsvp);
 
+        // Getting user ticket
+        callSsoServer('POST', '/oz/rsvp',  {rsvp: request.payload.rsvp}, appTicket, function (err, userTicket){
+          console.log('getUserTicket', err, userTicket);
+          if (err){
+            return reply(err);
+          }
+
+          reply(userTicket);
+        });
+      });
     }
   });
 
@@ -68,24 +52,10 @@ module.exports.register = function (server, options, next) {
 };
 
 module.exports.register.attributes = {
-  name: 'resources',
+  name: 'login',
   version: '1.0.0'
 };
 
-
-
-
-
-function getAppTicket() {
-  var app = {
-    id: process.env.POC_APPLICATION_APP_ID,
-    key: process.env.POC_APPLICATION_APP_SECRET,
-    algorithm: 'sha256'
-  };
-  callSsoServer('POST', '/oz/app', {}, app, function (err, response){
-    console.log('getAppTicket', err, response);
-  });
-}
 
 
 function callSsoServer(method, path, body, credentials, callback) {
@@ -148,18 +118,16 @@ function parseReponse (callback) {
       try {
         data = JSON.parse(data);
       } catch (ex) {
-        console.log('JSON parse error on: ', data);
+        console.error('JSON parse error on: ', data);
         throw ex;
       }
 
-
-      // Gigya responds HTTP 200 OK even on errors.
       if (data.statusCode > 300 || res.statusCode > 300) {
-        var err = Boom.wrap(new Error(data.error), data.statusCode);
+        var err = Boom.wrap(new Error(data.error), data.statusCode, data.message);
         callback(err, null);
-      }
-      else
+      } else {
         callback(null, data);
+      }
     });
   };
 }

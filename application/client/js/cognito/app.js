@@ -43,7 +43,7 @@ function checkPermissionsOnBackend(payload, callback){
   $.ajax({
     type: 'POST',
     url: 'http://berlingske-poc.local:8084/cognito/permissions',
-    contentType: "application/json; charset=utf-8",
+    contentType: 'application/json; charset=utf-8',
     data: JSON.stringify(payload),
     xhrFields: {
       withCredentials: true
@@ -61,9 +61,55 @@ function checkPermissionsOnBackend(payload, callback){
   });
 }
 
+
 function loginPost(){
   postToSso('/auth', {});
 }
+
+
+function logoutPost(){
+  postToSso('/signout', {});
+}
+
+
+function tokenSignin(callback){
+  postToSso('/tokensignin', {app: 'test_sso_app'}, function(rsvp, status, jqXHR){
+    console.log('tokensignin', rsvp);
+
+    $.ajax({
+      type: 'POST',
+      url: '/login',
+      contentType: 'application/json; charset=utf-8',
+      data: JSON.stringify({rsvp: rsvp}),
+      success: [
+        function(data, status, jqXHR) {
+          console.log('/login sucess', data, status);
+
+          $.ajax({
+            type: 'POST',
+            url: '/resources/userp',
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify(data),
+            success: [
+              function(data, status, jqXHR) {
+                console.log('testtoototo', data, status);
+              },
+              callback
+            ],
+            error: function(jqXHR, textStatus, err) {
+              console.error(textStatus, err.toString());
+            }
+          });
+        },
+        callback
+      ],
+      error: function(jqXHR, textStatus, err) {
+        console.error(textStatus, err.toString());
+      }
+    });
+  });
+}
+
 
 function getPermissionsPost(){
   var accessKeyId = readCookie('aws_accessKeyId');
@@ -91,11 +137,11 @@ function postToSso(path, payload, callback){
     path = '';
   }
 
-
   $.ajax({
     type: 'POST',
     url: 'http://berlingske-poc.local:8084/cognito'.concat(path),
-    contentType: "application/json; charset=utf-8",
+    // url: 'http://127.0.0.1:8084/cognito'.concat(path),
+    contentType: 'application/json; charset=utf-8',
     data: JSON.stringify(payload),
     xhrFields: {
       withCredentials: true
@@ -133,13 +179,10 @@ function getResources(callback){
   $.ajax({
     type: 'GET',
     url: '/resources',
-    contentType: "application/json; charset=utf-8",
-    xhrFields: {
-      withCredentials: true
-    },
+    contentType: 'application/json; charset=utf-8',
     success: [
       function(data, status, jqXHR) {
-        console.log(data, status);
+        console.log('getResources', data, status);
       },
       callback
     ],

@@ -1,6 +1,11 @@
 # SSO Poc
 
+## /etc/hosts
 
+127.0.0.1       berlingske-poc.local
+127.0.0.1       berlingske-poc-client.local
+
+## MongoDB
 
 db.applications.insert({
   id: 'test_sso_app',

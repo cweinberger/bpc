@@ -1,13 +1,20 @@
-
-  // AWSCognito
-  // AmazonCognitoIdentity
-$(document).ready(function() {
-  $('#aws-logoutButton').hide();
-});
-
 $(document).ready(cognitoLoginInit);
+
 window.fbAsyncInit = facebookLoginInit;
 
+$(document).ready(function() {
+  $('#aws-logoutButton').hide();
+
+  var returnUrl = getUrlVar('returnUrl');
+
+  if (returnUrl){
+    // TODO
+  }
+});
+
+
+// AWSCognito
+// AmazonCognitoIdentity
 AWS.config.region = 'eu-west-1';
 // AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 //   IdentityPoolId: 'eu-west-1:2add6c33-59e3-4b5d-96d9-6285378c5922',
@@ -196,6 +203,7 @@ function credentialsGetCallback(callback){
     } else {
       console.log('AWS.config.credentials credentialsGetCallback', AWS.config.credentials);
 
+
       disableLoginControls();
 
       var payload = {
@@ -211,6 +219,14 @@ function credentialsGetCallback(callback){
         data: JSON.stringify(payload),
         success: [
           function(data, status, jqXHR) {
+            var returnUrl = getUrlVar('returnUrl');
+            var app = getUrlVar('app');
+            if (returnUrl && app){
+              // Redirection to main page to generate rsvp and from there return to returnUrl
+              window.location = '/cognito'.concat(window.location.search);
+            } else if(returnUrl){
+              window.location.href = returnUrl;
+            }
           },
           callback
         ],

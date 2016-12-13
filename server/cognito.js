@@ -9,6 +9,7 @@ const Facebook = require('./facebook');
 const MongoDB = require('./mongodb_client');
 
 //Declaration of all properties linked to the environment (beanstalk configuration)
+const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 const AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID;
 const AWS_REGION = process.env.AWS_REGION;
 const COGNITO_IDENTITY_POOL_ID = process.env.COGNITO_IDENTITY_POOL_ID;
@@ -97,39 +98,101 @@ module.exports.register = function (server, options, next) {
     method: 'GET',
     path: '/',
     config: {
-      cors: true,
+      cors: false,
+      auth: false,
       state: {
         parse: true, // parse and store in request.state
         failAction: 'log' // may also be 'ignore' or 'log'
       }
     },
     handler: function (request, reply) {
-      console.log('GET state', request.state);
-      console.log('GET query', request.query);
-      //
-      // if (request.state.awsAccessToken && request.query.returnUrl){
-      //   console.log('redirecting with a cookie');
-      //   reply
-      //   // .redirect(request.query.returnUrl.concat('?awsAccessToken=', request.state.awsAccessToken,'&awsIdToken=', request.state.awsIdToken, '&awsRefreshToken=', request.state.awsRefreshToken))
-      //   // .state('accessToken', request.state.accessToken)
-      //   .state('sjfhkgsdjkhfgsdjkhfg', 'fdfdfd')
-      //   .redirect(request.query.returnUrl);
-      //   // .header('X-AWS-ACCESS-TOKEN', request.state.awsAccessToken)
-      //   // .header('X-AWS-ID-TOKEN', request.state.awsIdToken)
-      //   // .header('X-AWS-REFRESH-TOKEN', request.state.awsRefreshToken);
-      //
-      // } else if (request.query.returnUrl) {
-      if (request.query.returnUrl) {
-        console.log('redirecting to main page with returnUrl');
-        reply.redirect('/?returnUrl='.concat(request.query.returnUrl));
+      console.log('GET / state', request.state);
+      console.log('GET / query', request.query);
+
+      var logins;
+
+      var app = request.query.app;
+      if (app === undefined || app === null){
+        return reply(Boom.unauthorized('Missing app parameter'));
+      }
+
+      if (request.state.ll){
+        logins = request.state.ll;
+      } else if (request.query.Logins){
+        logins = request.query.Logins;
       } else {
-        console.log('redirecting to main page');
-        reply.redirect('/');
+        var temp = Object.keys(request.query).map(f).join('&');
+        return reply.redirect('/cognito.html?'.concat(temp));
+      }
+
+      createUserRsvp(app, logins, function(err, rsvp){
+        if (err){
+          return reply(err);
+        }
+        // After granting app access, the user returns to the app with the rsvp
+        if (request.query.returnUrl) {
+          console.log('redirecting to main page with returnUrl');
+          reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp));
+        } else {
+          reply(rsvp)
+            .header('X-RSVP-TOKEN', rsvp);
+        }
+      });
+
+      function f(k){
+        return k.concat('=', request.query[k]);
       }
     }
   });
 
 
+
+  server.route({
+    method: 'POST',
+    path: '/',
+    config: {
+      auth: false,
+      cors: {
+        credentials: true,
+        origin: ['*'],
+        // access-control-allow-methods:POST
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+        maxAge: 86400
+      },
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'log' // may also be 'ignore' or 'log'
+      }
+    },
+    handler: function (request, reply) {
+      console.log('POST / headers', request.headers);
+      console.log('POST / payload', request.payload);
+
+      var app = request.payload.app;
+      if (app === undefined || app === null){
+        return reply(Boom.unauthorized('Missing app parameter'));
+      }
+
+      var logins;
+      if (request.state.ll){
+        logins = request.state.ll;
+      } else if (request.payload.Logins){
+        logins = request.payload.Logins;
+      } else {
+        return reply(Boom.unauthorized());
+      }
+
+      createUserRsvp(app, logins, function(err, rsvp){
+        if (err){
+          return reply(err);
+        }
+        // After granting app access, the user returns to the app with the rsvp
+        reply(rsvp)
+          .header('X-RSVP-TOKEN', rsvp);
+      });
+    }
+  });
 
 
 
@@ -354,6 +417,7 @@ module.exports.register = function (server, options, next) {
     method: 'POST',
     path: '/signout',
     config: {
+      auth: false,
       cors: {
         credentials: true,
         origin: ['*'],
@@ -376,10 +440,82 @@ module.exports.register = function (server, options, next) {
   });
 
 
+
+  server.route({
+    method: 'POST',
+    path: '/validateticket',
+    config: {
+      auth: {
+        strategy: 'oz',
+        access: {
+          scope: false,
+          entity: 'any'
+        }
+      },
+      cors: {
+        credentials: true,
+        origin: ['*'],
+        // access-control-allow-methods:POST
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+        maxAge: 86400
+      },
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'log' // may also be 'ignore' or 'log'
+      }
+    },
+    handler: function(request, reply) {
+      console.log('validateticket');
+      reply({});
+    }
+  });
+
+
+
+  server.route({
+    method: 'POST',
+    path: '/validateappticket',
+    config: {
+      auth: {
+        strategy: 'oz',
+        access: {
+          scope: false,
+          entity: 'app'
+        }
+      },
+      cors: {
+        credentials: true,
+        origin: ['*'],
+        // access-control-allow-methods:POST
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+        maxAge: 86400
+      },
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'log' // may also be 'ignore' or 'log'
+      }
+    },
+    handler: function(request, reply) {
+      console.log('validateappticket');
+      reply({});
+    }
+  });
+
+
+
   server.route({
     method: 'POST',
     path: '/validateuserticket',
     config: {
+      auth: {
+        strategy: 'oz',
+        access: {
+          scope: false,
+          entity: 'user'
+        }
+      },
       cors: {
         credentials: true,
         origin: ['*'],
@@ -398,6 +534,7 @@ module.exports.register = function (server, options, next) {
       reply({});
     }
   });
+
 
 
   server.route({
@@ -599,86 +736,6 @@ module.exports.register = function (server, options, next) {
   });
 
 
-
-
-  server.route({
-    method: 'POST',
-    path: '/tokensignin',
-    config: {
-      auth: false,
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
-      state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
-      }
-    },
-    handler: function (request, reply) {
-      console.log('POST tokensignin headers', request.headers);
-      console.log('POST tokensignin payload', request.payload);
-
-      var logins;
-      if (request.state.ll){
-        logins = request.state.ll;
-      } else if (request.payload.Logins){
-        logins = request.payload.Logins;
-      } else {
-        return reply(Boom.unauthorized());
-      }
-
-      var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
-        IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-        Logins: logins
-      });
-
-      cognitoIdentityCredentials.get(function(err){
-        if (err) {
-          console.error(err);
-          return reply(Boom.unauthorized(err.message));
-        }
-
-        MongoDB.collection('applications').findOne({id: request.payload.app}, {fields: {_id: 0}}, function(err, app){
-          if (err) {
-            console.error(err);
-            return reply(Boom.unauthorized(err.message));
-          } else if (app === null){
-            return reply(Boom.unauthorized('Unknown application'));
-          }
-
-          MongoDB.collection('grants').findOne({user: cognitoIdentityCredentials.identityId}, {fields: {_id: 0}}, function(err, grant){
-            if (err) {
-              console.error(err);
-              return reply(Boom.unauthorized(err.message));
-            } else if (grant === null){
-              return reply(Boom.unauthorized('Missing grant'));
-            }
-
-            grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
-
-            Oz.ticket.rsvp(app, grant, process.env.ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
-              if (err){
-                return reply(err);
-              }
-              // After granting app access, the user returns to the app with the rsvp
-              reply(rsvp)
-              .header('X-RSVP-TOKEN', rsvp);
-            });
-          });
-        });
-      });
-      // TODO: Find the user and the grant
-
-      // TODO: Validate the app ID (request.payload.id) exists.
-      // And validate that the key is the real secret.
-    }
-  });
-
   next();
 };
 
@@ -716,3 +773,47 @@ module.exports.loadGrantFunc = function(id, next) {
     }
   });
 };
+
+
+function createUserRsvp(app_id, logins, callback){
+  MongoDB.collection('applications').findOne({id: app_id}, {fields: {_id: 0}}, function(err, app){
+    if (err) {
+      console.error(err);
+      return callback(Boom.unauthorized(err.message));
+    } else if (app === null){
+      return callback(Boom.unauthorized('Unknown application'));
+    }
+
+    var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
+      IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+      Logins: logins
+    });
+
+    cognitoIdentityCredentials.get(function(err){
+      if (err) {
+        console.error(err);
+        return callback(Boom.unauthorized(err.message));
+      }
+
+      MongoDB.collection('grants').findOne({user: cognitoIdentityCredentials.identityId}, {fields: {_id: 0}}, function(err, grant){
+        if (err) {
+          console.error(err);
+          return callback(Boom.unauthorized(err.message));
+        } else if (grant === null){
+          return callback(Boom.unauthorized('Missing grant'));
+        }
+
+        grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
+
+        Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
+          if (err){
+            console.error(err);
+            return callback(err);
+          }
+          // After granting app access, the user returns to the app with the rsvp
+          callback(null, rsvp);
+        });
+      });
+    });
+  });
+}

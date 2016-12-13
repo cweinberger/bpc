@@ -14,10 +14,6 @@ const server = new Hapi.Server();
 server.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
 
 server.register(Inert, () => {});
-server.register(Cognito, { routes: { prefix: '/cognito' } }, cb);
-server.register(Gigya, { routes: { prefix: '/gigya' } }, cb);
-server.register(Drupal, { routes: { prefix: '/drupal' } }, cb);
-
 server.register(Scarecrow, function(err) {
   const oz_strategy_options = {
     oz: {
@@ -28,7 +24,12 @@ server.register(Scarecrow, function(err) {
   };
 
   server.auth.strategy('oz', 'oz', true, oz_strategy_options);
+  
+  server.register(Cognito, { routes: { prefix: '/cognito' } }, cb);
+  server.register(Gigya, { routes: { prefix: '/gigya' } }, cb);
+  server.register(Drupal, { routes: { prefix: '/drupal' } }, cb);
 });
+
 
 server.route({
   method: 'GET',

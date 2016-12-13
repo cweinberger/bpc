@@ -3,28 +3,13 @@
 
 $(document).ready(function() {
 
-  $('#aws-loginButton2').attr('href', 'http://berlingske-poc.local:8084/cognito.html?returnUrl=' + window.location.origin + window.location.pathname);
-  $('#aws-loginButton3').attr('href', 'http://berlingske-poc.local:8084/cognito?returnUrl=' + window.location.origin + window.location.pathname);
+  $('#aws-loginButton2').attr('href', 'http://berlingske-poc.local:8084/cognito.html?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app');
+  $('#aws-loginButton3').attr('href', 'http://berlingske-poc.local:8084/cognito?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app');
 
-  var awsAccessToken = getUrlVar('awsAccessToken');
-  var awsIdToken = getUrlVar('awsIdToken');
-  var awsRefreshToken = getUrlVar('awsRefreshToken');
+  var rsvp = getUrlVar('rsvp');
 
-  if (awsAccessToken){
-
-    // createCookie('awsAccessToken', awsAccessToken, 30);
-    // createCookie('awsIdToken', awsIdToken, 30);
-    // createCookie('awsRefreshToken', awsRefreshToken, 30);
-    loginAwsByQueryTokens(awsAccessToken, awsIdToken, awsRefreshToken, function (){
-
-      var returnUrl = getUrlVar('returnUrl');
-      if (returnUrl) {
-        console.log('returnUrl returning', returnUrl);
-        // window.location.href = decodeURI(returnUrl.concat('?awsAccessToken=', awsAccessToken, '&awsIdToken=', awsIdToken,  '&awsRefreshToken=', awsRefreshToken));
-        window.location.href = decodeURI(returnUrl);
-        return;
-      }
-    });
+  if (rsvp){
+    loginUsingRsvp(rsvp);
   }
 });
 
@@ -73,40 +58,29 @@ function logoutPost(){
 
 
 function tokenSignin(callback){
-  postToSso('/tokensignin', {app: 'test_sso_app'}, function(rsvp, status, jqXHR){
+  postToSso('', {app: 'test_sso_app'}, function(rsvp, status, jqXHR){
     console.log('tokensignin', rsvp);
 
-    $.ajax({
-      type: 'POST',
-      url: '/login',
-      contentType: 'application/json; charset=utf-8',
-      data: JSON.stringify({rsvp: rsvp}),
-      success: [
-        function(data, status, jqXHR) {
-          console.log('/login sucess', data, status);
+    loginUsingRsvp(rsvp, callback);
+  });
+}
 
-          $.ajax({
-            type: 'POST',
-            url: '/resources/userp',
-            contentType: 'application/json; charset=utf-8',
-            data: JSON.stringify(data),
-            success: [
-              function(data, status, jqXHR) {
-                console.log('testtoototo', data, status);
-              },
-              callback
-            ],
-            error: function(jqXHR, textStatus, err) {
-              console.error(textStatus, err.toString());
-            }
-          });
-        },
-        callback
-      ],
-      error: function(jqXHR, textStatus, err) {
-        console.error(textStatus, err.toString());
-      }
-    });
+
+function loginUsingRsvp(rsvp, callback){
+  $.ajax({
+    type: 'POST',
+    url: '/login',
+    contentType: 'application/json; charset=utf-8',
+    data: JSON.stringify({rsvp: rsvp}),
+    success: [
+      function(userTicket, status, jqXHR) {
+        console.log('/login sucess', userTicket, status);
+      },
+      callback
+    ],
+    error: function(jqXHR, textStatus, err) {
+      console.error(textStatus, err.toString());
+    }
   });
 }
 
@@ -183,6 +157,26 @@ function getResources(callback){
     success: [
       function(data, status, jqXHR) {
         console.log('getResources', data, status);
+      },
+      callback
+    ],
+    error: function(jqXHR, textStatus, err) {
+      console.error(textStatus, err.toString());
+    }
+  });
+}
+
+
+function getProtectedResource(callback){
+  $.ajax({
+    type: 'GET',
+    url: '/resources/userp',
+    contentType: 'application/json; charset=utf-8',
+    // data: JSON.stringify(userTicket),
+    success: [
+      function(data, status, jqXHR) {
+        console.log('getProtectedResource', data, status);
+        $('#aws-userp').text(data.message);
       },
       callback
     ],

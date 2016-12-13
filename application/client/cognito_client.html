@@ -23,10 +23,17 @@
 
     <div class="container">
       <div>
-        <a href="/gigya_client.html">Gigya client</a>
-      </div>
+        <div class="nav">
+          <a href="http://berlingske-poc.local:8084/cognito.html">Cognito server</a>
+          |
+          <a href="http://berlingske-poc-client.local:8085/cognito_client.html">Cognito client</a>
+          |
+          <a href="http://berlingske-poc.local:8084/gigya.html">Gigya server</a>
+          |
+          <a href="http://berlingske-poc-client.local:8085/gigya_client.html">Gigya client</a>
+        </div>
 
-      <h1>Client POC - Cognito</h1>
+      <h1>SSO POC - Cognito client</h1>
 
       <div>Username: <span id="aws-currentuser"></span></div>
       <div>Permissions: <span id="aws-currentuserpermissions"></span></div>
@@ -50,6 +57,7 @@
       <br/>
       <button id="aws-loginButton6" type="button" class="btn btn-default" onclick="getProtectedResource();">GET protected resources</button>
       <div>Message: <span id="aws-userp"></span></div>
+      <button id="aws-button7" type="button" class="btn btn-default" onclick="getProfile();">GET profile</button>
 
       <br/>
       <br/>

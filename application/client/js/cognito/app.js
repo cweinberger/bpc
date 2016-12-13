@@ -85,6 +85,27 @@ function loginUsingRsvp(rsvp, callback){
 }
 
 
+function getProfile(){
+  $.ajax({
+    type: 'GET',
+    url: 'http://berlingske-poc.local:8084/cognito/profile',
+    // url: 'http://127.0.0.1:8084/cognito'.concat(path),
+    contentType: 'application/json; charset=utf-8',
+    xhrFields: {
+      withCredentials: true
+    },
+    success: [
+      function(data, status, jqXHR) {
+        console.log(path, data, status);
+      }
+    ],
+    error: function(jqXHR, textStatus, err) {
+      console.error(textStatus, err.toString());
+    }
+  });
+}
+
+
 function getPermissionsPost(){
   var accessKeyId = readCookie('aws_accessKeyId');
   var secretKey = readCookie('aws_secretKey');

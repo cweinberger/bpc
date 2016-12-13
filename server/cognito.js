@@ -442,6 +442,103 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
+    method: 'GET',
+    path: '/profile',
+    config: {
+      // auth: {
+      //   strategy: 'oz',
+      //   access: {
+      //     scope: ['profile'],
+      //     entity: 'user'
+      //   }
+      // },
+      auth: false,
+      cors: {
+        credentials: true,
+        origin: ['*'],
+        // access-control-allow-methods:POST
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+        maxAge: 86400
+      },
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'log' // may also be 'ignore' or 'log'
+      }
+    },
+    handler(request, reply){
+      console.log('GET /profile', request.state);
+
+      var logins = request.state.ll;
+
+      var cognitoLogin = Object.keys(logins).find((k) => {return k.indexOf('cognito') > -1;});
+
+      if(cognitoLogin) {
+
+        var profile = {};
+        var payload = JSON.parse(new Buffer(logins[cognitoLogin].split('.')[1], 'base64').toString());
+        Object.keys(payload).filter(allowedFields).forEach(addToProfile);
+        reply(profile);
+        // Allow fields that start with cognito: and email
+        function allowedFields(k) {return k.indexOf('cognito:') > -1 || ['email'].indexOf(k) > -1;}
+        function addToProfile(k) {profile[k] = payload[k];}
+
+        //
+        // var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
+        //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+        //   Logins: logins
+        // });
+        //
+        // cognitoIdentityCredentials.get(function(err){
+        //
+        //   var params = {
+        //     IdentityId: cognitoIdentityCredentials.identityId,
+        //     Logins: logins
+        //   };
+        //
+        //   cognitoIdentity.getOpenIdToken(params, function(err, data) {
+        //     if (err) console.log(err, err.stack); // an error occurred
+        //     else     console.log(data);           // successful response
+        //
+        //     var params = {
+        //       AccessToken: data.Token
+        //     };
+        //     cognitoIdentityServiceProvider.getUser(params, function(err, data) {
+        //       if (err) console.log(err, err.stack); // an error occurred
+        //       else     console.log('user', data);           // successful response
+        //     });
+        //   });
+        //
+        //
+
+
+
+
+
+
+
+          // var poolData = {
+          //   UserPoolId : 'eu-west-1_hS9hPyLgW',
+          //   ClientId : '5tv5te4df577992koo6mo7t6me',
+          //   Paranoia : 7
+          // };
+          // var userPool = new AWSCognito.CognitoIdentityServiceProvider.CognitoUserPool(poolData);
+          // var currentUser = userPool.getCurrentUser();
+
+        // });
+      } else if (logins['graph.facebook.com']){
+
+          Facebook.getProfile({access_token: logins['graph.facebook.com']}, function(err, response){
+            reply(response);
+          });
+
+      } else {
+        reply(Boom.notFound());
+      }
+    }
+  });
+
+  server.route({
     method: 'POST',
     path: '/validateticket',
     config: {

@@ -30,7 +30,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function (request, reply) {
-console.log('STATE', request.state);
+      console.log('POST / state', request.state);
       var parameters = request.payload.regToken ?
       {
         regToken: request.payload.regToken

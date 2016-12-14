@@ -37,29 +37,7 @@ var cognitoIdentity = new AWS.CognitoIdentity();
 var cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
 
 
-//Params for making the API call
-// var params = {
-//   AccountId: AWS_ACCOUNT_ID, // AWS account Id
-//   RoleArn: IAM_ROLE_ARN, // IAM role that will be used by authentication
-//   IdentityPoolId: COGNITO_IDENTITY_POOL_ID, //ID of the identity pool
-//   Logins: {
-//     // 'www.amazon.com': AMAZON_TOKEN //Token given by Amazon
-//   }
-// };
 
-//Initialize the Credentials object
-// AWS.config.credentials = new AWS.CognitoIdentityCredentials(params);
-
-
-// var poolData = {
-//   UserPoolId : COGNITO_IDENTITY_POOL_ID,
-//   ClientId : '5tv5te4df577992koo6mo7t6me',
-//   Paranoia : 7
-// };
-
-
-// Call to Amazon Cognito, get the credentials for our user
-// AWS.config.credentials.get(err,data){…}
 
 module.exports.register = function (server, options, next) {
 
@@ -101,8 +79,8 @@ module.exports.register = function (server, options, next) {
       cors: false,
       auth: false,
       state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
+        parse: true,
+        failAction: 'log'
       }
     },
     handler: function (request, reply) {
@@ -161,8 +139,8 @@ module.exports.register = function (server, options, next) {
         maxAge: 86400
       },
       state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
+        parse: true,
+        failAction: 'log'
       }
     },
     handler: function (request, reply) {
@@ -273,87 +251,6 @@ module.exports.register = function (server, options, next) {
           }
         }
       });
-
-      // var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
-      //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-      //   Logins: logins
-      // });
-      //
-      // cognitoIdentityCredentials.get(function(err){
-      //   if (err) {
-      //     return reply(Boom.unauthorized());
-      //   }
-      //
-      //   var IdentityId = cognitoIdentityCredentials.identityId;
-      //
-      //   if (temp_users[IdentityId] === undefined || temp_users[IdentityId] === null){
-      //     temp_users[IdentityId] = {};
-      //   }
-      //
-      //   temp_users[IdentityId].CognitoIdentityCredentials = cognitoIdentityCredentials;
-      //
-      //   temp_users[IdentityId].Permissions = [
-      //     '*:read'
-      //   ];
-
-
-
-
-        // We need AccessToken to get the profile data
-
-        // if (logins['graph.facebook.com']){
-        //   Facebook.getProfile({access_token: cognitoIdentityCredentials.params.Logins['graph.facebook.com']}, function(err, response){
-        //     temp_users[IdentityId].FacebookProfile = response;
-        //   });
-        // }
-        //
-        // var cognitoLogin = Object.keys(logins).find((k) => {return k.indexOf('cognito') > -1;});
-        // console.log('cognitoLogin', cognitoLogin);
-        // if(cognitoLogin){
-        //   cognitoIdentityServiceProvider.getUser({AccessToken: cognitoIdentityCredentials.params.Logins[cognitoLogin]}, function(err, data){
-        //     console.log('getUser', err, data);
-        //     if (err) {
-        //       // return reply(err);
-        //     } else if (data === null) {
-        //       // return reply(Boom.unauthorized());
-        //       // } else if (data.Username !== request.payload.username) {
-        //       //   return reply(Boom.unauthorized());
-        //     } else {
-        //       temp_users[IdentityId].CognitoUser = data;
-        //     }
-        //   });
-        // }
-
-
-      // });
-
-      //
-      // var params = {
-      //   IdentityId: request.payload.IdentityId,
-      //   Logins: request.payload.Logins
-      // };
-      //
-      // // cognitoIdentity.getOpenIdToken(params, function(err, data) {
-      // //   console.log('getOpenIdToken', err, data);
-      // // });
-      //
-      // cognitoIdentity.getCredentialsForIdentity(params, function(err, data) {
-      //   console.log('getCredentialsForIdentity', data, err);
-      //   if (err) {
-      //     return reply(Boom.unauthorized());
-      //   } else if (request.payload.SessionToken !== data.Credentials.SessionToken){
-      //     // return reply(Boom.unauthorized());
-      //   }
-      //
-      //   temp_users[IdentityId].CognitoIdentityCredentials = data.Credentials;
-      //
-      //   Facebook.getProfiles({access_token: params.Logins['graph.facebook.com']}, function(err, response){
-      //     temp_users[IdentityId].FacebookProfile = response;
-      //   });
-      //
-      //
-      //   reply();
-      // });
     }
   });
 
@@ -374,8 +271,8 @@ module.exports.register = function (server, options, next) {
         maxAge: 86400
       },
       state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
+        parse: true,
+        failAction: 'log'
       }
     },
     handler: function(request, reply){
@@ -427,8 +324,8 @@ module.exports.register = function (server, options, next) {
         maxAge: 86400
       },
       state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
+        parse: true,
+        failAction: 'log'
       }
     },
     handler: function(request, reply){
@@ -462,14 +359,16 @@ module.exports.register = function (server, options, next) {
         maxAge: 86400
       },
       state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
+        parse: true,
+        failAction: 'log'
       }
     },
     handler(request, reply){
       console.log('GET /profile', request.state);
 
       var logins = request.state.ll;
+
+      // TODO: Check the login tokens expiration
 
       var cognitoLogin = Object.keys(logins).find((k) => {return k.indexOf('cognito') > -1;});
 
@@ -479,53 +378,11 @@ module.exports.register = function (server, options, next) {
         var payload = JSON.parse(new Buffer(logins[cognitoLogin].split('.')[1], 'base64').toString());
         Object.keys(payload).filter(allowedFields).forEach(addToProfile);
         reply(profile);
+
         // Allow fields that start with cognito: and email
         function allowedFields(k) {return k.indexOf('cognito:') > -1 || ['email'].indexOf(k) > -1;}
         function addToProfile(k) {profile[k] = payload[k];}
 
-        //
-        // var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
-        //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-        //   Logins: logins
-        // });
-        //
-        // cognitoIdentityCredentials.get(function(err){
-        //
-        //   var params = {
-        //     IdentityId: cognitoIdentityCredentials.identityId,
-        //     Logins: logins
-        //   };
-        //
-        //   cognitoIdentity.getOpenIdToken(params, function(err, data) {
-        //     if (err) console.log(err, err.stack); // an error occurred
-        //     else     console.log(data);           // successful response
-        //
-        //     var params = {
-        //       AccessToken: data.Token
-        //     };
-        //     cognitoIdentityServiceProvider.getUser(params, function(err, data) {
-        //       if (err) console.log(err, err.stack); // an error occurred
-        //       else     console.log('user', data);           // successful response
-        //     });
-        //   });
-        //
-        //
-
-
-
-
-
-
-
-          // var poolData = {
-          //   UserPoolId : 'eu-west-1_hS9hPyLgW',
-          //   ClientId : '5tv5te4df577992koo6mo7t6me',
-          //   Paranoia : 7
-          // };
-          // var userPool = new AWSCognito.CognitoIdentityServiceProvider.CognitoUserPool(poolData);
-          // var currentUser = userPool.getCurrentUser();
-
-        // });
       } else if (logins['graph.facebook.com']){
 
           Facebook.getProfile({access_token: logins['graph.facebook.com']}, function(err, response){
@@ -537,6 +394,8 @@ module.exports.register = function (server, options, next) {
       }
     }
   });
+
+
 
   server.route({
     method: 'POST',
@@ -558,8 +417,8 @@ module.exports.register = function (server, options, next) {
         maxAge: 86400
       },
       state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
+        parse: true,
+        failAction: 'log'
       }
     },
     handler: function(request, reply) {
@@ -590,8 +449,8 @@ module.exports.register = function (server, options, next) {
         maxAge: 86400
       },
       state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
+        parse: true,
+        failAction: 'log'
       }
     },
     handler: function(request, reply) {
@@ -622,8 +481,8 @@ module.exports.register = function (server, options, next) {
         maxAge: 86400
       },
       state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
+        parse: true,
+        failAction: 'log'
       }
     },
     handler: function(request, reply) {
@@ -647,8 +506,8 @@ module.exports.register = function (server, options, next) {
         maxAge: 86400
       },
       state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
+        parse: true,
+        failAction: 'log'
       }
     },
     handler: function(request, reply) {
@@ -743,92 +602,6 @@ module.exports.register = function (server, options, next) {
           }
         });
       }
-
-
-      // var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
-      //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-      //   Logins: logins
-      // });
-      //
-      // cognitoIdentityCredentials.get(function(err){
-      //   if (err) {
-      //     return reply(Boom.unauthorized());
-      //   }
-      //
-      //   if (new Date(cognitoIdentityCredentials.Expiration) < Date.now()) {
-      //     reply(Boom.unauthorized('Session expired'));
-      //   } else {
-      //
-      //     var user = temp_users[cognitoIdentityCredentials.identityId];
-      //
-      //     reply(user);
-      //   }
-      // });
-
-
-
-
-      // var params = {
-      //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-      //   AccountId: AWS_ACCOUNT_ID,
-      //   Logins: logins
-      // };
-      //
-      // cognitoIdentity.getId(params, function(err, data) {
-      //   console.log('getId', err, data); // successful response
-      //   if (err) {
-      //     reply(Boom.unauthorized());
-      //   } else if (data.IdentityId === undefined || data.IdentityId === null) {
-      //     reply(Boom.unauthorized());
-      //   } else {
-      //
-      //     var params = {
-      //       IdentityId: data.IdentityId,
-      //       Logins: logins
-      //     };
-      //
-      //     cognitoIdentity.getOpenIdToken(params, function(err, data) {
-      //       console.log('getOpenIdToken', err, data);
-      //     });
-      //
-      //     cognitoIdentity.getCredentialsForIdentity(params, function(err, data) {
-      //       console.log('getCredentialsForIdentity', err, data);
-      //       if (err) {
-      //         reply(Boom.unauthorized());
-      //       } else {
-      //         // TODO
-      //         if (new Date(data.Expiration) < Date.now()) {
-      //           reply(Boom.unauthorized('Session expired'));
-      //         } else {
-      //
-      //           var user = temp_users[data.IdentityId];
-      //           console.log('user', user);
-      //
-      //           reply(user);
-      //         }
-      //       }
-      //     });
-      //   }
-      // });
-
-      // if(Object.keys(logins).some((k) => {return k.indexOf('facebook') > -1;})){
-      //
-      // } else if(Object.keys(logins).some((k) => {return k.indexOf('cognito') > -1;})){
-      //   cognitoIdentityServiceProvider.getUser({AccessToken: accessToken}, function(err, data){
-      //     console.log('getUser', err, data);
-      //     if (err) {
-      //       // return reply(err);
-      //     } else if (data === null) {
-      //       // return reply(Boom.unauthorized());
-      //       // } else if (data.Username !== request.payload.username) {
-      //       //   return reply(Boom.unauthorized());
-      //     } else {
-      //       // if (request.payload.permissions.indexOf('read:*') > -1) {
-      //       // }
-      //       // reply();
-      //     }
-      //   });
-      // }
     }
   });
 

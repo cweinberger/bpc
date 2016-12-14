@@ -24,8 +24,8 @@ module.exports.register = function (server, options, next) {
     config: {
       cors: false,
       state: {
-        parse: true, // parse and store in request.state
-        failAction: 'log' // may also be 'ignore' or 'log'
+        parse: true,
+        failAction: 'log'
       }
     },
     handler: function(request, reply) {

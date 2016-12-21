@@ -15,7 +15,9 @@
     "oz": "^4.0.4",
     "scarecrow": "^3.0.4"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "gulp": "^3.9.1"
+  },
   "scripts": {
     "start": "node $npm_package_main",
     "test": "echo \"Error: no test specified\" && exit 1"

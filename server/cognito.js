@@ -105,7 +105,14 @@ module.exports.register = function (server, options, next) {
 
       createUserRsvp(app, logins, function(err, rsvp){
         if (err){
-          return reply(err);
+          if (err.isBoom && err.output.statusCode === 401 && err.output.payload.message.indexOf('Token is expired') > -1){
+            var originalRequestParameters = Object.keys(request.query).map(function(k){
+              return k.concat('=', request.query[k]);
+            }).join('&');
+            return reply.redirect('/cognito.html'.concat('?returnUrl=', request.path, encodeURIComponent('?'.concat(originalRequestParameters))));
+          } else {
+            return reply(err);
+          }
         }
         // After granting app access, the user returns to the app with the rsvp
         if (request.query.returnUrl) {
@@ -215,33 +222,75 @@ module.exports.register = function (server, options, next) {
 
           var IdentityId = data.IdentityId;
 
-          MongoDB.collection('users').findOne({IdentityId: IdentityId}, {fields:{IdentityId:1, Permissions: 1}}, function(err, user) {
-            if (err) {
-              console.log(err);
-              reply(Boom.badImplementation());
-            } else if(user === null){
-              MongoDB.collection('users').insertOne({
-                IdentityId: IdentityId,
-                IdentityProvider: Object.keys(logins)[0],
-                Logins: JSON.stringify(logins),
-                Permissions: [
-                  '*:read'
-                ]
-              }, function(err, result){
-                if (err) {
-                  console.log(err);
-                  reply(Boom.badImplementation());
-                } else if(result.ok !== 1){
-                  console.log('result', result);
-                  reply(Boom.badImplementation());
-                } else {
-                  done()
-                }
-              });
-            } else {
-              done();
+          MongoDB.collection('users').updateOne(
+             {IdentityId: IdentityId},
+             {$set: {
+               IdentityId: IdentityId,
+               IdentityProvider: Object.keys(logins)[0],
+               Logins: JSON.stringify(logins),
+               Permissions: [
+                 '*:read'
+               ]
+             }},
+             {
+               upsert: true
+              //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+              //  collation: <document>
+            }, function(err, result){
+              if (err) {
+                console.error(err);
+                reply(Boom.badImplementation());
+              } else if(result.result.ok !== 1) {
+                console.log('result', result);
+                reply(Boom.badImplementation());
+              } else {
+                done();
+              }
             }
-          });
+          );
+
+          // MongoDB.collection('users').findOne({IdentityId: IdentityId}, {fields:{IdentityId:1, Permissions: 1}}, function(err, user) {
+          //   if (err) {
+          //     console.log(err);
+          //     reply(Boom.badImplementation());
+          //   } else if(user === null){
+          //     console.log('================= CREATING');
+          //     MongoDB.collection('users').insertOne({
+          //       IdentityId: IdentityId,
+          //       IdentityProvider: Object.keys(logins)[0],
+          //       Logins: JSON.stringify(logins),
+          //       Permissions: [
+          //         '*:read'
+          //       ]
+          //     }, function(err, result){
+          //       if (err) {
+          //         console.log(err);
+          //         reply(Boom.badImplementation());
+          //       } else if(result.result.ok !== 1){
+          //         console.log('result', result);
+          //         reply(Boom.badImplementation());
+          //       } else {
+          //         done();
+          //       }
+          //     });
+          //   } else {
+          //     console.log('================= EXISTS', user);
+          //     MongoDB.collection('users').updateOne(
+          //       {IdentityId: IdentityId},
+          //       {Logins: JSON.stringify(logins)},
+          //     function(err, result){
+          //       if (err) {
+          //         console.log(err);
+          //         reply(Boom.badImplementation());
+          //       } else if(result.result.nModified !== 1) {
+          //         console.log('result', result);
+          //         reply(Boom.badImplementation());
+          //       } else {
+          //         done();
+          //       }
+          //     });
+          //   }
+          // });
 
           function done(){
             reply()
@@ -374,27 +423,77 @@ module.exports.register = function (server, options, next) {
 
       if(cognitoLogin) {
 
-        var profile = {};
-        var payload = JSON.parse(new Buffer(logins[cognitoLogin].split('.')[1], 'base64').toString());
-        Object.keys(payload).filter(allowedFields).forEach(addToProfile);
-        reply(profile);
-
-        // Allow fields that start with cognito: and email
-        function allowedFields(k) {return k.indexOf('cognito:') > -1 || ['email'].indexOf(k) > -1;}
-        function addToProfile(k) {profile[k] = payload[k];}
+        parseCognitoLogin(logins[cognitoLogin], reply);
 
       } else if (logins['graph.facebook.com']){
-
-          Facebook.getProfile({access_token: logins['graph.facebook.com']}, function(err, response){
-            reply(response);
+          Facebook.getProfile({access_token: logins['graph.facebook.com']}, function(err, result){
+            if(err){
+              console.error(err);
+              reply(err);
+            } else {
+              reply(result);
+            }
           });
 
       } else {
+
         reply(Boom.notFound());
+
       }
     }
   });
 
+
+  server.route({
+    method: 'GET',
+    path: '/userprofile',
+    config: {
+      auth: {
+        strategy: 'oz',
+        access: {
+          // scope: ['profile'],
+          entity: 'user'
+        }
+      }
+    },
+    handler(request, reply){
+      console.log('GET /userprofile (server)', request.headers);
+
+      var id = request.headers.authorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
+
+      if (id === undefined || id === null || id === ''){
+        return reply(Boom.unauthorized('Authorization Hawk ticket not found'));
+      }
+
+      Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, function(err, result){
+      // Oz.ticket.parse(request.headers.authorization, ENCRYPTIONPASSWORD, {}, function(err, result){
+        console.log('ticket parse', err, result);
+
+        if (result.ext.private.Logins === undefined || result.ext.private.Logins === null){
+          return reply(Boom.unauthorized('Authorization Hawk ticket missing logins'));
+        }
+
+        var logins = result.ext.private.Logins;
+
+        // TODO: Check the login tokens expiration
+
+        var cognitoLogin = Object.keys(logins).find((k) => {return k.indexOf('cognito') > -1;});
+
+        if(cognitoLogin) {
+
+          parseCognitoLogin(logins[cognitoLogin], reply);
+
+        } else if (logins['graph.facebook.com']){
+            Facebook.getProfile({access_token: logins['graph.facebook.com']}, reply);
+
+        } else {
+
+          reply(Boom.notFound());
+
+        }
+      });
+    }
+  });
 
 
   server.route({
@@ -632,14 +731,26 @@ module.exports.loadAppFunc = function(id, callback) {
 
 module.exports.loadGrantFunc = function(id, next) {
   console.log('loadGrantFunc', id);
-  MongoDB.collection('grants').findOne({id:id}, {fields: {_id: 0}}, function(err, grant) {
+  MongoDB.collection('grants').findOne({id: id}, {fields: {_id: 0}}, function(err, grant) {
     if (err) {
       return next(err);
     } else if (grant === null) {
       next(Boom.unauthorized('Missing grant'));
     } else {
+
       grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
-      next(null, grant);
+
+      // Finding private details to encrypt in the ticket for later usage.
+      MongoDB.collection('users').findOne({IdentityId: grant.user}, {fields: {_id: 0, IdentityId: 1, Logins: 1}}, function(err, user){
+        if (err) {
+          return next(err);
+        } else if (user === null) {
+          // return next(new Error('Unknown user'));
+          next(null, grant);
+        } else {
+          next(null, grant, {public: {IdentityId: user.IdentityId}, private: {Logins:JSON.parse(user.Logins)}});
+        }
+      });
     }
   });
 };
@@ -665,6 +776,10 @@ function createUserRsvp(app_id, logins, callback){
         return callback(Boom.unauthorized(err.message));
       }
 
+      console.log('CREATING USER RSVP', cognitoIdentityCredentials);
+
+      // TODO: Check if user exists here.
+
       MongoDB.collection('grants').findOne({user: cognitoIdentityCredentials.identityId}, {fields: {_id: 0}}, function(err, grant){
         if (err) {
           console.error(err);
@@ -686,4 +801,16 @@ function createUserRsvp(app_id, logins, callback){
       });
     });
   });
+}
+
+
+function parseCognitoLogin(login, callback){
+  var profile = {};
+  var payload = JSON.parse(new Buffer(login.split('.')[1], 'base64').toString());
+  Object.keys(payload).filter(allowedFields).forEach(addToProfile);
+  callback(null, profile);
+
+  // Allow fields that start with cognito: and email
+  function allowedFields(k) {return k.indexOf('cognito:') > -1 || ['email'].indexOf(k) > -1;}
+  function addToProfile(k) {profile[k] = payload[k];}
 }

@@ -225,7 +225,7 @@ function credentialsGetCallback(callback){
               // Redirection to main page to generate rsvp and from there return to returnUrl
               window.location = '/cognito'.concat(window.location.search);
             } else if(returnUrl){
-              window.location.href = returnUrl;
+              window.location.href = decodeURIComponent(returnUrl);
             }
           },
           callback

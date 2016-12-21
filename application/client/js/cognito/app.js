@@ -9,7 +9,9 @@ $(document).ready(function() {
   var rsvp = getUrlVar('rsvp');
 
   if (rsvp){
-    loginUsingRsvp(rsvp);
+    loginUsingRsvp(rsvp, function(){
+      removeUrlVar('rsvp');
+    });
   }
 });
 
@@ -96,7 +98,22 @@ function getProfile(){
     },
     success: [
       function(data, status, jqXHR) {
-        console.log(path, data, status);
+        console.log(data, status);
+      }
+    ],
+    error: function(jqXHR, textStatus, err) {
+      console.error(textStatus, err.toString());
+    }
+  });
+}
+
+function getUserProfile(){
+  $.ajax({
+    type: 'GET',
+    url: '/login/userprofile',
+    success: [
+      function(data, status, jqXHR) {
+        console.log(data, status);
       }
     ],
     error: function(jqXHR, textStatus, err) {

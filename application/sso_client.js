@@ -49,6 +49,30 @@ module.exports.validateUserTicket = function(userTicket, callback){
 };
 
 
+module.exports.refreshAppTicket = function(callback){
+  callSsoServer('POST', '/oz/refresh', {}, appTicket, function(err, result){
+    if (err){
+      console.error(err);
+      callback(err);
+    } else {
+      console.log('refreshAppTicket', result);
+      appTicket = result;
+      callback(null, {});
+    }
+  });
+};
+
+
+module.exports.refreshUserTicket = function(userTicket, callback){
+  callSsoServer('POST', '/oz/refresh', {}, userTicket, callback);
+};
+
+
+module.exports.getUserProfile = function(userTicket, callback){
+  callSsoServer('GET', '/cognito/userprofile', {}, userTicket, callback);
+};
+
+
 function callSsoServer(method, path, body, credentials, callback) {
   if (callback === undefined && typeof body === 'function') {
     callback = body;
@@ -76,7 +100,7 @@ function callSsoServer(method, path, body, credentials, callback) {
     }
   };
 
-  if (credentials !== null && Object.keys(credentials).length > 1){
+  if (credentials !== undefined && credentials !== null && Object.keys(credentials).length > 1){
     options.headers = {
       'Authorization': Hawk.client.header('http://'.concat(options.hostname, ':', options.port, options.path), method, {credentials: credentials, app: POC_APPLICATION_APP_ID}).field
     };
@@ -95,6 +119,7 @@ function callSsoServer(method, path, body, credentials, callback) {
     callback(e);
   });
 }
+module.exports.request = callSsoServer;
 
 
 function parseReponse (callback) {
@@ -107,15 +132,19 @@ function parseReponse (callback) {
 
     res.on('end', function () {
       try {
-        data = JSON.parse(data);
+        if (data.length > 0){
+          data = JSON.parse(data);
+        }
       } catch (ex) {
         console.log('JSON parse error on: ', data);
         throw ex;
       }
 
 
-      // Gigya responds HTTP 200 OK even on errors.
-      if (data.statusCode > 300 || res.statusCode > 300) {
+      if (res.statusCode > 300) {
+        console.log('==================');
+        console.log(data);
+        console.log('==================');
         var err = Boom.wrap(new Error(data.error), data.statusCode);
         callback(err, null);
       }

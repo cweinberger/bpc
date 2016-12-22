@@ -44,11 +44,11 @@ module.exports.register = function (server, options, next) {
       }
 
       // Different examples on how to validate the userTicket
-      sso_client.validateUserTicket(request.state.ticket, ['read', 'write'], function (err, response){
+      // sso_client.validateUserTicket(request.state.ticket, ['read', 'write'], function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, ['read'], function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, 'read', function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, [], function (err, response){
-      // sso_client.validateUserTicket(request.state.ticket, null, function (err, response){
+      sso_client.validateUserTicket(request.state.ticket, 1, function (err, response){
         if (err){
           return reply(err);
         }

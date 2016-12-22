@@ -28,6 +28,36 @@ var poolData = {
 
 var userPool = new AWSCognito.CognitoIdentityServiceProvider.CognitoUserPool(poolData);
 
+var appTicket;
+var app = {
+  id: 'sso_client',
+  key: 'gk32fh4k4h42fk4hfsdk2ljd98djjllu',
+  algorithm: 'sha256'
+};
+
+callSsoServer('POST', '/oz/app', {}, app, function(data, status, jqXHR) {
+  console.log('getAppTicket result', data);
+  appTicket = data;
+});
+
+
+function callSsoServer(type, path, data, credentials, callback){
+  var url = 'http://berlingske-poc.local:8084'.concat(path)
+  $.ajax({
+    type: type,
+    url: url,
+    contentType: "application/json; charset=utf-8",
+    data: JSON.stringify(data),
+    headers: {
+      'Authorization': hawk.client.header(url, type, {credentials: credentials, app: 'sso_client'}).field
+    },
+    success: callback,
+    error: function(jqXHR, textStatus, err) {
+      console.error(textStatus, err.toString());
+    }
+  });
+}
+
 
 function cognitoLoginInit(){
   var currentUser = userPool.getCurrentUser();
@@ -45,7 +75,6 @@ function cognitoLoginInit(){
       console.log('AWS session validity: ' + session.isValid());
 
       setUserPoolIdentityToken(currentUser.signInUserSession.idToken.jwtToken, function(){
-        checkAwsPermissionsOnBackend();
       });
     });
   }
@@ -58,7 +87,6 @@ function facebookLoginInit(){
      if (response.status === 'connected') {
 
        setFacebookIdentityToken(response.authResponse.accessToken, function(){
-         checkAwsPermissionsOnBackend();
        });
 
         // Logged into your app and Facebook.
@@ -104,7 +132,6 @@ function loginAwsByUsernameAndPassword(e){
       $('#aws-currentuser').text(awsUsername);
 
       setUserPoolIdentityToken(result.idToken.jwtToken, function(){
-        checkAwsPermissionsOnBackend();
       });
     },
 
@@ -139,7 +166,6 @@ function awsFacebookLoginDone(response){
 
   // Add the Facebook access token to the Cognito credentials login map.
   setFacebookIdentityToken(response.authResponse.accessToken, function(){
-    checkAwsPermissionsOnBackend();
   });
 }
 
@@ -208,13 +234,11 @@ function credentialsGetCallback(callback){
 
       var payload = {
         Logins: AWS.config.credentials.params.Logins
-        // IdentityId: AWS.config.credentials.identityId,
-        // SessionToken:AWS.config.credentials.sessionToken
-      }
+      };
 
       $.ajax({
         type: 'POST',
-        url: '/cognito/register',
+        url: '/cognito/signin',
         contentType: "application/json; charset=utf-8",
         data: JSON.stringify(payload),
         success: [
@@ -239,6 +263,7 @@ function credentialsGetCallback(callback){
 }
 
 
+
 function credentialsRefreshCallback(error){
   if (error) {
     console.error(error);
@@ -247,36 +272,6 @@ function credentialsRefreshCallback(error){
   }
 }
 
-
-function checkAwsPermissionsOnBackend(callback){
-
-  var payload = AWS.config.credentials.params;
-
-  $.ajax({
-    type: 'POST',
-    url: '/cognito/permissions',
-    contentType: "application/json; charset=utf-8",
-    data: JSON.stringify(payload),
-    xhrFields: {
-      withCredentials: true
-    },
-    success: [
-      function(data, status, jqXHR) {
-        // console.log(data, status);
-        if (data.IdentityId){
-          $('#aws-currentuser').text(data.IdentityId)
-        }
-        if (data.Permissions){
-          $('#aws-currentuserpermissions').text(data.Permissions)
-        }
-      },
-      callback
-    ],
-    error: function(jqXHR, textStatus, err) {
-      console.error(textStatus, err.toString());
-    }
-  });
-}
 
 
 function signout(){
@@ -288,7 +283,7 @@ function signout(){
       function(data, status, jqXHR) {
         console.log('signout success');
         signoutFacebook();
-        signoutAws();
+        signoutCognito();
         disableLogoutControls();
       }
     ],
@@ -310,7 +305,7 @@ function signoutFacebook(callback){
 }
 
 
-function signoutAws(callback){
+function signoutCognito(callback){
   var currentUser = userPool.getCurrentUser();
 
   if(currentUser === null){

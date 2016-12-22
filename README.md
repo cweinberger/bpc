@@ -8,6 +8,13 @@
 ## MongoDB
 
 db.applications.insert({
+  id: 'sso_client',
+  scope: [],
+  delegate: false,
+  key: 'gk32fh4k4h42fk4hfsdk2ljd98djjllu',
+  algorithm: 'sha256'})
+
+db.applications.insert({
   id: 'test_sso_app',
   scope: [],
   delegate: false,

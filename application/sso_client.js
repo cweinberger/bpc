@@ -37,21 +37,6 @@ getAppTicket(function(err, result){
 module.exports.getAppTicket = getAppTicket;
 
 
-module.exports.validateAppTicket = function(appTicket, callback){
-  callSsoServer('POST', '/cognito/validateappticket', {}, appTicket, callback);
-};
-
-
-module.exports.getUserTicket = function(rsvp, callback) {
-  callSsoServer('POST', '/oz/rsvp', {rsvp: rsvp}, appTicket, callback);
-};
-
-
-module.exports.validateUserTicket = function(userTicket, scope, callback){
-  callSsoServer('POST', '/cognito/validateuserticket', {scope: scope}, userTicket, callback);
-};
-
-
 module.exports.refreshAppTicket = function(callback){
   callSsoServer('POST', '/oz/reissue', {}, appTicket, function(err, result){
     if (err){
@@ -66,8 +51,23 @@ module.exports.refreshAppTicket = function(callback){
 };
 
 
+module.exports.validateAppTicket = function(appTicket, callback){
+  callSsoServer('POST', '/cognito/validateappticket', {}, appTicket, callback);
+};
+
+
+module.exports.getUserTicket = function(rsvp, callback) {
+  callSsoServer('POST', '/oz/rsvp', {rsvp: rsvp}, appTicket, callback);
+};
+
+
 module.exports.refreshUserTicket = function(userTicket, callback){
   callSsoServer('POST', '/oz/refresh', {}, userTicket, callback);
+};
+
+
+module.exports.validateUserTicket = function(userTicket, scope, callback){
+  callSsoServer('POST', '/cognito/validateuserticket', {scope: scope}, userTicket, callback);
 };
 
 

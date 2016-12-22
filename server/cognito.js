@@ -76,8 +76,8 @@ module.exports.register = function (server, options, next) {
     method: 'GET',
     path: '/',
     config: {
-      cors: false,
       auth: false,
+      cors: false,
       state: {
         parse: true,
         failAction: 'log'
@@ -185,7 +185,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/register',
+    path: '/signin',
     config: {
       auth: false
     },
@@ -266,6 +266,34 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
+    method: 'POST',
+    path: '/signout',
+    config: {
+      auth: false,
+      cors: {
+        credentials: true,
+        origin: ['*'],
+        // access-control-allow-methods:POST
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+        maxAge: 86400
+      },
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply){
+      reply()
+        .unstate('ii')
+        .unstate('il')
+        .unstate('ll');
+    }
+  });
+
+
+
+  server.route({
     method: 'GET',
     path: '/credentials',
     config: {
@@ -315,34 +343,6 @@ module.exports.register = function (server, options, next) {
     }
   });
 
-
-
-
-  server.route({
-    method: 'POST',
-    path: '/signout',
-    config: {
-      auth: false,
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
-      state: {
-        parse: true,
-        failAction: 'log'
-      }
-    },
-    handler: function(request, reply){
-      reply()
-        .unstate('ii')
-        .unstate('il')
-        .unstate('ll');
-    }
-  });
 
 
 
@@ -539,45 +539,36 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
 
      var subset = request.payload.scope;
-     console.log('???????? sub', subset);
 
-     if (subset !== undefined && subset !== null){
-
-       if (subset instanceof Array === false) {
-         subset = [subset];
-       }
-
-       var err = Oz.scope.validate(subset);
-       if (err){
-         // return reply(err);
-         return reply(Boom.badRequest('Invalid request scope'));
-       }
-
-       // We check if the requested scope (subset) is contained in the users grant scope (superset)
-
-       console.log('validateuserticket', request.headers);
-       getTicketFromHawkHeader(request.headers.authorization, function(err, ticket){
-         console.log('=====', ticket);
-
-         var superset = ticket.scope;
-
-         console.log('???????? suber', superset);
-         var err = Oz.scope.validate(superset);
-
-         if (err){
-           // return reply(err);
-           return reply(Boom.badRequest('Invalid ticket scope'));
-         }
-
-         if (!Oz.scope.isSubset(superset, subset)){
-           return reply(Boom.unauthorized('Ticket scope not a subset of request scope'));
-         } else {
-           reply({});
-         }
-       });
-     } else {
+     if (subset === undefined || subset === null){
+       // The user ticket is not being validated against a subset of scopes.
        reply({});
      }
+
+     if (subset instanceof Array === false) {
+       subset = [subset];
+     }
+
+     var err = Oz.scope.validate(subset);
+     if (err){
+       return reply(Boom.badRequest('Invalid request scope'));
+     }
+
+     // We check if the requested scope (subset) is contained in the users grant scope (superset)
+     getTicketFromHawkHeader(request.headers.authorization, function(err, ticket){
+
+       var superset = ticket.scope;
+       var err = Oz.scope.validate(superset);
+       if (err){
+         return reply(Boom.badRequest('Invalid ticket scope'));
+       }
+
+       if (!Oz.scope.isSubset(superset, subset)){
+         return reply(Boom.unauthorized('Ticket scope not a subset of request scope'));
+       } else {
+         reply({});
+       }
+     });
     }
   });
 
@@ -616,6 +607,11 @@ module.exports.loadGrantFunc = function(id, next) {
     } else if (grant === null) {
       next(Boom.unauthorized('Missing grant'));
     } else {
+
+      if (grant.exp === undefined || grant.exp === null) {
+        grant.exp = Oz.hawk.utils.now() + (60000 * 60 * 24); // 60000 = 1 minute
+      }
+
       // Finding private details to encrypt in the ticket for later usage.
       MongoDB.collection('users').findOne({IdentityId: grant.user}, {fields: {_id: 0, IdentityId: 1, Logins: 1}}, function(err, user){
         if (err) {
@@ -654,9 +650,10 @@ function createUserRsvp(app_id, logins, callback){
         return callback(Boom.unauthorized(err.message));
       }
 
-      // console.log('CREATING USER RSVP', cognitoIdentityCredentials);
-
       // TODO: Check if user exists here.
+      MongoDB.collection('users').findOne({IdentityId: cognitoIdentityCredentials.identityId}, function(err, user){
+        console.log('Checking the user exists', err, user);
+      });
 
       MongoDB.collection('grants').findOne({user: cognitoIdentityCredentials.identityId, app: app_id}, {fields: {_id: 0}}, function(err, grant){
         if (err) {
@@ -670,7 +667,6 @@ function createUserRsvp(app_id, logins, callback){
         // Or a default exp could be set per application and then added to the grant.
         if (grant.exp === undefined || grant.exp === null) {
           grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
-          MongoDB.collection('grants').updateOne({id: grant.id}, {$set: {exp: grant.exp}});
         }
 
         Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {

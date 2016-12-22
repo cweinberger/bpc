@@ -99,6 +99,7 @@ module.exports.register = function (server, options, next) {
       } else if (request.query.Logins){
         logins = request.query.Logins;
       } else {
+        // Redirecting the user to the login-page
         var temp = Object.keys(request.query).map(f).join('&');
         return reply.redirect('/cognito.html?'.concat(temp));
       }
@@ -160,6 +161,7 @@ module.exports.register = function (server, options, next) {
       }
 
       var logins;
+
       if (request.state.ll){
         logins = request.state.ll;
       } else if (request.payload.Logins){
@@ -249,49 +251,6 @@ module.exports.register = function (server, options, next) {
             }
           );
 
-          // MongoDB.collection('users').findOne({IdentityId: IdentityId}, {fields:{IdentityId:1, Permissions: 1}}, function(err, user) {
-          //   if (err) {
-          //     console.log(err);
-          //     reply(Boom.badImplementation());
-          //   } else if(user === null){
-          //     console.log('================= CREATING');
-          //     MongoDB.collection('users').insertOne({
-          //       IdentityId: IdentityId,
-          //       IdentityProvider: Object.keys(logins)[0],
-          //       Logins: JSON.stringify(logins),
-          //       Permissions: [
-          //         '*:read'
-          //       ]
-          //     }, function(err, result){
-          //       if (err) {
-          //         console.log(err);
-          //         reply(Boom.badImplementation());
-          //       } else if(result.result.ok !== 1){
-          //         console.log('result', result);
-          //         reply(Boom.badImplementation());
-          //       } else {
-          //         done();
-          //       }
-          //     });
-          //   } else {
-          //     console.log('================= EXISTS', user);
-          //     MongoDB.collection('users').updateOne(
-          //       {IdentityId: IdentityId},
-          //       {Logins: JSON.stringify(logins)},
-          //     function(err, result){
-          //       if (err) {
-          //         console.log(err);
-          //         reply(Boom.badImplementation());
-          //       } else if(result.result.nModified !== 1) {
-          //         console.log('result', result);
-          //         reply(Boom.badImplementation());
-          //       } else {
-          //         done();
-          //       }
-          //     });
-          //   }
-          // });
-
           function done(){
             reply()
             .state('ii', IdentityId)
@@ -307,8 +266,8 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
-    method: 'POST',
-    path: '/auth',
+    method: 'GET',
+    path: '/credentials',
     config: {
       auth: false,
       cors: {
@@ -459,21 +418,14 @@ module.exports.register = function (server, options, next) {
     handler(request, reply){
       console.log('GET /userprofile (server)', request.headers);
 
-      var id = request.headers.authorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
+      getTicketFromHawkHeader(request.headers.authorization, function(err, ticket){
+        console.log('ticket parse', err, ticket);
 
-      if (id === undefined || id === null || id === ''){
-        return reply(Boom.unauthorized('Authorization Hawk ticket not found'));
-      }
-
-      Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, function(err, result){
-      // Oz.ticket.parse(request.headers.authorization, ENCRYPTIONPASSWORD, {}, function(err, result){
-        console.log('ticket parse', err, result);
-
-        if (result.ext.private.Logins === undefined || result.ext.private.Logins === null){
+        if (ticket.ext.private.Logins === undefined || ticket.ext.private.Logins === null){
           return reply(Boom.unauthorized('Authorization Hawk ticket missing logins'));
         }
 
-        var logins = result.ext.private.Logins;
+        var logins = ticket.ext.private.Logins;
 
         // TODO: Check the login tokens expiration
 
@@ -585,122 +537,47 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('validateuserticket');
-      reply({});
-    }
-  });
 
+     var subset = request.payload.scope;
+     console.log('???????? sub', subset);
 
+     if (subset !== undefined && subset !== null){
 
-  server.route({
-    method: 'POST',
-    path: '/permissions',
-    config: {
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
-      state: {
-        parse: true,
-        failAction: 'log'
-      }
-    },
-    handler: function(request, reply) {
+       if (subset instanceof Array === false) {
+         subset = [subset];
+       }
 
-      console.log('');
-      console.log('validateUser');
-      console.log('PAYLOAD', request.payload);
-      // console.log('STATE', request.state);
+       var err = Oz.scope.validate(subset);
+       if (err){
+         // return reply(err);
+         return reply(Boom.badRequest('Invalid request scope'));
+       }
 
-      // TODO: Validate accessToken
-      // - Check the iss claim. It should match your user pool. For example, a user pool created in the us-east-1 region will have an iss value of https://cognito-idp.us-east-1.amazonaws.com/{userPoolId}.
-      // - Check the token_use claim.
+       // We check if the requested scope (subset) is contained in the users grant scope (superset)
 
-      //   If you are only accepting the access token in your web APIs, its value must be access.
-      //   If you are only using the ID token, its value must be id.
-      //   If you are using both tokens, the value is either id or access.
+       console.log('validateuserticket', request.headers);
+       getTicketFromHawkHeader(request.headers.authorization, function(err, ticket){
+         console.log('=====', ticket);
 
-      // - Verify the signature of the decoded JWT token.
-      // - Check the exp claim and make sure the token is not expired.
+         var superset = ticket.scope;
 
-      // See "To verify a signature for ID and access tokens" on https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-with-identity-providers.html
+         console.log('???????? suber', superset);
+         var err = Oz.scope.validate(superset);
 
+         if (err){
+           // return reply(err);
+           return reply(Boom.badRequest('Invalid ticket scope'));
+         }
 
-      // var accessToken = request.payload.accessToken;
-      // var idToken = request.payload.idToken;
-
-      if (request.payload === null){
-        return reply(Boom.unauthorized('Payload missing'));
-      }
-
-      var identityId = request.payload.IdentityId !== undefined && request.payload.IdentityId !== null ? request.payload.IdentityId :
-                       request.payload.identityId !== undefined && request.payload.identityId !== null ? request.payload.identityId : null;
-
-      if (identityId === null){
-        return reply(Boom.unauthorized('IdentityId missing'));
-      }
-
-
-      if (request.payload.sessionToken) {
-        var accessKeyId = request.payload.accessKeyId ? request.payload.accessKeyId : '';
-        var secretKey = request.payload.secretKey ? request.payload.secretKey : '';
-        var creds = new AWS.Credentials(accessKeyId, secretKey, request.payload.sessionToken);
-        console.log('creds', creds);
-
-        if(creds.expired){
-          reply(Boom.unauthorized());
-        } else {
-          getUserPermissions(identityId, reply);
-        }
-      } else {
-
-        var logins;
-
-        if (request.state.ll) {
-          logins = request.state.ll;
-        } else if (request.payload.Logins) {
-          logins = request.payload.Logins;
-        } else {
-          return reply(Boom.unauthorized());
-        }
-
-        console.log('logins', logins);
-
-        var params = {
-          IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-          AccountId: AWS_ACCOUNT_ID,
-          Logins: logins
-        };
-
-        cognitoIdentity.getId(params, function(err, data) {
-          console.log('getId', err, data);
-          if (err) {
-            console.log(err);
-            reply(Boom.unauthorized());
-          } else if (data.IdentityId === undefined || data.IdentityId === null) {
-            reply(Boom.unauthorized('user not found'));
-          } else if (data.IdentityId !== request.state.ii) {
-            reply(Boom.unauthorized('cookie mismatch'));
-          } else {
-            getUserPermissions(data.IdentityId, reply);
-          }
-        });
-      }
-
-      function getUserPermissions(IdentityId, callback){
-        MongoDB.collection('users').findOne({IdentityId: IdentityId}, {fields: {_id: 0, Permissions: 1}}, function (err, result){
-          if (err) {
-            console.log(err);
-            callback(Boom.unauthorized());
-          } else {
-            callback(null, result);
-          }
-        });
-      }
+         if (!Oz.scope.isSubset(superset, subset)){
+           return reply(Boom.unauthorized('Ticket scope not a subset of request scope'));
+         } else {
+           reply({});
+         }
+       });
+     } else {
+       reply({});
+     }
     }
   });
 
@@ -715,6 +592,7 @@ module.exports.register.attributes = {
 };
 
 
+// Here we are creating the app ticket
 module.exports.loadAppFunc = function(id, callback) {
   console.log('loadAppFunc', id);
   MongoDB.collection('applications').findOne({id:id}, {fields: {_id: 0}}, function(err, app) {
@@ -729,6 +607,7 @@ module.exports.loadAppFunc = function(id, callback) {
 };
 
 
+// Here we are creating the user ticket
 module.exports.loadGrantFunc = function(id, next) {
   console.log('loadGrantFunc', id);
   MongoDB.collection('grants').findOne({id: id}, {fields: {_id: 0}}, function(err, grant) {
@@ -737,9 +616,6 @@ module.exports.loadGrantFunc = function(id, next) {
     } else if (grant === null) {
       next(Boom.unauthorized('Missing grant'));
     } else {
-
-      grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
-
       // Finding private details to encrypt in the ticket for later usage.
       MongoDB.collection('users').findOne({IdentityId: grant.user}, {fields: {_id: 0, IdentityId: 1, Logins: 1}}, function(err, user){
         if (err) {
@@ -756,7 +632,9 @@ module.exports.loadGrantFunc = function(id, next) {
 };
 
 
+// Here we are creating the user->app rsvp
 function createUserRsvp(app_id, logins, callback){
+  console.log('createUserRsvp', app_id);
   MongoDB.collection('applications').findOne({id: app_id}, {fields: {_id: 0}}, function(err, app){
     if (err) {
       console.error(err);
@@ -772,15 +650,15 @@ function createUserRsvp(app_id, logins, callback){
 
     cognitoIdentityCredentials.get(function(err){
       if (err) {
-        console.error(err);
+        console.error('cognitoIdentityCredentials error:', err);
         return callback(Boom.unauthorized(err.message));
       }
 
-      console.log('CREATING USER RSVP', cognitoIdentityCredentials);
+      // console.log('CREATING USER RSVP', cognitoIdentityCredentials);
 
       // TODO: Check if user exists here.
 
-      MongoDB.collection('grants').findOne({user: cognitoIdentityCredentials.identityId}, {fields: {_id: 0}}, function(err, grant){
+      MongoDB.collection('grants').findOne({user: cognitoIdentityCredentials.identityId, app: app_id}, {fields: {_id: 0}}, function(err, grant){
         if (err) {
           console.error(err);
           return callback(Boom.unauthorized(err.message));
@@ -788,7 +666,12 @@ function createUserRsvp(app_id, logins, callback){
           return callback(Boom.unauthorized('Missing grant'));
         }
 
-        grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
+        // TODO: exp should be set by other logic than this. E.g. the system that handles subscriptions
+        // Or a default exp could be set per application and then added to the grant.
+        if (grant.exp === undefined || grant.exp === null) {
+          grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
+          MongoDB.collection('grants').updateOne({id: grant.id}, {$set: {exp: grant.exp}});
+        }
 
         Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
           if (err){
@@ -801,6 +684,16 @@ function createUserRsvp(app_id, logins, callback){
       });
     });
   });
+}
+
+
+function getTicketFromHawkHeader(requestHeaderAuthorization, callback){
+  var id = requestHeaderAuthorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
+  if (id === undefined || id === null || id === ''){
+    return callback(Boom.unauthorized('Authorization Hawk ticket not found'));
+  }
+
+  Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
 }
 
 

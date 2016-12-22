@@ -10,7 +10,7 @@ const sso_client = require('./sso_client');
 module.exports.register = function (server, options, next) {
 
   server.state('ticket', {
-    ttl: 1000 * 60 * 60 * 24,
+    ttl: 1000 * 60 * 60 * 24 * 30, // (one month)
     isHttpOnly: false,
     isSecure: false,
     // isSameSite: false,
@@ -30,6 +30,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
+      console.log('POST /login (app)');
       sso_client.getUserTicket(request.payload.rsvp, function (err, userTicket){
         console.log('getUserTicket', err, userTicket);
         if (err){

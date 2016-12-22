@@ -17,45 +17,10 @@ $(document).ready(function() {
 
 
 
-function checkPermissionsOnBackend(payload, callback){
-
-  // var payload = {
-  //   username: awsUsername,
-  //   // idToken: currentUser.signInUserSession.idToken.jwtToken,
-  //   accessToken: awsAccessToken,
-  //   // refreshToken: currentUser.signInUserSession.refreshToken.token,
-  //   permissions: ['read:*']
-  // };
-
-  $.ajax({
-    type: 'POST',
-    url: 'http://berlingske-poc.local:8084/cognito/permissions',
-    contentType: 'application/json; charset=utf-8',
-    data: JSON.stringify(payload),
-    xhrFields: {
-      withCredentials: true
-    },
-    success: [
-      function(data, status, jqXHR) {
-        // console.log(data, status);
-        $('#aws-currentuserpermissions').text('OK');
-      },
-      callback
-    ],
-    error: function(jqXHR, textStatus, err) {
-      console.error(textStatus, err.toString());
-    }
-  });
-}
-
-
-function loginPost(){
-  postToSso('/auth', {});
-}
-
-
 function logoutPost(){
-  postToSso('/signout', {});
+  postToSso('/signout', {}, function(){
+    $('#aws-currentuser').text('');
+  });
 }
 
 
@@ -87,10 +52,10 @@ function loginUsingRsvp(rsvp, callback){
 }
 
 
-function getProfile(){
+function getCredentials(){
   $.ajax({
     type: 'GET',
-    url: 'http://berlingske-poc.local:8084/cognito/profile',
+    url: 'http://berlingske-poc.local:8084/cognito/credentials',
     // url: 'http://127.0.0.1:8084/cognito'.concat(path),
     contentType: 'application/json; charset=utf-8',
     xhrFields: {
@@ -107,12 +72,24 @@ function getProfile(){
   });
 }
 
-function getUserProfile(){
+
+function getProfile(){
+  $('#aws-currentuser').text('');
   $.ajax({
     type: 'GET',
-    url: '/login/userprofile',
+    url: 'http://berlingske-poc.local:8084/cognito/profile',
+    // url: 'http://127.0.0.1:8084/cognito'.concat(path),
+    contentType: 'application/json; charset=utf-8',
+    xhrFields: {
+      withCredentials: true
+    },
     success: [
       function(data, status, jqXHR) {
+        if (data.name){
+          $('#aws-currentuser').text(data.name);
+        } else if(data['cognito:username']) {
+          $('#aws-currentuser').text(data['cognito:username']);
+        }
         console.log(data, status);
       }
     ],
@@ -123,24 +100,27 @@ function getUserProfile(){
 }
 
 
-function getPermissionsPost(){
-  var accessKeyId = readCookie('aws_accessKeyId');
-  var secretKey = readCookie('aws_secretKey');
-  var sessionToken = readCookie('aws_sessionToken');
-  var identityId = readCookie('aws_identityId');
-  var payload = {
-    identityId: identityId,
-    accessKeyId: accessKeyId,
-    secretKey: secretKey,
-    sessionToken: sessionToken,
-    id: 'Mickey',
-    scope: 'read',
-    secret: 'fakesecret'
-  };
-  postToSso('/permissions', payload, function(data, status, jqXHR){
-
+function getUserProfile(){
+  $('#aws-currentuser').text('');
+  $.ajax({
+    type: 'GET',
+    url: '/login/userprofile',
+    success: [
+      function(data, status, jqXHR) {
+        if (data.name){
+          $('#aws-currentuser').text(data.name);
+        } else if(data['cognito:username']) {
+          $('#aws-currentuser').text(data['cognito:username']);
+        }
+        console.log(data, status);
+      }
+    ],
+    error: function(jqXHR, textStatus, err) {
+      console.error(textStatus, err.toString());
+    }
   });
 }
+
 
 
 function postToSso(path, payload, callback){
@@ -160,22 +140,14 @@ function postToSso(path, payload, callback){
     },
     success: [
       function(data, status, jqXHR) {
-        console.log(path, data, status);
         if (data.IdentityId){
           $('#aws-currentuser').text(data.IdentityId)
-          createCookie('aws_identityId', data.IdentityId)
         }
         if (data.identityId){
           $('#aws-currentuser').text(data.identityId)
-          createCookie('aws_identityId', data.identityId)
         }
         if (data.Permissions){
           $('#aws-currentuserpermissions').text(data.Permissions)
-        }
-        if(data.sessionToken){
-          createCookie('aws_accessKeyId', data.data.Credentials.AccessKeyId)
-          createCookie('aws_secretKey', data.data.Credentials.SecretKey)
-          createCookie('aws_sessionToken', data.sessionToken)
         }
       },
       callback
@@ -206,6 +178,7 @@ function getResources(callback){
 
 
 function getProtectedResource(callback){
+  $('#aws-userp').text('');
   $.ajax({
     type: 'GET',
     url: '/resources/userp',

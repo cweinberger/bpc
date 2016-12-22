@@ -43,7 +43,12 @@ module.exports.register = function (server, options, next) {
         return reply(Boom.forbidden('Ticket has expired'));
       }
 
-      sso_client.validateUserTicket(request.state.ticket, function (err, response){
+      // Different examples on how to validate the userTicket
+      sso_client.validateUserTicket(request.state.ticket, ['read', 'write'], function (err, response){
+      // sso_client.validateUserTicket(request.state.ticket, ['read'], function (err, response){
+      // sso_client.validateUserTicket(request.state.ticket, 'read', function (err, response){
+      // sso_client.validateUserTicket(request.state.ticket, [], function (err, response){
+      // sso_client.validateUserTicket(request.state.ticket, null, function (err, response){
         if (err){
           return reply(err);
         }

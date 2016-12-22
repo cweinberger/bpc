@@ -13,7 +13,7 @@ const POC_APPLICATION_SSO_URL = process.env.POC_APPLICATION_SSO_URL;
 const POC_APPLICATION_SSO_PORT = process.env.POC_APPLICATION_SSO_PORT;
 
 
-module.exports.getAppTicket = function(callback) {
+function getAppTicket(callback) {
   var app = {
     id: POC_APPLICATION_APP_ID,
     key: POC_APPLICATION_APP_SECRET,
@@ -23,7 +23,7 @@ module.exports.getAppTicket = function(callback) {
 };
 
 
-module.exports.getAppTicket(function(err, result){
+getAppTicket(function(err, result){
   if (err){
     console.error(err);
     process.exit(1);
@@ -32,6 +32,9 @@ module.exports.getAppTicket(function(err, result){
     appTicket = result;
   }
 });
+
+
+module.exports.getAppTicket = getAppTicket;
 
 
 module.exports.validateAppTicket = function(appTicket, callback){
@@ -44,18 +47,18 @@ module.exports.getUserTicket = function(rsvp, callback) {
 };
 
 
-module.exports.validateUserTicket = function(userTicket, callback){
-  callSsoServer('POST', '/cognito/validateuserticket', {}, userTicket, callback);
+module.exports.validateUserTicket = function(userTicket, scope, callback){
+  callSsoServer('POST', '/cognito/validateuserticket', {scope: scope}, userTicket, callback);
 };
 
 
 module.exports.refreshAppTicket = function(callback){
-  callSsoServer('POST', '/oz/refresh', {}, appTicket, function(err, result){
+  callSsoServer('POST', '/oz/reissue', {}, appTicket, function(err, result){
     if (err){
-      console.error(err);
+      console.error('refreshAppTicket:', err);
       callback(err);
     } else {
-      console.log('refreshAppTicket', result);
+      console.log('refreshAppTicket (app)', result);
       appTicket = result;
       callback(null, {});
     }

@@ -101,7 +101,7 @@ module.exports.register = function (server, options, next) {
       } else {
         // Redirecting the user to the login-page
         var temp = Object.keys(request.query).map(f).join('&');
-        return reply.redirect('/cognito.html?'.concat(temp));
+        return reply.redirect('/cognito_login.html?'.concat(temp));
       }
 
       createUserRsvp(app, logins, function(err, rsvp){
@@ -110,7 +110,7 @@ module.exports.register = function (server, options, next) {
             var originalRequestParameters = Object.keys(request.query).map(function(k){
               return k.concat('=', request.query[k]);
             }).join('&');
-            return reply.redirect('/cognito.html'.concat('?returnUrl=', request.path, encodeURIComponent('?'.concat(originalRequestParameters))));
+            return reply.redirect('/cognito_login.html'.concat('?returnUrl=', request.path, encodeURIComponent('?'.concat(originalRequestParameters))));
           } else {
             return reply(err);
           }

@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- <meta property="fb:app_id" content="1864072863822447" /> -->
+    <meta property="fb:app_id" content="1864072863822447" />
 
     <script
       src="https://code.jquery.com/jquery-3.1.1.min.js"
@@ -28,25 +28,36 @@
   </head>
   <body>
 
+    <div id="fb-root"></div>
+    <script>(function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/da_DK/sdk.js#xfbml=1&version=v2.8&appId=1864072863822447";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));</script>
 
     <div class="container">
       <div class="nav">
-        <a href="http://berlingske-poc.local:8084/cognito.html">Cognito server</a>
+        <a href="http://berlingske-poc.local:8084/cognito_login.html">Cognito login</a>
         |
-        <a href="http://berlingske-poc-client.local:8085/cognito_client.html">Cognito client</a>
+        <a href="http://berlingske-poc-client.local:8085/cognito_application.html">Cognito application</a>
         |
-        <a href="http://berlingske-poc.local:8084/gigya.html">Gigya server</a>
+        <a href="http://berlingske-poc.local:8084/gigya_login.html">Gigya login</a>
         |
-        <a href="http://berlingske-poc-client.local:8085/gigya_client.html">Gigya client</a>
+        <a href="http://berlingske-poc-client.local:8085/gigya_application.html">Gigya application</a>
       </div>
 
-      <h1>SSO POC - Gigya server</h1>
+      <h1>SSO POC - Gigya client</h1>
 
       <div>Username: <span id="gigya-currentuser"></span></div>
       <div>Permissions: <span id="gigya-currentuserpermissions"></span></div>
       <button id="gigya-loginButton" type="button" class="btn btn-default" onclick="gigya.accounts.showScreenSet({screenSet:'Default-RegistrationLogin'});">Login</button>
       <button id="gigya-logoutButton" type="button" class="btn btn-warning" onclick="logoutGigya();">Log out</button>
       <br />
+      <br />
+      <h3>Facebook user</h3>
+      <div id="aws-loginButtonFacebook" class="fb-login-button" data-max-rows="1" data-size="xlarge" data-show-faces="false" data-auto-logout-link="false" onlogin="gigyaFacebookLoginDone"></div>
     </div>
   </body>
 </html>

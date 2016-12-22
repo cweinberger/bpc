@@ -3,7 +3,7 @@
 
 $(document).ready(function() {
 
-  $('#aws-loginButton2').attr('href', 'http://berlingske-poc.local:8084/cognito.html?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app');
+  $('#aws-loginButton2').attr('href', 'http://berlingske-poc.local:8084/cognito_login.html?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app');
   $('#aws-loginButton3').attr('href', 'http://berlingske-poc.local:8084/cognito?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app');
 
   var rsvp = getUrlVar('rsvp');

@@ -32,3 +32,10 @@ db.grants.insert({
   app: 'test_sso_app',
   user: 'eu-west-1:f34b49cd-695f-4d07-acd8-02e06174fa6b',
   scope: []})
+
+# Flows
+
+## AWS Cognito / Oz
+
+
+## Gigya

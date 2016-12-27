@@ -14,8 +14,44 @@ module.exports.register = function (server, options, next) {
   server.route({
     method: 'GET',
     path: '/',
+    config: {
+      auth: false
+    },
     handler: function (request, reply) {
       reply('Hello gigya!');
+
+      // callGigyaRestApi('GET', '/ids.getSchema', function(err, data){
+      //   console.log('getSchema', err, data);
+      // });
+
+      // callGigyaRestApi('GET', '/ids.getRegisteredCounters', function(err, data){
+      //   console.log('getRegisteredCounters', err, data);
+      // });
+
+      // var testCounter = [
+      //   {
+      //     class: 'test',
+      //     path: '/tests'
+      //   }
+      // ];
+      //
+      // callGigyaRestApi('GET', '/ids.registerCounters', function(err, data){
+      //   console.log('registerCounters', err, data);
+      // });
+
+      var payload = {
+        // UID: 'b92032903d394589b8cadc4227776b0b',
+        UID: '_guid_DmXlOj3E7ZPsN3HVURc4wyeL1zELWzXV_R-fTFLbo98=',
+        data: {
+          // subscribe: true,
+          dakotest: 'jepjep'
+        }
+      };
+
+      callGigyaRestApi('POST', '/ids.setAccountInfo', payload, function(err, data){
+        console.log('setAccountInfo', err, data);
+      });
+
     }
   });
 
@@ -24,6 +60,7 @@ module.exports.register = function (server, options, next) {
     path: '/',
     config: {
       cors: true,
+      auth: false,
       state: {
         parse: true, // parse and store in request.state
         failAction: 'log' // may also be 'ignore' or 'log'
@@ -31,17 +68,22 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
       console.log('POST / state', request.state);
+
+      if(request.payload === null){
+        return reply(Boom.unauthorized('Missing payload'));
+      }
+
       var parameters = request.payload.regToken ?
       {
         regToken: request.payload.regToken
       } : {
-        UID: request.payload.UID,
-        UIDSignature: request.payload.UIDSignature,
-        signatureTimestamp: request.payload.signatureTimestamp
+        UID: request.payload.UID
+        // UIDSignature: request.payload.UIDSignature,
+        // signatureTimestamp: request.payload.signatureTimestamp
       };
 
       callGigyaRestApi('GET', '/accounts.getAccountInfo', parameters, function(err, data){
-        console.error('callGigyaRestApi', err, data);
+        console.error('getAccountInfo', err, data);
         if (err) {
           return reply(err);
         } else if (data === null) {

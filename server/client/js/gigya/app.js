@@ -22,7 +22,7 @@ function onLogoutEventHandler(response){
 function getGigyaAccountInfo(){
   gigya.accounts.getAccountInfo({
     callback: function(response){
-      console.log('getAccountInfo', response);
+      console.log('accounts.getAccountInfo', response);
       if (response.status === 'OK') {
         $('#gigya-currentuser').text(response.profile.email);
         $('#gigya-loginButton').hide();
@@ -39,7 +39,6 @@ gigya.accounts.addEventHandlers({ onLogin: onLoginEventHandler});
 gigya.accounts.addEventHandlers({ onLogout: onLogoutEventHandler});
 
 
-
 function logoutGigya(){
   gigya.accounts.logout({
     callback: function(data){
@@ -48,6 +47,52 @@ function logoutGigya(){
       $('#gigya-currentuserpermissions').text('');
       $('#gigya-loginButton').show();
       $('#gigya-logoutButton').hide();
+    }
+  });
+}
+
+function tl(){
+  gigya.accounts.getAccountInfo(function(response){
+    var data = {
+      UID: response.UID,
+      UIDSignature: response.UIDSignature,
+      signatureTimestamp: response.signatureTimestamp
+    };
+
+    $.ajax({
+      type: 'POST',
+      url: '/gigya',
+      contentType: 'application/json; charset=utf-8',
+      data: JSON.stringify(data),
+      xhrFields: {
+        withCredentials: true
+      },
+      success: [
+        function(data, status, jqXHR) {
+          console.log(data, status);
+        }
+      ],
+      error: function(jqXHR, textStatus, err) {
+        console.error(textStatus, err.toString());
+      }
+    });
+  });
+}
+
+
+function ti(){
+  $.ajax({
+    type: 'GET',
+    url: '/gigya',
+    contentType: 'application/json; charset=utf-8',
+    data: JSON.stringify({}),
+    success: [
+      function(data, status, jqXHR) {
+        console.log(data, status);
+      }
+    ],
+    error: function(jqXHR, textStatus, err) {
+      console.error(textStatus, err.toString());
     }
   });
 }

@@ -4,13 +4,7 @@ const spawn = require('child_process').spawn;
 var server;
 var application;
 
-gulp.task('default', function(){
-  gulp.run('server');
-  setTimeout(function(){
-    // We wait so we know the sso server is up before requesting an appTicket
-    gulp.run('application');
-  }, 1000);
-});
+gulp.task('default', ['server', 'application']);
 
 gulp.task('start_server', function() {
   if (server) {

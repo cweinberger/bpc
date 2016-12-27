@@ -155,6 +155,10 @@ module.exports.register = function (server, options, next) {
       console.log('POST / headers', request.headers);
       console.log('POST / payload', request.payload);
 
+      if(request.payload == null){
+        return reply(Boom.unauthorized('Missing payload'));
+      }
+
       var app = request.payload.app;
       if (app === undefined || app === null){
         return reply(Boom.unauthorized('Missing app parameter'));

@@ -31,16 +31,44 @@ consoleApp.route({
 });
 
 consoleApp.route({
-  method: 'GET',
-  path: '/{param*}',
+  method: 'get',
+  path: '/build/{param*}',
   handler: {
     directory: {
-      path: './console/client',
-      redirectToSlash: true,
-      index: true
+      path: './console/client/build'
     }
   }
 });
+
+consoleApp.route({
+  method: 'get',
+  path: '/assets/{param*}',
+  handler: {
+    directory: {
+      path: './console/client/assets'
+    }
+  }
+});
+
+consoleApp.route({
+  method: 'get',
+  path: '/{param*}',
+  handler: {
+    file: './console/client/index.html'
+  }
+});
+
+// consoleApp.route({
+//   method: 'GET',
+//   path: '/{param*}',
+//   handler: {
+//     directory: {
+//       path: './console/client',
+//       redirectToSlash: true,
+//       index: true
+//     }
+//   }
+// });
 
 consoleApp.start((err) => {
   if (err) {

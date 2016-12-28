@@ -7,6 +7,21 @@ const sso_client = require('./sso_client');
 module.exports.register = function (server, options, next) {
 
   server.route({
+    method: 'GET',
+    path: '/',
+    config: {
+      cors: false,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply) {
+      sso_client.validateUserTicket(request.state.ticket, ['admin'], reply);
+    }
+  });
+
+  server.route({
     method: 'POST',
     path: '/',
     config: {

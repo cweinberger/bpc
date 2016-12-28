@@ -2,7 +2,7 @@
   "name": "sso-poc",
   "version": "1.0.0",
   "description": "NEW SSO POC",
-  "main": "index.js",
+  "main": "server/index.js",
   "dependencies": {
     "aws-sdk": "^2.7.1",
     "hapi": "^15.2.0",
@@ -10,13 +10,21 @@
     "inert": "^4.0.2",
     "iron": "^4.0.4",
     "joi": "^9.2.0",
+    "jquery": "^3.1.1",
     "jsonwebtoken": "^7.2.1",
     "mongodb": "^2.2.12",
     "oz": "^4.0.4",
+    "react": "^15.4.1",
+    "react-dom": "^15.4.1",
     "scarecrow": "^3.0.4"
   },
   "devDependencies": {
-    "gulp": "^3.9.1"
+    "babel-core": "^6.21.0",
+    "babel-loader": "^6.2.10",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-preset-react": "^6.16.0",
+    "gulp": "^3.9.1",
+    "webpack": "^1.14.0"
   },
   "scripts": {
     "start": "node $npm_package_main",

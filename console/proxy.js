@@ -12,13 +12,13 @@ module.exports.register = function (server, options, next) {
   prefix = server.realm.modifiers.route.prefix;
 
   server.route({
-    method: 'GET',
+    method: ['GET', 'POST', 'PUT', 'DELETE'],
     path: '/applications',
     handler: proxy
   });
 
   server.route({
-    method: 'GET',
+    method: ['GET', 'POST', 'PUT', 'DELETE'],
     path: '/grants',
     handler: proxy
   });

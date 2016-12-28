@@ -30,36 +30,11 @@
       integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
       crossorigin="anonymous"></script>
 
-    <script src="/js/tools.js"></script>
-    <script src="/js/hawk/browser.js"></script>
-    <script src="/console_app.js"></script>
-
+    <base href="/">
   </head>
   <body>
+    <div id="content"></div>
 
-
-    <div class="container">
-      <div class="nav">
-        <a href="http://berlingske-poc.local:8084/cognito_login.html">Cognito login</a>
-        |
-        <a href="http://berlingske-poc-client.local:8085/cognito_application.html">Cognito application</a>
-        |
-        <a href="http://berlingske-poc.local:8084/gigya_login.html">Gigya login</a>
-        |
-        <a href="http://berlingske-poc-client.local:8085/gigya_application.html">Gigya application</a>
-      </div>
-
-      <h1>SSO POC - Oz Admin</h1>
-
-      <br />
-      <a id="loginButton1" href="#" class="">Login berlingske-poc.local browser</a>
-      <br />
-      <br />
-      <button id="button1" type="button" class="btn btn-default" onclick="getApplications();">GET applications</button>
-      <br />
-      <br />
-      <button id="button1" type="button" class="btn btn-default" onclick="getGrants();">GET grants</button>
-
-    </div>
+    <script src="build/bundle.js"></script>
   </body>
 </html>

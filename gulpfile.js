@@ -14,11 +14,14 @@ gulp.task('start_server', function() {
   server = spawn('node', ['./server/index.js'], {stdio: 'inherit'});
 });
 
-gulp.task('server', ['start_server'], function () {
+gulp.task('server', ['start_server'], function (done) {
   gulp.watch(['./server/**/*.js'], ['start_server']);
+  setTimeout(function() {
+    done();
+  }, 1000);
 });
 
-gulp.task('start_application', function() {
+gulp.task('start_application', ['server'], function() {
   if (application) {
     application.kill();
   }
@@ -30,7 +33,7 @@ gulp.task('application', ['start_application'], function () {
 });
 
 
-gulp.task('start_console', function() {
+gulp.task('start_console', ['server'], function() {
   if (consoleApp) {
     consoleApp.kill();
   }

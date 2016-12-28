@@ -3,8 +3,9 @@ const spawn = require('child_process').spawn;
 
 var server;
 var application;
+var consoleApp;
 
-gulp.task('default', ['server', 'application']);
+gulp.task('default', ['server', 'application', 'console']);
 
 gulp.task('start_server', function() {
   if (server) {
@@ -26,4 +27,16 @@ gulp.task('start_application', function() {
 
 gulp.task('application', ['start_application'], function () {
   gulp.watch(['./application/**/*.js'], ['start_application']);
+});
+
+
+gulp.task('start_console', function() {
+  if (consoleApp) {
+    consoleApp.kill();
+  }
+  consoleApp = spawn('node', ['./console/index.js'], {stdio: 'inherit'});
+});
+
+gulp.task('console', ['start_console'], function () {
+  gulp.watch(['./console/**/*.js'], ['start_console']);
 });

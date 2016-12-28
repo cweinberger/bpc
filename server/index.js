@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const Cognito = require('./cognito');
 const Gigya = require('./gigya');
 const Drupal = require('./drupal');
+const OzAdmin = require('./oz_admin');
 const Scarecrow = require('scarecrow');
 
 const server = new Hapi.Server();
@@ -24,10 +25,11 @@ server.register(Scarecrow, function(err) {
   };
 
   server.auth.strategy('oz', 'oz', true, oz_strategy_options);
-  
+
   server.register(Cognito, { routes: { prefix: '/cognito' } }, cb);
   server.register(Gigya, { routes: { prefix: '/gigya' } }, cb);
   server.register(Drupal, { routes: { prefix: '/drupal' } }, cb);
+  server.register(OzAdmin, { routes: { prefix: '/admin' } }, cb);
 });
 
 

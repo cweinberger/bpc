@@ -10,10 +10,27 @@ const Gigya = require('./gigya');
 const Drupal = require('./drupal');
 const OzAdmin = require('./oz_admin');
 const Scarecrow = require('scarecrow');
+const Good = require('good');
+const GoodConsole = require('good-console');
+
+const goodOpts = {
+  reporters: {
+    cliReporter: [{
+      module: 'good-squeeze',
+      name: 'Squeeze',
+      args: [{ log: '*', response: '*' }]
+    },{
+      module: 'good-console'
+    }, 'stdout']
+  }
+};
+
 
 const server = new Hapi.Server();
 server.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
 
+
+server.register({register: Good, options: goodOpts}, cb);
 server.register(Inert, () => {});
 server.register(Scarecrow, function(err) {
   const oz_strategy_options = {

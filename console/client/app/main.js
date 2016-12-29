@@ -7,11 +7,13 @@ var Grants = require('./grants');
 var ConsoleApp = React.createClass({
   getInitialState: function() {
     return {
+      appId: null,
       loginurl: 'http://berlingske-poc.local:8084/cognito_login.html?returnUrl=' + window.location.origin + window.location.pathname + '&app=console'
     };
   },
-  componentDidMount: function() {
-    var rsvp = this.getSearchParameter('rsvp');
+  componentWillMount: function() {
+    var rsvp = this.getSearchParameter('rsvp'),
+        loginurl = this.state.loginurl;
 
     if (rsvp) {
       this.loginUsingRsvp(rsvp, function(){
@@ -29,7 +31,7 @@ var ConsoleApp = React.createClass({
         ],
         error: function(jqXHR, textStatus, err) {
           console.error(textStatus, err.toString());
-          window.location = this.state.loginurl;
+          window.location.href = loginurl;
         }
       });
     }
@@ -84,6 +86,14 @@ var ConsoleApp = React.createClass({
       }
     });
   },
+  selectApplication: function(id){
+    console.log('selectApplication', id);
+    this.setState({ appId: id });
+  },
+  closeApplication: function(){
+    console.log('closeApplication');
+    this.setState({ appId: null });
+  },
   render: function() {
 
 
@@ -102,14 +112,14 @@ var ConsoleApp = React.createClass({
 
 
         <h1>SSO POC - Oz Admin</h1>
-
+        <div>
+          <a href={this.state.loginurl}>Login</a>
+        </div>
         <br />
-        <a href={this.state.loginurl}>Login</a>
-
-        <Applications />
-        <br />
-        <br />
-        <Grants />
+        {this.state.appId === null
+          ? <Applications selectApplication={this.selectApplication} />
+          : <Grants app={this.state.appId} closeApplication={this.closeApplication} />
+        }
       </div>
     );
   }

@@ -4,13 +4,30 @@ var React = require('react');
 module.exports = React.createClass({
   getInitialState: function() {
     return {
+      validScopes: [],
       grants: []
     };
+  },
+  getApplicationScopes: function() {
+    return $.ajax({
+      type: 'GET',
+      // url: '/admin/grants',
+      url: '/admin/applications/'.concat(this.props.app, '/scope'),
+      contentType: "application/json; charset=utf-8",
+      success: function(data, status){
+        console.log('validScopes', data);
+        this.setState({validScopes: data});
+      }.bind(this),
+      error: function(jqXHR, textStatus, err) {
+        console.error(textStatus, err.toString());
+      }
+    });
   },
   getGrants: function() {
     return $.ajax({
       type: 'GET',
-      url: '/p/grants',
+      // url: '/admin/grants',
+      url: '/admin/applications/'.concat(this.props.app, '/grants'),
       contentType: "application/json; charset=utf-8",
       success: function(data, status){
         this.setState({grants: data});
@@ -21,34 +38,55 @@ module.exports = React.createClass({
     });
   },
   createGrant: function(grant) {
-    var p = this.props.callBasUsingUserCreds('POST', '/applications/grants', grant);
-    p.done(function(newGrant) {
-      var grants = this.state.grants;
-      grants.push(newGrant);
-      this.setState({grants: grants});
-    }.bind(this));
-    return p;
+    return $.ajax({
+      type: 'POST',
+      url: '/admin/applications/'.concat(this.props.app, '/grants'),
+      contentType: "application/json; charset=utf-8",
+      data: JSON.stringify(grant),
+      success: function(data, status){
+        var grants = this.state.grants;
+        grants.push(data);
+        this.setState({grants: grants});
+      }.bind(this),
+      error: function(jqXHR, textStatus, err) {
+        console.error(textStatus, err.toString());
+      }
+    });
   },
   updateGrant: function(grant, index) {
-    var p = this.props.callBasUsingUserCreds('POST', '/applications/grants', grant);
-    p.done(function(result) {
-      var grants = this.state.grants;
-      grants[index] = result;
-      this.setState({grants: grants});
-    }.bind(this));
-    return p;
+    return $.ajax({
+      type: 'PUT',
+      // url: '/admin/grants/'.concat(grant.id),
+      url: '/admin/applications/'.concat(this.props.app, '/grants/', grant.id),
+      contentType: "application/json; charset=utf-8",
+      data: JSON.stringify(grant),
+      success: function(data, status){
+        var grants = this.state.grants;
+        grants[index] = data;
+        this.setState({grants: grants});
+      }.bind(this),
+      error: function(jqXHR, textStatus, err) {
+        console.error(textStatus, err.toString());
+      }
+    });
   },
   deleteGrant: function(grantId, index) {
-    var p = this.props.callBasUsingUserCreds('DELETE', '/applications/grants', {id: grantId});
-    p.done(function() {
-      var grants = this.state.grants;
-      grants.splice(index, 1);
-      this.setState({grants: grants});
-    }.bind(this));
-    return p;
+    return $.ajax({
+      type: 'DELETE',
+      url: '/admin/applications/'.concat(this.props.app, '/grants/', grantId),
+      success: function(data, status){
+        var grants = this.state.grants;
+        grants.splice(index, 1);
+        this.setState({grants: grants});
+      }.bind(this),
+      error: function(jqXHR, textStatus, err) {
+        console.error(textStatus, err.toString());
+      }
+    });
   },
   componentDidMount: function() {
     this.getGrants();
+    this.getApplicationScopes();
   },
   render: function() {
 
@@ -65,6 +103,7 @@ module.exports = React.createClass({
 
     return (
       <div className="grants">
+      <input type="button" value="Tilbage" onClick={this.props.closeApplication} />
         <h3>Grants</h3>
         {grants}
         <CreateGrant createGrant={this.createGrant} />
@@ -89,6 +128,9 @@ var Grant = React.createClass({
     e.preventDefault();
     if (this.state.newScope !== '') {
       var grant = this.state.grant;
+      if (!(grant.scope instanceof Array)){
+        grant.scope = [];
+      }
       grant.scope.push(this.state.newScope);
       this.props.updateGrant(grant, this.props.index).done(function() {
         this.setState({newScope: ''});
@@ -101,7 +143,7 @@ var Grant = React.createClass({
     this.props.updateGrant(grant, this.props.index);
   },
   deleteGrant: function() {
-    return this.props.deleteGrant(this.state.grant.id, this.props.index);
+    this.props.deleteGrant(this.state.grant.id, this.props.index);
   },
   render: function() {
     var scopes = this.state.grant.scope
@@ -153,9 +195,9 @@ var CreateGrant = React.createClass({
   },
   handleSubmit: function(e) {
     e.preventDefault();
-    if (this.state.app !== '' && this.state.user !== '') {
-      this.props.createGrant({app: this.state.app, user: this.state.user}).done(function() {
-        this.setState({app: '', user: ''});
+    if (this.state.user !== '') {
+      this.props.createGrant({user: this.state.user}).done(function() {
+        this.setState({user: ''});
       }.bind(this));
     }
   },
@@ -166,17 +208,11 @@ var CreateGrant = React.createClass({
           <div className="col-xs-12">
             <input
               type="text"
-              name="app"
-              placeholder="Application ID"
-              value={this.state.app}
-              onChange={this.onChange} />
-            <input
-              type="text"
               name="user"
-              placeholder="User email"
+              placeholder="User"
               value={this.state.user}
               onChange={this.onChange} />
-            <button type="submit">Create grant</button>
+            <button type="submit">Add user</button>
           </div>
         </div>
       </form>

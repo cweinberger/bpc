@@ -596,7 +596,20 @@ module.exports.loadAppFunc = function(id, callback) {
     } else if (app === null){
       callback(Boom.unauthorized('Unknown application'));
     } else {
-      callback(null, app);
+      // if (app.scope instanceof Array && app.scope[0] === 'admin'){
+      if (false){
+        // If the app is admin/console-app, then we'll add scopes to match all other apps ala 'admin:{AppId}'
+        MongoDB.collection('applications').find({}, {fields: {_id: 0, id: 1}}).toArray(function(err, result) {
+
+          var ids = result
+            .filter((k) => { return k.id !== app.id; }) // We don't want the main admin-app
+            .map((i) => {return 'admin:'.concat(i.id);});
+          app.scope = app.scope.concat(ids);
+          callback(null, app);
+        });
+      } else {
+        callback(null, app);
+      }
     }
   });
 };

@@ -43,7 +43,7 @@ module.exports.refreshAppTicket = function(callback){
       console.error('refreshAppTicket:', err);
       callback(err);
     } else {
-      console.log('refreshAppTicket (app)', result);
+      console.log('refreshAppTicket (console)', result);
       appTicket = result;
       callback(null, {});
     }
@@ -144,10 +144,11 @@ function parseReponse (callback) {
 
 
       if (res.statusCode > 300) {
-        console.log('==================');
+        console.log('=========sso_client.js=========');
         console.log(data);
-        console.log('==================');
-        var err = Boom.wrap(new Error(data.error), data.statusCode);
+        console.log('===============================');
+        var err = Boom.wrap(new Error(data.error), data.statusCode, data.message);
+        err.data = data;
         callback(err, null);
       }
       else

@@ -10,7 +10,7 @@ module.exports = React.createClass({
   getApplications: function() {
     return $.ajax({
       type: 'GET',
-      url: '/p/applications',
+      url: '/admin/applications',
       contentType: "application/json; charset=utf-8",
       success: function(data, status){
         this.setState({applications: data});
@@ -23,12 +23,12 @@ module.exports = React.createClass({
   createApplication: function(application) {
     return $.ajax({
       type: 'POST',
-      url: '/p/applications',
+      url: '/admin/applications',
       contentType: "application/json; charset=utf-8",
       data: JSON.stringify(application),
       success: function(data, status){
         var apps = this.state.applications;
-        apps.push(newApp);
+        apps.push(data);
         this.setState({applications: apps});
       }.bind(this),
       error: function(jqXHR, textStatus, err) {
@@ -39,12 +39,12 @@ module.exports = React.createClass({
   updateApplication: function(application, index) {
     return $.ajax({
       type: 'PUT',
-      url: '/p/applications'.concat(application.id),
+      url: '/admin/applications/'.concat(application.id),
       contentType: "application/json; charset=utf-8",
       data: JSON.stringify(application),
       success: function(data, status){
         var applications = this.state.applications;
-        applications[index] = result;
+        applications[index] = data;
         this.setState({applications: applications});
       }.bind(this),
       error: function(jqXHR, textStatus, err) {
@@ -53,10 +53,9 @@ module.exports = React.createClass({
     });
   },
   deleteApplication: function(appId, index) {
-    console.log('deleteApplication', appId, index);
     return $.ajax({
       type: 'DELETE',
-      url: '/p/applications'.concat(appId),
+      url: '/admin/applications/'.concat(appId),
       contentType: "application/json; charset=utf-8",
       success: function(data, status){
         var applications = this.state.applications;
@@ -79,6 +78,7 @@ module.exports = React.createClass({
           key={index}
           index={index}
           application={application}
+          selectApplication={this.props.selectApplication}
           updateApplication={this.updateApplication}
           deleteApplication={this.deleteApplication} />
         );
@@ -108,7 +108,7 @@ var Application = React.createClass({
   },
   addScope: function(e) {
     e.preventDefault();
-    var application = this.state.application;
+    var application = Object.assign(this.state.application);
     application.scope.push(this.state.newScope);
     this.props.updateApplication(application, this.props.index).done(function() {
       this.setState({newScope: ''});
@@ -135,18 +135,23 @@ var Application = React.createClass({
 
     return (
       <div className="row">
-        <div className="col-xs-2"><div>{this.state.application.id}</div></div>
+        <div className="col-xs-2">
+          <input type="button" value={this.state.application.id} onClick={this.props.selectApplication.bind(null, this.state.application.id)} />
+        </div>
         <div className="col-xs-5"><div>{this.state.application.key}</div></div>
         <div className="col-xs-3">
           {scopes}
-          <form onSubmit={this.addScope}>
-            <input
-              type="text"
-              name="newScope"
-              value={this.state.newScope}
-              onChange={this.onChange}
-              placeholder="Add scope"/>
-          </form>
+          {['console', 'sso_client'].indexOf(this.state.application.id) === -1
+            ? <form onSubmit={this.addScope}>
+                <input
+                  type="text"
+                  name="newScope"
+                  value={this.state.newScope}
+                  onChange={this.onChange}
+                  placeholder="Add scope"/>
+              </form>
+          : null
+        }
         </div>
         <div className="col-xs-1">
         {['console', 'sso_client'].indexOf(this.state.application.id) === -1
@@ -177,7 +182,7 @@ var CreateApplication = React.createClass({
   },
   render: function() {
     return (
-      <form onSubmit={this.handleSubmit}>
+      <form style={{paddingTop: '30px'}} onSubmit={this.handleSubmit}>
         <div className="row">
           <div className="col-xs-12">
             <input

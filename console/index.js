@@ -20,7 +20,7 @@ consoleApp.state('ticket', {
 
 consoleApp.register(Inert, () => {});
 consoleApp.register(Login, { routes: { prefix: '/login' } }, cb);
-consoleApp.register(Proxy, { routes: { prefix: '/p' } }, cb);
+consoleApp.register(Proxy, { routes: { prefix: '/admin' } }, cb);
 
 consoleApp.route({
   method: 'GET',

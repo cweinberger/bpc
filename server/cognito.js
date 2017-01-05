@@ -2,6 +2,7 @@
 'use strict';
 
 const Boom = require('boom');
+const Joi = require('joi');
 const Oz = require('oz');
 const crypto = require('crypto');
 const AWS = require('aws-sdk');
@@ -34,7 +35,13 @@ AWS.config.update({
 });
 
 var cognitoIdentity = new AWS.CognitoIdentity();
-var cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
+var cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider(
+  // {
+  //   accessKeyId: AWS_ACCESS_KEY_ID,
+  //   secretAccessKey: AWS_SECRET_ACCESS_KEY,
+  //   region: AWS_REGION
+  // }
+);
 
 
 

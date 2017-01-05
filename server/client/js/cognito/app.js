@@ -1,16 +1,16 @@
-$(document).ready(cognitoLoginInit);
-
-window.fbAsyncInit = facebookLoginInit;
-
-$(document).ready(function() {
-  $('#aws-logoutButton').hide();
-
-  var returnUrl = getUrlVar('returnUrl');
-
-  if (returnUrl){
-    // TODO
-  }
-});
+// $(document).ready(cognitoLoginInit);
+//
+// window.fbAsyncInit = facebookLoginInit;
+//
+// $(document).ready(function() {
+//   $('#aws-logoutButton').hide();
+//
+//   var returnUrl = getUrlVar('returnUrl');
+//
+//   if (returnUrl){
+//     // TODO
+//   }
+// });
 
 
 // AWSCognito
@@ -28,6 +28,8 @@ var poolData = {
 
 var userPool = new AWSCognito.CognitoIdentityServiceProvider.CognitoUserPool(poolData);
 
+var identityPoolId = 'eu-west-1:2add6c33-59e3-4b5d-96d9-6285378c5922';
+
 var appTicket;
 var app = {
   id: 'sso_client',
@@ -35,10 +37,10 @@ var app = {
   algorithm: 'sha256'
 };
 
-callSsoServer('POST', '/oz/app', {}, app, function(data, status, jqXHR) {
-  console.log('getAppTicket result', data);
-  appTicket = data;
-});
+// callSsoServer('POST', '/oz/app', {}, app, function(data, status, jqXHR) {
+//   console.log('getAppTicket result', data);
+//   appTicket = data;
+// });
 
 
 function callSsoServer(type, path, data, credentials, callback){
@@ -58,14 +60,129 @@ function callSsoServer(type, path, data, credentials, callback){
   });
 }
 
+function createAwsLogin(e){
+  e.preventDefault();
+
+  var awsUsername = document.getElementById('aws-new-username').value;
+  var awsEmail = document.getElementById('aws-new-email').value;
+  var awsPassword = document.getElementById('aws-new-password').value;
+  var awsPasswordRepeat = document.getElementById('aws-new-passwordrepeat').value;
+
+  if (awsPassword !== awsPasswordRepeat){
+    alert('Password matcher ikke')
+    return;
+  }
+
+  var payload = {
+    username: awsUsername,
+    email: awsEmail,
+    password: awsPassword
+  };
+
+  var attre = [
+    {
+      Name: 'email',
+      Value: awsEmail
+    }
+  ];
+
+  userPool.signUp(awsUsername, awsPassword, attre, null, function(err, result){
+    console.log('signup', err, result);
+    if(err){
+      console.error(err);
+      return;
+    }
+
+    $('#aws-createLoginForm').hide();
+    $('#aws-confirmRegistration').show();
+
+    // cognitoUser = result.user;
+    // cognitoUser.cacheTokens();
+    window.localStorage.setItem('usernameToConfirm', result.user.username);
+  });
+
+  // callSsoServer('POST', '/cognito/signup', payload, appTicket, function(data, status, jqXHR) {
+  //   console.log('create result', data);
+  // });
+}
+
+
+function confirmRegistration(e){
+  e.preventDefault();
+
+  var awsVerificationCode = document.getElementById('aws-confirmation-code').value;
+  var awsUsername = window.localStorage.getItem('usernameToConfirm');
+  window.localStorage.removeItem('usernameToConfirm');
+  if (awsUsername === null){
+    awsUsername = document.getElementById('aws-confirmation-username').value;
+  }
+
+  var userData = {
+    Username : awsUsername,
+    Pool : userPool
+  };
+
+  var cognitoUser = new AWSCognito.CognitoIdentityServiceProvider.CognitoUser(userData);
+  cognitoUser.confirmRegistration(awsVerificationCode, true, function(err, result) {
+    console.log('confirmRegistration result: ' + result);
+    if (err) {
+      console.error(err);
+      return;
+    } else if (result === 'SUCCESS') {
+      window.location.href = '/cognito_login.html';
+      // cognitoUser.authenticateUser
+      // console.log('TTTTT', userPool.getCurrentUser());
+      // cognitoUser.getSession(function(err, session){
+      //   console.log('cccc', err, session);
+      // });
+    }
+
+  });
+
+  // var cognitoUser = userPool.getCurrentUser();
+  // cognitoUser.confirmRegistration(awsVerificationCode, true, function(err, result) {
+  //   if (err) {
+  //     console.error(err);
+  //     return;
+  //   }
+  //
+  //   console.log('confirmRegistration result: ' + result);
+  // });
+}
+
+
+function resendConfirmationCode(e){
+  e.preventDefault();
+
+  var awsUsername = document.getElementById('aws-resend-username').value;
+
+  var userData = {
+    Username : awsUsername,
+    Pool : userPool
+  };
+
+  var cognitoUser = new AWSCognito.CognitoIdentityServiceProvider.CognitoUser(userData);
+  cognitoUser.resendConfirmationCode(function(err, result) {
+    console.log('resendConfirmationCode result: ' + result);
+    if (err) {
+      console.error(err);
+      return;
+    } else if (result === 'SUCCESS') {
+      window.localStorage.setItem('usernameToConfirm', awsUsername);
+      $('#aws-resendConfirmationCode').hide();
+      $('#aws-confirmation-username').hide();
+    }
+  });
+}
+
+
 
 function cognitoLoginInit(){
-  var currentUser = userPool.getCurrentUser();
-  if (currentUser != null) {
-    console.log('currentUser', currentUser);
-    $('#aws-currentuser').text(currentUser.username);
+  var cognitoUser = userPool.getCurrentUser();
+  if (cognitoUser != null) {
+    console.log('cognitoUser', cognitoUser);
 
-    currentUser.getSession(function(err, session) {
+    cognitoUser.getSession(function(err, session) {
       if (err) {
         console.error(err);
         return;
@@ -74,7 +191,8 @@ function cognitoLoginInit(){
       console.log('AWS session', session);
       console.log('AWS session validity: ' + session.isValid());
 
-      setUserPoolIdentityToken(currentUser.signInUserSession.idToken.jwtToken, function(){
+      setUserPoolIdentityToken(cognitoUser.signInUserSession.idToken.jwtToken, function(){
+        disableLoginControls();
       });
     });
   }
@@ -87,13 +205,13 @@ function facebookLoginInit(){
      if (response.status === 'connected') {
 
        setFacebookIdentityToken(response.authResponse.accessToken, function(){
+         disableLoginControls();
        });
 
         // Logged into your app and Facebook.
         // $('#aws-loginButtonFacebook').hide();
         FB.api('/me', function(response) {
           console.log('FB me', JSON.stringify(response));
-          $('#aws-currentuser').text(response.name);
         });
       } else if (response.status === 'not_authorized') {
         // The person is logged into Facebook, but not your app.
@@ -128,15 +246,13 @@ function loginAwsByUsernameAndPassword(e){
   cognitoUser.authenticateUser(authenticationDetails, {
     onSuccess: function (result) {
       console.log('Cognito authentication success', result);
-
-      $('#aws-currentuser').text(awsUsername);
-
       setUserPoolIdentityToken(result.idToken.jwtToken, function(){
+        disableLoginControls();
       });
     },
 
     onFailure: function(err) {
-      alert(err);
+      console.error(err);
     },
 
     // mfaRequired: function(codeDeliveryDetails) {
@@ -161,11 +277,12 @@ function awsFacebookLoginDone(response){
   console.log('awsFacebookLoginDone', response);
 
   FB.api('/me', function(response) {
-    $('#aws-currentuser').text(response.name);
+    console.log('FB me', JSON.stringify(response));
   });
 
   // Add the Facebook access token to the Cognito credentials login map.
   setFacebookIdentityToken(response.authResponse.accessToken, function(){
+    disableLoginControls();
   });
 }
 
@@ -173,7 +290,7 @@ function awsFacebookLoginDone(response){
 function setIdentityLogins(logins, callback){
   // if (AWS.config.credentials === null){
     AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-      IdentityPoolId: 'eu-west-1:2add6c33-59e3-4b5d-96d9-6285378c5922',
+      IdentityPoolId: identityPoolId,
       // RoleSessionName: 'web',
       Logins: logins
     });
@@ -185,7 +302,7 @@ function setIdentityLogins(logins, callback){
 function setFacebookIdentityToken(accessToken, callback){
   // if (AWS.config.credentials === null){
     AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-      IdentityPoolId: 'eu-west-1:2add6c33-59e3-4b5d-96d9-6285378c5922',
+      IdentityPoolId: identityPoolId,
       // RoleSessionName: 'web',
       Logins: {
         'graph.facebook.com': accessToken
@@ -205,7 +322,7 @@ function updateFacebookIdentityToken(accessToken){
 function setUserPoolIdentityToken(idToken, callback){
   // if (AWS.config.credentials === null){
     AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-      IdentityPoolId: 'eu-west-1:2add6c33-59e3-4b5d-96d9-6285378c5922',
+      IdentityPoolId: identityPoolId,
       // RoleSessionName: 'web',
       Logins: {
         'cognito-idp.eu-west-1.amazonaws.com/eu-west-1_hS9hPyLgW': idToken
@@ -228,9 +345,6 @@ function credentialsGetCallback(callback){
       console.error(error);
     } else {
       console.log('AWS.config.credentials credentialsGetCallback', AWS.config.credentials);
-
-
-      disableLoginControls();
 
       var payload = {
         Logins: AWS.config.credentials.params.Logins
@@ -306,18 +420,11 @@ function signoutFacebook(callback){
 
 
 function signoutCognito(callback){
-  var currentUser = userPool.getCurrentUser();
+  var cognitoUser = userPool.getCurrentUser();
 
-  if(currentUser === null){
+  if(cognitoUser === null){
     return;
   }
-
-  var userData = {
-    Username : currentUser.username,
-    Pool : userPool
-  };
-
-  var cognitoUser = new AWSCognito.CognitoIdentityServiceProvider.CognitoUser(userData);
 
   cognitoUser.signOut();
 
@@ -327,24 +434,12 @@ function signoutCognito(callback){
 }
 
 function disableLoginControls(){
-  $('#aws-loginForm').hide();
-  $('#aws-loginButton2').hide();
-  $('#aws-loginButton3').hide();
-  $('#aws-loginButton4').hide();
-  $('#aws-logoutButton').show();
-  $('#aws-loginButtonFacebook').hide();
-  $('#aws-logoutButtonFacebook').hide();
+  $('.loginControls').hide();
+  $('.userSignedIn').show();
 }
 
 
 function disableLogoutControls(){
-  $('#aws-currentuser').text('');
-  $('#aws-currentuserpermissions').text('');
-  $('#aws-loginForm').show();
-  $('#aws-loginButton2').show();
-  $('#aws-loginButton3').show();
-  $('#aws-loginButton4').show();
-  $('#aws-logoutButton').hide();
-  $('#aws-loginButtonFacebook').show();
-  $('#aws-logoutButtonFacebook').show();
+  $('.loginControls').show();
+  $('.userSignedIn').hide();
 }

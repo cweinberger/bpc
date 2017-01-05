@@ -117,7 +117,6 @@ function callSsoServer(method, path, body, credentials, callback) {
   req.end();
 
   req.on('error', function (e) {
-    console.log(Date().toString(), 'Error on request to ' + path, e);
     callback(e);
   });
 }
@@ -138,15 +137,12 @@ function parseReponse (callback) {
           data = JSON.parse(data);
         }
       } catch (ex) {
-        console.log('JSON parse error on: ', data);
+        console.error('JSON parse error on: ', data);
         throw ex;
       }
 
 
       if (res.statusCode > 300) {
-        console.log('=========sso_client.js=========');
-        console.log(data);
-        console.log('===============================');
         var err = Boom.wrap(new Error(data.error), data.statusCode, data.message);
         err.data = data;
         callback(err, null);

@@ -36,132 +36,37 @@ module.exports = React.createClass({
       }
     });
   },
-  updateApplication: function(application, index) {
-    return $.ajax({
-      type: 'PUT',
-      url: '/admin/applications/'.concat(application.id),
-      contentType: "application/json; charset=utf-8",
-      data: JSON.stringify(application),
-      success: function(data, status){
-        var applications = this.state.applications;
-        applications[index] = data;
-        this.setState({applications: applications});
-      }.bind(this),
-      error: function(jqXHR, textStatus, err) {
-        console.error(textStatus, err.toString());
-      }
-    });
-  },
-  deleteApplication: function(appId, index) {
-    return $.ajax({
-      type: 'DELETE',
-      url: '/admin/applications/'.concat(appId),
-      contentType: "application/json; charset=utf-8",
-      success: function(data, status){
-        var applications = this.state.applications;
-        applications.splice(index, 1);
-        this.setState({applications: applications});
-      }.bind(this),
-      error: function(jqXHR, textStatus, err) {
-        console.error(textStatus, err.toString());
-      }
-    });
-  },
   componentDidMount: function() {
     this.getApplications();
   },
   render: function() {
-
     var applications = this.state.applications.map(function(application, index) {
       return (
-        <Application
-          key={index}
-          index={index}
-          application={application}
-          selectApplication={this.props.selectApplication}
-          updateApplication={this.updateApplication}
-          deleteApplication={this.deleteApplication} />
-        );
+        <tr>
+          <td className="col-xs-10">{application.id}</td>
+          <td className="col-xs-2">
+            <input className="btn btn-default" type="button" value="Vis" onClick={this.props.selectApplication.bind(null, application.id)} />
+          </td>
+        </tr>
+      );
     }.bind(this));
 
     return (
       <div className="applications">
         <h3>Applications</h3>
-        {applications}
+        <table className="table">
+          <th>
+            <td className="col-xs-10">ID</td>
+            <td className="col-xs-2"></td>
+          </th>
+          {applications}
+        </table>
         <CreateApplication createApplication={this.createApplication} />
       </div>
     );
   }
 });
 
-var Application = React.createClass({
-  getInitialState: function() {
-    return {
-      newScope: '',
-      application: this.props.application
-    };
-  },
-  onChange: function(e) {
-    var temp = {};
-    temp[e.target.name] = e.target.value;
-    this.setState(temp);
-  },
-  addScope: function(e) {
-    e.preventDefault();
-    var application = Object.assign(this.state.application);
-    application.scope.push(this.state.newScope);
-    this.props.updateApplication(application, this.props.index).done(function() {
-      this.setState({newScope: ''});
-    }.bind(this));
-  },
-  removeScope: function(index) {
-    var application = this.state.application;
-    application.scope.splice(index, 1);
-    this.props.updateApplication(application, this.props.index);
-  },
-  deleteApplication: function() {
-    this.props.deleteApplication(this.state.application.id, this.props.index);
-  },
-  render: function() {
-    var scopes = this.state.application.scope
-      ? this.state.application.scope.map(function(s, i) {
-        return (
-          <div key={i}>
-          {s}
-          <span className="glyphicon glyphicon-remove-circle" aria-hidden="true" onClick={this.removeScope.bind(this, i)}></span>
-          </div>);
-        }.bind(this))
-      : null;
-
-    return (
-      <div className="row">
-        <div className="col-xs-2">
-          <input type="button" value={this.state.application.id} onClick={this.props.selectApplication.bind(null, this.state.application.id)} />
-        </div>
-        <div className="col-xs-5"><div>{this.state.application.key}</div></div>
-        <div className="col-xs-3">
-          {scopes}
-          {['console', 'sso_client'].indexOf(this.state.application.id) === -1
-            ? <form onSubmit={this.addScope}>
-                <input
-                  type="text"
-                  name="newScope"
-                  value={this.state.newScope}
-                  onChange={this.onChange}
-                  placeholder="Add scope"/>
-              </form>
-          : null
-        }
-        </div>
-        <div className="col-xs-1">
-        {['console', 'sso_client'].indexOf(this.state.application.id) === -1
-          ? <button type="button" onClick={this.deleteApplication}>Delete</button>
-          : null
-        }
-        </div>
-      </div>);
-  }
-});
 
 var CreateApplication = React.createClass({
   getInitialState: function() {

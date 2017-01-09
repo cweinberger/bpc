@@ -79,7 +79,7 @@ module.exports.register = function (server, options, next) {
         var application = Object.assign(request.payload, {
           scope: request.payload.scope ? filterArrayForDuplicates(request.payload.scope) : [],
           delegate: request.payload.delegate ? request.payload.delegate : false,
-          key: crypto.randomBytes(20).toString('hex'),
+          key: crypto.randomBytes(40).toString('hex'),
           algorithm: 'sha256'});
 
           MongoDB.collection('applications').insertOne(application, function(err, result) {
@@ -95,6 +95,31 @@ module.exports.register = function (server, options, next) {
       });
     }
   });
+
+
+  server.route({
+    method: 'GET',
+    path: '/applications/{id}',
+    config: {
+      auth: {
+        // scope: ['+admin:{params.id}'],
+        scope: ['+admin'],
+        entity: 'user'
+      }
+    },
+    handler: function (request, reply) {
+      MongoDB.collection('applications').findOne({id: request.params.id}, function(err, result) {
+        if (err) {
+          return reply(err);
+        } else if (result === null) {
+          return reply(Boom.notFound());
+        } else {
+          reply(result);
+        }
+      });
+    }
+  });
+
 
   server.route({
     method: 'PUT',
@@ -160,7 +185,9 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function (request, reply) {
-      MongoDB.collection('applications').remove({id: request.params.id}, reply);
+      MongoDB.collection('applications').remove({id: request.params.id});
+      MongoDB.collection('grants').remove({app: request.params.id});
+      reply();
     }
   });
 
@@ -198,6 +225,8 @@ module.exports.register = function (server, options, next) {
       MongoDB.collection('applications').findOne({ id: request.params.id }, {fields: {_id: 0, scope: 1}}, function(err, result){
         if(err){
           reply(err);
+        } else if (result === null){
+          return reply(Boom.notFound());
         } else {
           reply(result.scope)
         }

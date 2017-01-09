@@ -86,7 +86,7 @@ module.exports = React.createClass({
   },
   componentDidMount: function() {
     this.getGrants();
-    this.getApplicationScopes();
+    // this.getApplicationScopes();
   },
   render: function() {
 
@@ -96,14 +96,12 @@ module.exports = React.createClass({
           key={index}
           index={index}
           grant={grant}
-          updateGrant={this.updateGrant}
           deleteGrant={this.deleteGrant} />
-        );
+      );
     }.bind(this));
 
     return (
       <div className="grants">
-      <input type="button" value="Tilbage" onClick={this.props.closeApplication} />
         <h3>Grants</h3>
         {grants}
         <CreateGrant createGrant={this.createGrant} />
@@ -113,66 +111,16 @@ module.exports = React.createClass({
 });
 
 var Grant = React.createClass({
-  getInitialState: function() {
-    return {
-      newScope: '',
-      grant: this.props.grant
-    };
-  },
-  onChange: function(e) {
-    var temp = {};
-    temp[e.target.name] = e.target.value;
-    this.setState(temp);
-  },
-  addScope: function(e) {
-    e.preventDefault();
-    if (this.state.newScope !== '') {
-      var grant = this.state.grant;
-      if (!(grant.scope instanceof Array)){
-        grant.scope = [];
-      }
-      grant.scope.push(this.state.newScope);
-      this.props.updateGrant(grant, this.props.index).done(function() {
-        this.setState({newScope: ''});
-      }.bind(this));
-    }
-  },
-  removeScope: function(index) {
-    var grant = this.state.grant;
-    grant.scope.splice(index, 1);
-    this.props.updateGrant(grant, this.props.index);
-  },
   deleteGrant: function() {
-    this.props.deleteGrant(this.state.grant.id, this.props.index);
+    this.props.deleteGrant(this.props.grant.id, this.props.index);
   },
   render: function() {
-    var scopes = this.state.grant.scope
-      ? this.state.grant.scope.map(function(s, i) {
-          return (
-            <div key={i}>
-              {s}
-              <span className="glyphicon glyphicon-remove-circle" aria-hidden="true" onClick={this.removeScope.bind(this, i)}></span>
-            </div>);
-        }.bind(this))
-      : null;
-
     return (
       <div className="row">
-        <div className="col-xs-2"><div>{this.state.grant.app}</div></div>
-        <div className="col-xs-4"><div>{this.state.grant.user}</div></div>
-        <div className="col-xs-3">
-          {scopes}
-          <form onSubmit={this.addScope}>
-            <input
-              type="text"
-              name="newScope"
-              value={this.state.newScope}
-              onChange={this.onChange}
-              placeholder="Add scope"/>
-          </form>
-        </div>
+        <div className="col-xs-2"><div>{this.props.grant.app}</div></div>
+        <div className="col-xs-8"><div>{this.props.grant.user}</div></div>
         <div className="col-xs-2">
-          <button type="button" onClick={this.deleteGrant}>Delete grant</button>
+          <button className="btn btn-default" type="button" onClick={this.deleteGrant}>Delete grant</button>
         </div>
       </div>
     );

@@ -2,7 +2,8 @@ var $ = require('jquery');
 var React = require('react');
 var ReactDOM = require('react-dom');
 var Applications = require('./applications');
-var Grants = require('./grants');
+var Application = require('./application');
+
 
 var ConsoleApp = React.createClass({
   getInitialState: function() {
@@ -171,7 +172,7 @@ var ConsoleApp = React.createClass({
         <br />
         {this.state.appId === null
           ? <Applications selectApplication={this.selectApplication} />
-          : <Grants app={this.state.appId} closeApplication={this.closeApplication} />
+          : <Application app={this.state.appId} closeApplication={this.closeApplication} />
         }
       </div>
     );

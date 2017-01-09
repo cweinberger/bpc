@@ -20,15 +20,13 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('getResources state', request.state);
-      console.log('getResources payload', request.payload);
-      reply();
+      reply({message: 'non-protected resource'});
     }
   });
 
   server.route({
     method: 'GET',
-    path: '/userp',
+    path: '/protected',
     config: {
       state: {
         parse: true,
@@ -36,10 +34,12 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('userp state', request.state);
-      console.log('userp payload', request.payload);
 
-      if (request.state.ticket.exp <= Hawk.utils.now()){
+      if(request.state.ticket === undefined || request.state.ticket === null){
+        return reply(Boom.unauthorized());
+      }
+
+      if (request.state.ticket.exp < Hawk.utils.now()){
         return reply(Boom.forbidden('Ticket has expired'));
       }
 
@@ -48,7 +48,10 @@ module.exports.register = function (server, options, next) {
       // sso_client.validateUserTicket(request.state.ticket, ['read'], function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, 'read', function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, [], function (err, response){
-      sso_client.validateUserTicket(request.state.ticket, 1, function (err, response){
+      // sso_client.validateUserTicket(request.state.ticket, 1, function (err, response){
+      sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: ['read', 'admin']}, request.state.ticket, function (err, response){
+      // sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: 'admin'}, request.state.ticket, function (err, response){
+      // sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: ['read', 'admin'], all: true}, request.state.ticket, function (err, response){
         if (err){
           return reply(err);
         }

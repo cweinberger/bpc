@@ -43,22 +43,22 @@ var app = {
 // });
 
 
-function callSsoServer(type, path, data, credentials, callback){
-  var url = 'http://berlingske-poc.local:8084'.concat(path)
-  $.ajax({
-    type: type,
-    url: url,
-    contentType: "application/json; charset=utf-8",
-    data: JSON.stringify(data),
-    headers: {
-      'Authorization': hawk.client.header(url, type, {credentials: credentials, app: 'sso_client'}).field
-    },
-    success: callback,
-    error: function(jqXHR, textStatus, err) {
-      console.error(textStatus, err.toString());
-    }
-  });
-}
+// function callSsoServer(type, path, data, credentials, callback){
+//   var url = 'http://berlingske-poc.local:8084'.concat(path)
+//   $.ajax({
+//     type: type,
+//     url: url,
+//     contentType: "application/json; charset=utf-8",
+//     data: JSON.stringify(data),
+//     headers: {
+//       'Authorization': hawk.client.header(url, type, {credentials: credentials, app: 'sso_client'}).field
+//     },
+//     success: callback,
+//     error: function(jqXHR, textStatus, err) {
+//       console.error(textStatus, err.toString());
+//     }
+//   });
+// }
 
 function createAwsLogin(e){
   e.preventDefault();
@@ -222,6 +222,7 @@ function facebookLoginInit(){
   });
 }
 
+
 function loginAwsByUsernameAndPassword(e){
   e.preventDefault();
 
@@ -325,6 +326,7 @@ function setUserPoolIdentityToken(idToken, callback){
       IdentityPoolId: identityPoolId,
       // RoleSessionName: 'web',
       Logins: {
+        // cognito-identity.amazonaws.com
         'cognito-idp.eu-west-1.amazonaws.com/eu-west-1_hS9hPyLgW': idToken
       }
     });
@@ -346,35 +348,65 @@ function credentialsGetCallback(callback){
     } else {
       console.log('AWS.config.credentials credentialsGetCallback', AWS.config.credentials);
 
-      var payload = {
-        Logins: AWS.config.credentials.params.Logins
-      };
+      var Logins = AWS.config.credentials.params.Logins;
 
-      $.ajax({
-        type: 'POST',
-        url: '/cognito/signin',
-        contentType: "application/json; charset=utf-8",
-        data: JSON.stringify(payload),
-        success: [
-          function(data, status, jqXHR) {
-            var returnUrl = getUrlVar('returnUrl');
-            var app = getUrlVar('app');
-            if (returnUrl && app){
-              // Redirection to main page to generate rsvp and from there return to returnUrl
-              window.location = '/cognito'.concat(window.location.search);
-            } else if(returnUrl){
-              window.location.href = decodeURIComponent(returnUrl);
-            }
-          },
-          callback
-        ],
-        error: function(jqXHR, textStatus, err) {
-          console.error(textStatus, err.toString());
-        }
-      });
+      var returnUrl = getUrlVar('returnUrl');
+      var app = getUrlVar('app');
+
+      // if (returnUrl && app){
+        // Redirection to main page to generate rsvp and from there return to returnUrl
+        // window.location = '/cognito'.concat(window.location.search);
+      // } else
+      if(returnUrl){
+        // window.location.href = decodeURIComponent(returnUrl);
+        window.location = '/cognito'.concat('?Logins=', encodeURIComponent(JSON.stringify(Logins)), '&app=', app, '&returnUrl=', returnUrl);
+      } else if (callback !== undefined && typeof callback === 'function'){
+        // TODO: Perhaps we should redirect to a predefined app instead e.g. a profile-page?
+          // returnUrl = '/cognito_profile.html'
+          // app = 'profile'
+        callback();
+      }
     }
-  }
+  };
 }
+
+
+// function credentialsGetCallback(callback){
+//   return function(error){
+//     if (error) {
+//       console.error(error);
+//     } else {
+//       console.log('AWS.config.credentials credentialsGetCallback', AWS.config.credentials);
+//
+//       var payload = {
+//         Logins: AWS.config.credentials.params.Logins
+//       };
+//
+//       $.ajax({
+//         type: 'POST',
+//         url: '/cognito/getid',
+//         contentType: "application/json; charset=utf-8",
+//         data: JSON.stringify(payload),
+//         success: [
+//           function(data, status, jqXHR) {
+//             var returnUrl = getUrlVar('returnUrl');
+//             var app = getUrlVar('app');
+//             if (returnUrl && app){
+//               // Redirection to main page to generate rsvp and from there return to returnUrl
+//               window.location = '/cognito'.concat(window.location.search);
+//             } else if(returnUrl){
+//               window.location.href = decodeURIComponent(returnUrl);
+//             }
+//           },
+//           callback
+//         ],
+//         error: function(jqXHR, textStatus, err) {
+//           console.error(textStatus, err.toString());
+//         }
+//       });
+//     }
+//   }
+// }
 
 
 
@@ -389,22 +421,22 @@ function credentialsRefreshCallback(error){
 
 
 function signout(){
-  $.ajax({
-    type: 'POST',
-    url: '/cognito/signout',
-    contentType: "application/json; charset=utf-8",
-    success: [
-      function(data, status, jqXHR) {
-        console.log('signout success');
-        signoutFacebook();
-        signoutCognito();
-        disableLogoutControls();
-      }
-    ],
-    error: function(jqXHR, textStatus, err) {
-      console.error(textStatus, err.toString());
-    }
-  });
+  signoutFacebook();
+  signoutCognito();
+  disableLogoutControls();
+  // $.ajax({
+  //   type: 'POST',
+  //   url: '/cognito/signout',
+  //   contentType: "application/json; charset=utf-8",
+  //   success: [
+  //     function(data, status, jqXHR) {
+  //       console.log('signout success');
+  //     }
+  //   ],
+  //   error: function(jqXHR, textStatus, err) {
+  //     console.error(textStatus, err.toString());
+  //   }
+  // });
 }
 
 

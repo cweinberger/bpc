@@ -71,6 +71,11 @@ module.exports.validateUserTicket = function(userTicket, scope, callback){
 };
 
 
+module.exports.validateUserPermissions = function(userTicket, permissions, callback){
+  callSsoServer('POST', '/cognito/validateuserpermissions', {permissions: permissions}, userTicket, callback);
+};
+
+
 module.exports.getUserProfile = function(userTicket, callback){
   callSsoServer('GET', '/cognito/userprofile', {}, userTicket, callback);
 };

@@ -3,7 +3,7 @@
 
 const Hapi = require('hapi');
 const Inert = require('inert');
-const Login = require('./login');
+const Ticket = require('./ticket');
 const Proxy = require('./proxy');
 
 const consoleApp = new Hapi.Server();
@@ -19,7 +19,7 @@ consoleApp.state('ticket', {
 });
 
 consoleApp.register(Inert, () => {});
-consoleApp.register(Login, { routes: { prefix: '/login' } }, cb);
+consoleApp.register(Ticket, { routes: { prefix: '/ticket' } }, cb);
 consoleApp.register(Proxy, { routes: { prefix: '/admin' } }, cb);
 
 consoleApp.route({

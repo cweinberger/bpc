@@ -3,18 +3,24 @@
 
 const Hapi = require('hapi');
 const Inert = require('inert');
-const Joi = require('joi');
 const Resources = require('./resources');
-const Login = require('./login');
-
-
+const Ticket = require('./ticket');
 
 const application = new Hapi.Server();
 application.connection({ port: process.env.PORT ? parseInt(process.env.PORT) + 1 : 8000 + 1 });
 
+application.state('ticket', {
+  ttl: 1000 * 60 * 60 * 24 * 30, // (one month)
+  isHttpOnly: false,
+  isSecure: false,
+  // isSameSite: false,
+  path: '/',
+  encoding: 'base64json'
+});
+
 application.register(Inert, () => {});
 application.register(Resources, { routes: { prefix: '/resources' } }, cb);
-application.register(Login, { routes: { prefix: '/login' } }, cb);
+application.register(Ticket, { routes: { prefix: '/ticket' } }, cb);
 
 
 

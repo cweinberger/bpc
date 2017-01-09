@@ -256,7 +256,7 @@ module.exports.register = function (server, options, next) {
       var grant = Object.assign(
           request.payload,
           {
-            id: crypto.randomBytes(40).toString('hex'),
+            id: crypto.randomBytes(20).toString('hex'),
             app: request.params.id
           });
 
@@ -298,7 +298,7 @@ module.exports.register = function (server, options, next) {
           id: Joi.strip(),
           app: Joi.strip(),
           user: Joi.strip(),
-          exp: Joi.date().timestamp('unix').raw(),
+          exp: Joi.date().timestamp('unix').raw().valid(null),
           scope: Joi.array().items(Joi.string())
           // scope: Joi.array().items(Joi.string().valid('admin').forbidden(), Joi.string())
         }

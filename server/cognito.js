@@ -35,14 +35,21 @@ AWS.config.update({
 });
 
 var cognitoIdentity = new AWS.CognitoIdentity();
-var cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider(
-  // {
-  //   accessKeyId: AWS_ACCESS_KEY_ID,
-  //   secretAccessKey: AWS_SECRET_ACCESS_KEY,
-  //   region: AWS_REGION
-  // }
-);
+var cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
 
+
+// var params = {
+//   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+//   AccountId: AWS_ACCOUNT_ID,
+//   Logins: {
+//     someKey: 'STRING_VALUE',
+//     /* anotherKey: ... */
+//   }
+// };
+// cognitoidentity.getId(params, function(err, data) {
+//   if (err) console.log(err, err.stack); // an error occurred
+//   else     console.log(data);           // successful response
+// });
 
 
 
@@ -94,29 +101,24 @@ module.exports.register = function (server, options, next) {
       console.log('GET / state', request.state);
       console.log('GET / query', request.query);
 
-      var logins;
+      if (request.query.Logins === undefined || request.query.Logins === null){
+        // return reply(Boom.unauthorized());
+        // Redirecting the user to the login-page
+        var temp = Object.keys(request.query).map(f).join('&');
+        return reply.redirect('/cognito_login.html?'.concat(temp));
+      }
+
+      var logins = JSON.parse(decodeURIComponent(request.query.Logins));
 
       var app = request.query.app;
       if (app === undefined || app === null){
         return reply(Boom.unauthorized('Missing app parameter'));
       }
 
-      if (request.state.ll){
-        logins = request.state.ll;
-      } else if (request.query.Logins){
-        logins = request.query.Logins;
-      } else {
-        // Redirecting the user to the login-page
-        var temp = Object.keys(request.query).map(f).join('&');
-        return reply.redirect('/cognito_login.html?'.concat(temp));
-      }
-
       createUserRsvp(app, logins, function(err, rsvp){
         if (err){
           if (err.isBoom && err.output.statusCode === 401 && err.output.payload.message.indexOf('Token is expired') > -1){
-            var originalRequestParameters = Object.keys(request.query).map(function(k){
-              return k.concat('=', request.query[k]);
-            }).join('&');
+            var originalRequestParameters = Object.keys(request.query).map(f).join('&');
             return reply.redirect('/cognito_login.html'.concat('?returnUrl=', request.path, encodeURIComponent('?'.concat(originalRequestParameters))));
           } else {
             return reply(err);
@@ -166,19 +168,15 @@ module.exports.register = function (server, options, next) {
         return reply(Boom.unauthorized('Missing payload'));
       }
 
+      var logins = request.payload.Logins
+
+      if (logins === undefined || logins === null){
+        return reply(Boom.unauthorized());
+      }
+
       var app = request.payload.app;
       if (app === undefined || app === null){
         return reply(Boom.unauthorized('Missing app parameter'));
-      }
-
-      var logins;
-
-      if (request.state.ll){
-        logins = request.state.ll;
-      } else if (request.payload.Logins){
-        logins = request.payload.Logins;
-      } else {
-        return reply(Boom.unauthorized());
       }
 
       createUserRsvp(app, logins, function(err, rsvp){
@@ -192,226 +190,266 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+  //
+  // server.route({
+  //   method: 'POST',
+  //   path: '/getid',
+  //   config: {
+  //     auth: false
+  //   },
+  //   handler: function(request, reply) {
+  //
+  //     if (request.payload.Logins === undefined || request.payload.Logins === null){
+  //       return reply(Boom.badRequest('Parameter Logins missing'));
+  //     }
+  //
+  //     var Logins = request.payload.Logins;
+  //
+  //     var params = {
+  //       IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+  //       AccountId: AWS_ACCOUNT_ID,
+  //       Logins: Logins
+  //     };
+  //
+  //     cognitoIdentity.getId(params, function(err, data) {
+  //       if (err) {
+  //         console.log(err);
+  //         reply(Boom.unauthorized('Error getting IdentityId'));
+  //       } else if (data.IdentityId === undefined || data.IdentityId === null) {
+  //         reply(Boom.unauthorized('IdentityId could not be found'));
+  //       } else {
+  //
+  //         reply(data)
+  //         .state('ii', data.IdentityId)
+  //         .state('il', Object.keys(Logins)[0])
+  //         .state('ll', Logins);
+  //       }
+  //     });
+  //   }
+  // });
+
+  //
+  // server.route({
+  //   method: 'POST',
+  //   path: '/signin',
+  //   config: {
+  //     auth: false
+  //   },
+  //   handler: function(request, reply) {
+  //
+  //     console.log('');
+  //     console.log('registerUser', request.payload);
+  //
+  //     // if (request.payload.IdentityId === undefined || request.payload.IdentityId === null){
+  //     //   return reply(Boom.badRequest('Parameter IdentityId missing'));
+  //     // }
+  //
+  //     if (request.payload.Logins === undefined || request.payload.Logins === null){
+  //       return reply(Boom.badRequest('Parameter Logins missing'));
+  //     }
+  //
+  //     // if (request.payload.AccessToken === undefined || request.payload.AccessToken === null){
+  //     //   return reply(Boom.badRequest('Parameter AccessToken missing'));
+  //     // }
+  //
+  //     var logins = request.payload.Logins;
+  //
+  //     var params = {
+  //       IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+  //       AccountId: AWS_ACCOUNT_ID,
+  //       Logins: logins
+  //     };
+  //
+  //     cognitoIdentity.getId(params, function(err, data) {
+  //       if (err) {
+  //         console.log(err);
+  //         reply(Boom.unauthorized('Error getting IdentityId'));
+  //       } else if (data.IdentityId === undefined || data.IdentityId === null) {
+  //         reply(Boom.unauthorized('IdentityId could not be found'));
+  //       } else {
+  //
+  //         var IdentityId = data.IdentityId;
+  //
+  //         MongoDB.collection('users').updateOne(
+  //            {IdentityId: IdentityId},
+  //            {$set: {
+  //              IdentityId: IdentityId,
+  //              IdentityProvider: Object.keys(logins)[0],
+  //              Logins: JSON.stringify(logins),
+  //              Permissions: [
+  //                '*:read'
+  //              ]
+  //            }},
+  //            {
+  //              upsert: true
+  //             //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+  //             //  collation: <document>
+  //           }, function(err, result){
+  //             if (err) {
+  //               console.error(err);
+  //               reply(Boom.badImplementation());
+  //             } else if(result.result.ok !== 1) {
+  //               console.log('result', result);
+  //               reply(Boom.badImplementation());
+  //             } else {
+  //               done();
+  //             }
+  //           }
+  //         );
+  //
+  //         function done(){
+  //           reply()
+  //           .state('ii', IdentityId)
+  //           .state('il', Object.keys(logins)[0])
+  //           .state('ll', logins);
+  //         }
+  //       }
+  //     });
+  //   }
+  // });
+  //
+  //
+  //
+
+  // server.route({
+  //   method: 'POST',
+  //   path: '/signout',
+  //   config: {
+  //     auth: {
+  //       access: {
+  //         entity: 'user'
+  //       }
+  //     },
+  //     cors: {
+  //       credentials: true,
+  //       origin: ['*'],
+  //       // access-control-allow-methods:POST
+  //       headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+  //       exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+  //       maxAge: 86400
+  //     },
+  //     state: {
+  //       parse: true,
+  //       failAction: 'log'
+  //     }
+  //   },
+  //   handler: function(request, reply){
+  //     console.log('POST /signout', request.state);
+  //     reply()
+  //       .unstate('ticket');
+  //   }
+  // });
 
 
-  server.route({
-    method: 'POST',
-    path: '/signin',
-    config: {
-      auth: false
-    },
-    handler: function(request, reply) {
-
-      console.log('');
-      console.log('registerUser', request.payload);
-
-      // if (request.payload.IdentityId === undefined || request.payload.IdentityId === null){
-      //   return reply(Boom.badRequest('Parameter IdentityId missing'));
-      // }
-
-      if (request.payload.Logins === undefined || request.payload.Logins === null){
-        return reply(Boom.badRequest('Parameter Logins missing'));
-      }
-
-      // if (request.payload.AccessToken === undefined || request.payload.AccessToken === null){
-      //   return reply(Boom.badRequest('Parameter AccessToken missing'));
-      // }
-
-      var logins = request.payload.Logins;
-
-      var params = {
-        IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-        AccountId: AWS_ACCOUNT_ID,
-        Logins: logins
-      };
-
-      cognitoIdentity.getId(params, function(err, data) {
-        if (err) {
-          console.log(err);
-          reply(Boom.unauthorized('Error getting IdentityId'));
-        } else if (data.IdentityId === undefined || data.IdentityId === null) {
-          reply(Boom.unauthorized('IdentityId could not be found'));
-        } else {
-
-          var IdentityId = data.IdentityId;
-
-          MongoDB.collection('users').updateOne(
-             {IdentityId: IdentityId},
-             {$set: {
-               IdentityId: IdentityId,
-               IdentityProvider: Object.keys(logins)[0],
-               Logins: JSON.stringify(logins),
-               Permissions: [
-                 '*:read'
-               ]
-             }},
-             {
-               upsert: true
-              //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
-              //  collation: <document>
-            }, function(err, result){
-              if (err) {
-                console.error(err);
-                reply(Boom.badImplementation());
-              } else if(result.result.ok !== 1) {
-                console.log('result', result);
-                reply(Boom.badImplementation());
-              } else {
-                done();
-              }
-            }
-          );
-
-          function done(){
-            reply()
-            .state('ii', IdentityId)
-            .state('il', Object.keys(logins)[0])
-            .state('ll', logins);
-          }
-        }
-      });
-    }
-  });
+  //
+  // server.route({
+  //   method: 'GET',
+  //   path: '/credentials',
+  //   config: {
+  //     auth: false,
+  //     cors: {
+  //       credentials: true,
+  //       origin: ['*'],
+  //       // access-control-allow-methods:POST
+  //       headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match', 'Cookie'],
+  //       exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+  //       maxAge: 86400
+  //     },
+  //     state: {
+  //       parse: true,
+  //       failAction: 'log'
+  //     }
+  //   },
+  //   handler: function(request, reply){
+  //
+  //     console.log('');
+  //     console.log('/credentials');
+  //
+  //     var logins;
+  //     if (request.state.ll){
+  //       logins = request.state.ll;
+  //     } else if (request.payload.Logins){
+  //       logins = request.payload.Logins;
+  //     } else {
+  //       return reply(Boom.unauthorized());
+  //     }
+  //
+  //     console.log('logins', logins);
+  //
+  //     var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
+  //       IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+  //       Logins: logins
+  //     });
+  //
+  //     cognitoIdentityCredentials.get(function(err){
+  //       if (err) {
+  //         console.error(err);
+  //         reply(Boom.unauthorized(err.message));
+  //       } else {
+  //         reply(cognitoIdentityCredentials);
+  //       }
+  //     });
+  //   }
+  // });
 
 
 
-
-  server.route({
-    method: 'POST',
-    path: '/signout',
-    config: {
-      auth: false,
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
-      state: {
-        parse: true,
-        failAction: 'log'
-      }
-    },
-    handler: function(request, reply){
-      reply()
-        .unstate('ii')
-        .unstate('il')
-        .unstate('ll');
-    }
-  });
-
-
-
-  server.route({
-    method: 'GET',
-    path: '/credentials',
-    config: {
-      auth: false,
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match', 'Cookie'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
-      state: {
-        parse: true,
-        failAction: 'log'
-      }
-    },
-    handler: function(request, reply){
-
-      console.log('');
-      console.log('authUser');
-
-      var logins;
-      if (request.state.ll){
-        logins = request.state.ll;
-      } else if (request.payload.Logins){
-        logins = request.payload.Logins;
-      } else {
-        return reply(Boom.unauthorized());
-      }
-
-      console.log('logins', logins);
-
-      var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
-        IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-        Logins: logins
-      });
-
-      cognitoIdentityCredentials.get(function(err){
-        if (err) {
-          console.error(err);
-          reply(Boom.unauthorized(err.message));
-        } else {
-          reply(cognitoIdentityCredentials);
-        }
-      });
-    }
-  });
-
-
-
-
-  server.route({
-    method: 'GET',
-    path: '/profile',
-    config: {
-      // auth: {
-      //   strategy: 'oz',
-      //   access: {
-      //     scope: ['profile'],
-      //     entity: 'user'
-      //   }
-      // },
-      auth: false,
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
-      state: {
-        parse: true,
-        failAction: 'log'
-      }
-    },
-    handler(request, reply){
-      console.log('GET /profile', request.state);
-
-      var logins = request.state.ll;
-
-      // TODO: Check the login tokens expiration
-
-      var cognitoLogin = Object.keys(logins).find((k) => {return k.indexOf('cognito') > -1;});
-
-      if(cognitoLogin) {
-
-        parseCognitoLogin(logins[cognitoLogin], reply);
-
-      } else if (logins['graph.facebook.com']){
-          Facebook.getProfile({access_token: logins['graph.facebook.com']}, function(err, result){
-            if(err){
-              console.error(err);
-              reply(err);
-            } else {
-              reply(result);
-            }
-          });
-
-      } else {
-
-        reply(Boom.notFound());
-
-      }
-    }
-  });
+  //
+  // server.route({
+  //   method: 'GET',
+  //   path: '/profile',
+  //   config: {
+  //     // auth: {
+  //     //   strategy: 'oz',
+  //     //   access: {
+  //     //     scope: ['profile'],
+  //     //     entity: 'user'
+  //     //   }
+  //     // },
+  //     auth: false,
+  //     cors: {
+  //       credentials: true,
+  //       origin: ['*'],
+  //       // access-control-allow-methods:POST
+  //       headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+  //       exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+  //       maxAge: 86400
+  //     },
+  //     state: {
+  //       parse: true,
+  //       failAction: 'log'
+  //     }
+  //   },
+  //   handler(request, reply){
+  //     console.log('GET /profile', request.state);
+  //
+  //     var logins = request.state.ll;
+  //
+  //     // TODO: Check the login tokens expiration
+  //
+  //     var cognitoLogin = Object.keys(logins).find((k) => {return k.indexOf('cognito') > -1;});
+  //
+  //     if(cognitoLogin) {
+  //
+  //       parseCognitoLogin(logins[cognitoLogin], reply);
+  //
+  //     } else if (logins['graph.facebook.com']){
+  //         Facebook.getProfile({access_token: logins['graph.facebook.com']}, function(err, result){
+  //           if(err){
+  //             console.error(err);
+  //             reply(err);
+  //           } else {
+  //             reply(result);
+  //           }
+  //         });
+  //
+  //     } else {
+  //
+  //       reply(Boom.notFound());
+  //
+  //     }
+  //   }
+  // });
 
 
   server.route({
@@ -432,6 +470,10 @@ module.exports.register = function (server, options, next) {
       getTicketFromHawkHeader(request.headers.authorization, function(err, ticket){
         console.log('ticket parse', err, ticket);
 
+        if (ticket.ext.private === undefined || ticket.ext.private === null){
+          return reply(Boom.unauthorized('Authorization Hawk ticket missing private data'));
+        }
+
         if (ticket.ext.private.Logins === undefined || ticket.ext.private.Logins === null){
           return reply(Boom.unauthorized('Authorization Hawk ticket missing logins'));
         }
@@ -439,21 +481,26 @@ module.exports.register = function (server, options, next) {
         var logins = ticket.ext.private.Logins;
 
         // TODO: Check the login tokens expiration
+        // Oz does this already....
 
         var cognitoLogin = Object.keys(logins).find((k) => {return k.indexOf('cognito') > -1;});
 
         if(cognitoLogin) {
-
-          parseCognitoLogin(logins[cognitoLogin], reply);
-
+          parseCognitoLogin(logins[cognitoLogin], done);
         } else if (logins['graph.facebook.com']){
-            Facebook.getProfile({access_token: logins['graph.facebook.com']}, reply);
-
+          Facebook.getProfile({access_token: logins['graph.facebook.com']}, done);
         } else {
-
           reply(Boom.notFound());
-
         }
+
+        function done(err, data){
+          if(err){
+            reply(err);
+          } else {
+            data.IdentityId = ticket.user;
+            reply(data);
+          }
+        };
       });
     }
   });
@@ -522,6 +569,35 @@ module.exports.register = function (server, options, next) {
   });
 
 
+    server.route({
+      method: 'GET',
+      path: '/validateuserticket',
+      config: {
+        auth: {
+          strategy: 'oz',
+          access: {
+            scope: '{query.scope}',
+            entity: 'user'
+          }
+        },
+        cors: {
+          credentials: true,
+          origin: ['*'],
+          // access-control-allow-methods:POST
+          headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+          exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+          maxAge: 86400
+        },
+        state: {
+          parse: true,
+          failAction: 'log'
+        }
+      },
+      handler: function(request, reply) {
+        reply();
+      }
+    });
+
 
   server.route({
     method: 'POST',
@@ -553,7 +629,7 @@ module.exports.register = function (server, options, next) {
 
      if (subset === undefined || subset === null){
        // The user ticket is not being validated against a subset of scopes.
-       reply({});
+       return reply({});
      }
 
      if (subset instanceof Array === false) {
@@ -575,7 +651,7 @@ module.exports.register = function (server, options, next) {
        }
 
        if (!Oz.scope.isSubset(superset, subset)){
-         return reply(Boom.unauthorized('Ticket scope not a subset of request scope'));
+         return reply(Boom.forbidden('Ticket scope not a subset of request scope'));
        } else {
          reply({});
        }
@@ -583,6 +659,98 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+
+  server.route({
+    method: 'POST',
+    path: '/validateuserpermissions',
+    config: {
+      auth: {
+        strategy: 'oz',
+        access: {
+          scope: false,
+          entity: 'user'
+        }
+      },
+      cors: {
+        credentials: true,
+        origin: ['*'],
+        // access-control-allow-methods:POST
+        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+        maxAge: 86400
+      },
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply) {
+      var permissions = request.payload.permissions;
+
+      if (permissions === undefined || permissions === null){
+        // The user ticket is not being validated against a subset of scopes.
+        reply(badRequest('Missing permissions in payload'));
+      }
+
+      if (permissions instanceof Array === false) {
+        permissions = [permissions];
+      }
+
+      getTicketFromHawkHeader(request.headers.authorization, function(err, ticket){
+
+        const validatePermissionsInTicketInsteadOfMongo = true;
+
+        if (validatePermissionsInTicketInsteadOfMongo){
+
+          var passes = false;
+
+          if(request.payload.all) {
+            passes = permissions.every(isIn(ticket.ext.private.Permissions));
+          } else {
+            passes = ticket.ext.private.Permissions.some(isIn(permissions));
+          }
+
+          if (passes){
+            reply();
+          } else {
+            reply(Boom.forbidden());
+          }
+
+          function isIn(array){
+            return function (entry){
+              return array.indexOf(entry) > -1;
+            }
+          }
+
+        } else {
+
+          var query = {
+            IdentityId: ticket.user
+          };
+
+          if(request.payload.all) {
+            query.Permissions = { $all: permissions };
+          } else {
+            query.$or = permissions.map(function(permission){
+              return {Permissions: permission};
+            });
+          }
+
+          // Querying the user with the specified permissions
+          MongoDB.collection('users').findOne(query, {_id:1}, function(err, user){
+            if (err){
+              reply(err)
+            } else if (user === null) {
+              reply(Boom.forbidden());
+            } else {
+              reply();
+            }
+          });
+        }
+
+      });
+    }
+  });
 
   next();
 };
@@ -612,6 +780,7 @@ module.exports.loadAppFunc = function(id, callback) {
             .filter((k) => { return k.id !== app.id; }) // We don't want the main admin-app
             .map((i) => {return 'admin:'.concat(i.id);});
           app.scope = app.scope.concat(ids);
+
           callback(null, app);
         });
       } else {
@@ -636,15 +805,31 @@ module.exports.loadGrantFunc = function(id, next) {
         grant.exp = Oz.hawk.utils.now() + (60000 * 60 * 24); // 60000 = 1 minute
       }
 
-      // Finding private details to encrypt in the ticket for later usage.
-      MongoDB.collection('users').findOne({IdentityId: grant.user}, {fields: {_id: 0, IdentityId: 1, Logins: 1}}, function(err, user){
+      // next(null, grant);
+
+      // var params = {
+      //   IdentityId: grant.user,
+      // };
+      //
+      // cognitoIdentity.describeIdentity(params, function(err, data) {
+      //   if (err) {
+      //     console.error(err);
+      //     return next(Boom.unauthorized(err.message));
+      //   }
+      //
+      //   next(null, grant, {public: data, private: {}});
+      // });
+
+      // // Finding private details to encrypt in the ticket for later usage.
+      MongoDB.collection('users').findOne({IdentityId: grant.user}, {fields: {_id: 0, IdentityId: 1, Logins: 1, Permissions: 1}}, function(err, user){
         if (err) {
           return next(err);
         } else if (user === null) {
           // return next(new Error('Unknown user'));
           next(null, grant);
         } else {
-          next(null, grant, {public: {IdentityId: user.IdentityId}, private: {Logins:JSON.parse(user.Logins)}});
+          user.Logins = JSON.parse(user.Logins);
+          next(null, grant, {public: {}, private: user});
         }
       });
     }
@@ -653,38 +838,69 @@ module.exports.loadGrantFunc = function(id, next) {
 
 
 // Here we are creating the user->app rsvp
-function createUserRsvp(app_id, logins, callback){
-  console.log('createUserRsvp', app_id);
-  MongoDB.collection('applications').findOne({id: app_id}, {fields: {_id: 0}}, function(err, app){
+function createUserRsvp(appId, Logins, callback){
+  console.log('createUserRsvp', appId);
+
+  var params = {
+    IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+    AccountId: AWS_ACCOUNT_ID,
+    Logins: Logins
+  };
+
+  cognitoIdentity.getId(params, function(err, data) {
     if (err) {
-      console.error(err);
-      return callback(Boom.unauthorized(err.message));
-    } else if (app === null){
-      return callback(Boom.unauthorized('Unknown application'));
-    }
+      console.log(err);
+      callback(Boom.unauthorized('Error getting IdentityId'));
+    } else if (data.IdentityId === undefined || data.IdentityId === null) {
+      callback(Boom.unauthorized('IdentityId could not be found'));
+    } else {
 
-    var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
-      IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-      Logins: logins
-    });
+      MongoDB.collection('users').updateOne(
+        {
+           IdentityId: data.IdentityId
+        },
+        {
+           $set: {
+             IdentityId: data.IdentityId,
+            //  IdentityProvider: Object.keys(logins)[0],
+             Logins: JSON.stringify(Logins),
+           },
+           $addToSet: {
+             Permissions: 'read'
+           }
+        },
+        {
+           upsert: true
+          //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+          //  collation: <document>
+        },
+        function(err, result){
+          if (err) {
+            console.error(err);
+          }
+        }
+      );
 
-    cognitoIdentityCredentials.get(function(err){
-      if (err) {
-        console.error('cognitoIdentityCredentials error:', err);
-        return callback(Boom.unauthorized(err.message));
-      }
+      var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
 
-      // TODO: Check if user exists here.
-      MongoDB.collection('users').findOne({IdentityId: cognitoIdentityCredentials.identityId}, function(err, user){
-        console.log('Checking the user exists', err, user);
-      });
-
-      MongoDB.collection('grants').findOne({user: cognitoIdentityCredentials.identityId, app: app_id}, {fields: {_id: 0}}, function(err, grant){
+      MongoDB.collection('grants').findOne({user: data.IdentityId, app: appId, $or: exp_conditions}, {fields: {_id: 0}}, function(err, grant){
         if (err) {
           console.error(err);
           return callback(Boom.unauthorized(err.message));
         } else if (grant === null){
-          return callback(Boom.unauthorized('Missing grant'));
+          // return callback(Boom.unauthorized('Missing grant'));
+
+          // TODO: Perhaps it's better to use delegation. Eg. deletage a generic grant from a central app to the requesting app??
+
+          grant = {
+            id : crypto.randomBytes(20).toString('hex'), // (gives 40 characters)
+            app : appId,
+            user : data.IdentityId,
+            scope : [],
+            exp : null
+          };
+
+          MongoDB.collection('grants').insertOne(grant);
         }
 
         // TODO: exp should be set by other logic than this. E.g. the system that handles subscriptions
@@ -693,18 +909,70 @@ function createUserRsvp(app_id, logins, callback){
           grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
         }
 
-        Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
-          if (err){
+        MongoDB.collection('applications').findOne({id: appId}, {fields: {_id: 0}}, function(err, app){
+          if (err) {
             console.error(err);
-            return callback(err);
+            return callback(Boom.unauthorized(err.message));
+          } else if (app === null){
+            return callback(Boom.unauthorized('Unknown application'));
           }
-          // After granting app access, the user returns to the app with the rsvp
-          callback(null, rsvp);
+
+          Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
+            if (err){
+              console.error(err);
+              return callback(err);
+            }
+            // After granting app access, the user returns to the app with the rsvp
+            callback(null, rsvp);
+          });
         });
       });
-    });
+    }
+
+    // var cognitoIdentityCredentials = new AWS.CognitoIdentityCredentials({
+    //   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+    //   Logins: logins
+    // });
+    //
+    // cognitoIdentityCredentials.get(function(err){
+    //   if (err) {
+    //     console.error('cognitoIdentityCredentials error:', err);
+    //     return callback(Boom.unauthorized(err.message));
+    //   }
+    //
+    //   findGrant(cognitoIdentityCredentials.identityId, appId, function(err, grant){
+    //     Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
+    //       if (err){
+    //         console.error(err);
+    //         return callback(err);
+    //       }
+    //       // After granting app access, the user returns to the app with the rsvp
+    //       callback(null, rsvp);
+    //     });
+    //   });
+    // });
   });
 }
+
+
+// function findGrant(userId, appId, callback){
+//   MongoDB.collection('grants').findOne({user: userId, app: appId}, {fields: {_id: 0}}, function(err, grant){
+//     if (err) {
+//       console.error(err);
+//       return callback(Boom.unauthorized(err.message));
+//     } else if (grant === null){
+//       return callback(Boom.unauthorized('Missing grant'));
+//     }
+//
+//     // TODO: exp should be set by other logic than this. E.g. the system that handles subscriptions
+//     // Or a default exp could be set per application and then added to the grant.
+//     if (grant.exp === undefined || grant.exp === null) {
+//       grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
+//     }
+//
+//     callback(null, grant);
+//   });
+// }
 
 
 function getTicketFromHawkHeader(requestHeaderAuthorization, callback){

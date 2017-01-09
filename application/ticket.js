@@ -2,20 +2,23 @@
 'use strict';
 
 const Boom = require('boom');
-const Hawk = require('hawk');
-const http = require('http');
-const https = require('https');
 const sso_client = require('./sso_client');
 
 module.exports.register = function (server, options, next) {
 
-  server.state('ticket', {
-    ttl: 1000 * 60 * 60 * 24 * 30, // (one month)
-    isHttpOnly: false,
-    isSecure: false,
-    // isSameSite: false,
+  server.route({
+    method: 'GET',
     path: '/',
-    encoding: 'base64json'
+    config: {
+      cors: false,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply) {
+      sso_client.request('GET', '/cognito/validateuserticket?scope=test', null, request.state.ticket, reply);
+    }
   });
 
   server.route({
@@ -30,12 +33,11 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      console.log('POST /login (app)');
       sso_client.getUserTicket(request.payload.rsvp, function (err, userTicket){
         console.log('getUserTicket', err, userTicket);
         if (err){
           sso_client.refreshAppTicket(function(err, r){
-
+            console.log('refreshAppTicket', err, r);
           });
           return reply(err);
         }
@@ -43,6 +45,23 @@ module.exports.register = function (server, options, next) {
         reply(userTicket)
           .state('ticket', userTicket);
       });
+    }
+  });
+
+  server.route({
+    method: 'DELETE',
+    path: '/',
+    config: {
+      cors: false,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply) {
+      // This is not a global signout.
+      reply()
+        .unstate('ticket');
     }
   });
 
@@ -65,6 +84,29 @@ module.exports.register = function (server, options, next) {
         }
 
         reply(profile);
+      });
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/validateuserticket',
+    config: {
+      cors: false,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply) {
+      console.log('GET /validateuserticket (app)', request.state);
+      sso_client.request('GET', '/cognito/validateuserticket?scope=test', null, request.state.ticket, function (err, result){
+        console.log('validateuserticket (app result)', err, result);
+        if (err){
+          return reply(err);
+        }
+
+        reply();
       });
     }
   });

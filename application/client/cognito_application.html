@@ -24,30 +24,27 @@
 
       <h1>SSO POC - Cognito client</h1>
 
+      <div><span id="aws-status"></span></div>
       <div>Username: <span id="aws-currentuser"></span></div>
       <div>Permissions: <span id="aws-currentuserpermissions"></span></div>
       <br/>
       <br/>
 
-      <a id="aws-loginButton2" href="#" class="">Login berlingske-poc.local browser</a>
+      <button type="button" class="btn btn-default" onclick="getResources();">GET resources</button>
+      <div>Message: <span id="aws-resource"></span></div>
       <br/>
-      <a id="aws-loginButton3" href="#" class="">Login berlingske-poc.local backend</a>
-      <!-- <button id="aws-loginButton3" type="button" class="btn btn-default" onclick="gotoSso2();">Login berlingske-poc.local/cognito</button> -->
+      <button type="button" class="btn btn-default" onclick="getProtectedResource();">GET protected resources</button>
+      <div>Message: <span id="aws-protected-resource"></span></div>
       <br/>
-      <button id="aws-loginButton5" type="button" class="btn btn-default" onclick="getCredentials();">GET credentials</button>
+      <button type="button" class="btn btn-default" onclick="getUserProfile();">GET userprofile</button>
       <br/>
-      <button id="aws-loginButton7" type="button" class="btn btn-default" onclick="tokenSignin();">POST tokenSignin</button>
+      <button type="button" class="btn btn-default" onclick="validateUserTicket();">GET validateUserTicket</button>
       <br/>
-      <button id="aws-loginButton6" type="button" class="btn btn-default" onclick="logoutPost();">POST signout</button>
       <br/>
-      <button id="aws-loginButton6" type="button" class="btn btn-default" onclick="getResources();">GET resources</button>
-      <br/>
-      <button id="aws-loginButton6" type="button" class="btn btn-default" onclick="getProtectedResource();">GET protected resources</button>
-      <div>Message: <span id="aws-userp"></span></div>
-      <button id="aws-button7" type="button" class="btn btn-default" onclick="getProfile();">GET profile</button>
-      <button id="aws-button8" type="button" class="btn btn-default" onclick="getUserProfile();">GET userprofile</button>
 
+      <a href="#" class="btn btn-default aws-loginButton">Login / ny ticket</a>
       <br/>
+      <p><button type="button" class="btn btn-warning" onclick="deleteCookie();">Slet cookie</button></p>
       <br/>
 
       <!-- <form method="POST" action="http://berlingske-poc.local:8084/cognito">

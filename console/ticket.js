@@ -17,7 +17,8 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      sso_client.validateUserTicket(request.state.ticket, ['admin'], reply);
+      // sso_client.request('GET', '/cognito/validateuserticket?scope=admin', null, request.state.ticket, reply);
+      sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: 'admin'}, request.state.ticket, reply);
     }
   });
 
@@ -44,6 +45,46 @@ module.exports.register = function (server, options, next) {
 
         reply(userTicket)
           .state('ticket', userTicket);
+      });
+    }
+  });
+
+  server.route({
+    method: 'DELETE',
+    path: '/',
+    config: {
+      cors: false,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply) {
+      // This is not a global signout.
+      reply()
+        .unstate('ticket');
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/userprofile',
+    config: {
+      cors: false,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply) {
+      console.log('GET /userprofile (console)', request.state);
+      sso_client.request('GET', '/cognito/userprofile', null, request.state.ticket, function (err, profile){
+        console.log('getUserProfile', err, profile);
+        if (err){
+          return reply(err);
+        }
+
+        reply(profile);
       });
     }
   });

@@ -42,7 +42,7 @@ module.exports = React.createClass({
   render: function() {
     var applications = this.state.applications.map(function(application, index) {
       return (
-        <tr>
+        <tr key={index}>
           <td className="col-xs-10">{application.id}</td>
           <td className="col-xs-2">
             <input className="btn btn-default" type="button" value="Vis" onClick={this.props.selectApplication.bind(null, application.id)} />
@@ -55,11 +55,13 @@ module.exports = React.createClass({
       <div className="applications">
         <h3>Applications</h3>
         <table className="table">
-          <th>
-            <td className="col-xs-10">ID</td>
-            <td className="col-xs-2"></td>
-          </th>
-          {applications}
+          <tbody>
+            <tr>
+              <th className="col-xs-10">ID</th>
+              <th className="col-xs-2"></th>
+            </tr>
+            {applications}
+          </tbody>
         </table>
         <CreateApplication createApplication={this.createApplication} />
       </div>

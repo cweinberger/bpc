@@ -35,21 +35,10 @@ AWS.config.update({
 });
 
 var cognitoIdentity = new AWS.CognitoIdentity();
+var cognitoSync = new AWS.CognitoSync();
 var cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
 
 
-// var params = {
-//   IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
-//   AccountId: AWS_ACCOUNT_ID,
-//   Logins: {
-//     someKey: 'STRING_VALUE',
-//     /* anotherKey: ... */
-//   }
-// };
-// cognitoidentity.getId(params, function(err, data) {
-//   if (err) console.log(err, err.stack); // an error occurred
-//   else     console.log(data);           // successful response
-// });
 
 
 
@@ -84,6 +73,91 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  server.route({
+    method: 'POST',
+    path: '/store',
+    config: {
+      // auth: {
+      //   access: {
+      //     entity: 'user'
+      //   }
+      // },
+      auth: false,
+      cors: false,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function (request, reply) {
+
+      // getTicketFromHawkHeader(request.headers.authorization, function(err, ticket){
+      //   console.log('ticket parse', err, ticket);
+      //
+      //   if (ticket.ext.private === undefined || ticket.ext.private === null){
+      //     return reply(Boom.unauthorized('Authorization Hawk ticket missing private data'));
+      //   }
+      //
+      //   if (ticket.ext.private.Logins === undefined || ticket.ext.private.Logins === null){
+      //     return reply(Boom.unauthorized('Authorization Hawk ticket missing logins'));
+      //   }
+      // });
+
+      var identityId;
+
+      cognitoIdentity.getId({
+        IdentityPoolId: COGNITO_IDENTITY_POOL_ID,
+        AccountId: AWS_ACCOUNT_ID,
+        Logins: request.payload.Logins
+      }, function(err, result) {
+        if (err) {
+          console.error(err);
+          return reply(err);
+        }
+
+        identityId = result.IdentityId;
+
+        cognitoSync.listRecords({
+          DatasetName: 'sso',
+          IdentityId: identityId,
+          IdentityPoolId: COGNITO_IDENTITY_POOL_ID
+        }, function(err, result) {
+          if (err) {
+            console.error(err);
+            return reply(err);
+          }
+
+          var recordPatches = Object.keys(request.payload.Data).map(function(key){
+            return {
+              Key: key,
+              Op: 'replace',
+              SyncCount: 0,
+              Value: request.payload.Data[key]
+            };
+          });
+
+          var params = {
+            DatasetName: 'sso', /* required */
+            IdentityId: identityId, /* required */
+            IdentityPoolId: COGNITO_IDENTITY_POOL_ID, /* required */
+            SyncSessionToken: result.SyncSessionToken, /* required */
+            // ClientContext: 'STRING_VALUE',
+            // DeviceId: 'STRING_VALUE',
+            RecordPatches: recordPatches
+          };
+
+          cognitoSync.updateRecords(params, function(err, result) {
+            if (err) {
+              console.error(err);
+              return reply(err);
+            }
+
+            reply();
+          });
+        });
+      });
+    }
+  });
 
 
   server.route({
@@ -457,7 +531,6 @@ module.exports.register = function (server, options, next) {
     path: '/userprofile',
     config: {
       auth: {
-        strategy: 'oz',
         access: {
           // scope: ['profile'],
           entity: 'user'

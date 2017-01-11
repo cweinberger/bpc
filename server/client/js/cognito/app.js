@@ -31,11 +31,13 @@ var userPool = new AWSCognito.CognitoIdentityServiceProvider.CognitoUserPool(poo
 var identityPoolId = 'eu-west-1:2add6c33-59e3-4b5d-96d9-6285378c5922';
 
 var appTicket;
+
 var app = {
   id: 'sso_client',
   key: 'gk32fh4k4h42fk4hfsdk2ljd98djjllu',
   algorithm: 'sha256'
 };
+
 
 // callSsoServer('POST', '/oz/app', {}, app, function(data, status, jqXHR) {
 //   console.log('getAppTicket result', data);
@@ -208,17 +210,12 @@ function facebookLoginInit(){
          disableLoginControls();
        });
 
-        // Logged into your app and Facebook.
-        // $('#aws-loginButtonFacebook').hide();
-        FB.api('/me', function(response) {
-          console.log('FB me', JSON.stringify(response));
-        });
-      } else if (response.status === 'not_authorized') {
-        // The person is logged into Facebook, but not your app.
-      } else {
-        // The person is not logged into Facebook, so we're not sure if
-        // they are logged into this app or not.
-      }
+    } else if (response.status === 'not_authorized') {
+      // The person is logged into Facebook, but not your app.
+    } else {
+      // The person is not logged into Facebook, so we're not sure if
+      // they are logged into this app or not.
+    }
   });
 }
 
@@ -277,10 +274,6 @@ function loginAwsByUsernameAndPassword(e){
 function awsFacebookLoginDone(response){
   console.log('awsFacebookLoginDone', response);
 
-  FB.api('/me', function(response) {
-    console.log('FB me', JSON.stringify(response));
-  });
-
   // Add the Facebook access token to the Cognito credentials login map.
   setFacebookIdentityToken(response.authResponse.accessToken, function(){
     disableLoginControls();
@@ -310,6 +303,13 @@ function setFacebookIdentityToken(accessToken, callback){
       }
     });
     AWS.config.credentials.get(credentialsGetCallback(callback));
+
+    FB.api('/me', function(response) {
+
+      console.log('FB me', JSON.stringify(response));
+
+      storeDataInCognitoIdentityDataset(response, AWS.config.credentials.params.Logins, {useBackend: false});
+    });
   // }
 }
 
@@ -370,6 +370,87 @@ function credentialsGetCallback(callback){
   };
 }
 
+
+function storeDataInCognitoIdentityDataset(data, Logins, callback, options){
+
+  if (callback === undefined){
+    callback = function(){};
+  }
+
+  if (options === undefined){
+    options = {};
+  }
+
+  if (options.useBackend){
+    var payload = {
+      Data: data,
+      Logins: Logins
+    };
+
+    $.ajax({
+      type: 'POST',
+      url: '/cognito/store',
+      contentType: "application/json; charset=utf-8",
+      data: JSON.stringify(payload),
+      success: [
+        function(data, status, jqXHR) {
+          console.log('/cognito/store', data, status);
+        },
+        callback
+      ],
+      error: function(jqXHR, textStatus, err) {
+        console.error(textStatus, err.toString());
+      }
+    });
+
+  } else {
+
+    var cognitoSync = new AWS.CognitoSync();
+
+    cognitoSync.listRecords({
+      DatasetName: 'sso', /* required */
+      IdentityId: AWS.config.credentials.identityId, /* required */
+      IdentityPoolId: identityPoolId /* required */
+      // LastSyncCount: 0,
+      // MaxResults: 0,
+      // NextToken: 'STRING_VALUE',
+      // SyncSessionToken: 'STRING_VALUE'
+    }, function(err, result) {
+      if (err) {
+        console.error(err);
+        return callback(err);
+      }
+
+      var recordPatches = Object.keys(data).map(function(key){
+        return {
+          Key: key,
+          Op: 'replace',
+          SyncCount: 0,
+          Value: data[key]
+        };
+      });
+
+      var params = {
+        DatasetName: 'sso', /* required */
+        IdentityId: AWS.config.credentials.identityId, /* required */
+        IdentityPoolId: identityPoolId, /* required */
+        SyncSessionToken: result.SyncSessionToken, /* required */
+        // ClientContext: 'STRING_VALUE',
+        // DeviceId: 'STRING_VALUE',
+        RecordPatches: recordPatches
+      };
+
+      cognitoSync.updateRecords(params, function(err, result) {
+        if (err) {
+          console.error(err);
+          return callback(err);
+        }
+
+        callback();
+      });
+    });
+  }
+}
 
 // function credentialsGetCallback(callback){
 //   return function(error){

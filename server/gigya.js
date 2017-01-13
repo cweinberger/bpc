@@ -68,6 +68,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
       console.log('POST / state', request.state);
+      console.log('POST / payload', request.payload);
 
       if(request.payload === null){
         return reply(Boom.unauthorized('Missing payload'));
@@ -82,7 +83,8 @@ module.exports.register = function (server, options, next) {
         // signatureTimestamp: request.payload.signatureTimestamp
       };
 
-      callGigyaRestApi('GET', '/accounts.getAccountInfo', parameters, function(err, data){
+      // callGigyaRestApi('GET', '/accounts.getAccountInfo', parameters, function(err, data){
+      callGigyaRestApi('GET', '/ids.getAccountInfo', parameters, function(err, data){
         console.error('getAccountInfo', err, data);
         if (err) {
           return reply(err);

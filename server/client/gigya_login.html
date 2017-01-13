@@ -31,12 +31,12 @@
 
     <div class="container">
 
-      <h1>SSO POC - Gigya server</h1>
+      <h1>SSO POC - Gigya</h1>
 
       <div>Username: <span id="gigya-currentuser"></span></div>
       <div>Permissions: <span id="gigya-currentuserpermissions"></span></div>
       <button id="gigya-loginButton" type="button" class="btn btn-default" onclick="gigya.accounts.showScreenSet({screenSet:'Default-RegistrationLogin'});">Login</button>
-      <button id="gigya-logoutButton" type="button" class="btn btn-warning" onclick="logoutGigya();">Log out</button>
+      <button id="gigya-logoutButton" type="button" class="btn btn-warning" onclick="gigya.accounts.logout();">Log out</button>
       <br />
       <br />
       <button id="button1" type="button" class="btn btn-default" onclick="tl();">POST /</button>

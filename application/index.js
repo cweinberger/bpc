@@ -7,7 +7,7 @@ const Resources = require('./resources');
 const Ticket = require('./ticket');
 
 const application = new Hapi.Server();
-application.connection({ port: process.env.PORT ? parseInt(process.env.PORT) + 1 : 8000 + 1 });
+application.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
 
 application.state('ticket', {
   ttl: 1000 * 60 * 60 * 24 * 30, // (one month)

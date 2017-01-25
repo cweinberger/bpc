@@ -7,7 +7,6 @@ const Joi = require('joi');
 const crypto = require('crypto');
 const Cognito = require('./cognito');
 const Gigya = require('./gigya');
-const Drupal = require('./drupal');
 const OzAdmin = require('./oz_admin');
 const Scarecrow = require('scarecrow');
 const Good = require('good');
@@ -27,7 +26,7 @@ const goodOpts = {
 
 
 const server = new Hapi.Server();
-server.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
+server.connection({ port: process.env.PORT ? parseInt(process.env.PORT) + 1 : 8000 + 1 });
 
 
 server.register({register: Good, options: goodOpts}, cb);
@@ -45,7 +44,6 @@ server.register(Scarecrow, function(err) {
 
   server.register(Cognito, { routes: { prefix: '/cognito' } }, cb);
   server.register(Gigya, { routes: { prefix: '/gigya' } }, cb);
-  server.register(Drupal, { routes: { prefix: '/drupal' } }, cb);
   server.register(OzAdmin, { routes: { prefix: '/admin' } }, cb);
 });
 

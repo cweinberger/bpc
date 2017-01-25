@@ -1,5 +1,15 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script
+      src="https://code.jquery.com/jquery-3.1.1.min.js"
+      integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+      crossorigin="anonymous"></script>
+
     <!-- Latest compiled and minified CSS -->
     <link
       rel="stylesheet"
@@ -20,36 +30,29 @@
       integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
       crossorigin="anonymous"></script>
 
+    <script
+      type="text/javascript"
+      src="https://cdns.gigya.com/js/gigya.js?apikey=3_Pax_srwZ6L6thNGQ4d8nFGSnCU5AxIrsQo6oR0SQD-yYibdLPKCPl_iZiWVr_0Wu"></script>
+
+    <script src="/js/gigya/app.js"></script>
+    <script src="/js/tools.js"></script>
+
   </head>
   <body>
+
     <div class="container">
-      <div class="row">
-        <div class="col-sm-4 col-sm-offset-4">
-          <ul class="list-group">
-            <li class="list-group-item">
-              <a href="http://berlingske-poc.local:8084/cognito_login.html">Cognito login</a>
-            </li>
-            <li class="list-group-item">
-              <a href="http://berlingske-poc.local:8084/cognito_create.html">Cognito create login</a>
-            </li>
-            <li class="list-group-item">
-              <a href="http://berlingske-poc.local:8084/cognito_confirm.html">Cognito confirm registration</a>
-            </li>
-            <li class="list-group-item">
-              <a href="http://berlingske-poc-client.local:8085/cognito_application.html">Cognito client application</a>
-            </li>
-            <li class="list-group-item">
-              <a href="http://berlingske-poc.local:8084/gigya_login.html">Gigya login</a>
-            </li>
-            <li class="list-group-item">
-              <a href="http://berlingske-poc-client.local:8085/gigya_application.html">Gigya client application</a>
-            </li>
-            <li class="list-group-item">
-              <a href="http://berlingske-poc-console.local:8086">Oz console</a>
-            </li>
-          </ul>
-        </div>
-      </div>
+
+      <h1>SSO POC - Gigya</h1>
+
+      <div>Username: <span id="gigya-currentuser"></span></div>
+      <div>Permissions: <span id="gigya-currentuserpermissions"></span></div>
+      <button id="gigya-loginButton" type="button" class="btn btn-default" onclick="gigya.accounts.showScreenSet({screenSet:'Default-RegistrationLogin'});">Login</button>
+      <button id="gigya-logoutButton" type="button" class="btn btn-warning" onclick="gigya.accounts.logout();">Log out</button>
+      <br />
+      <br />
+      <button id="button1" type="button" class="btn btn-default" onclick="tl();">POST /</button>
+      <br/>
+      <button id="button2" type="button" class="btn btn-default" onclick="ti();">GET /</button>
     </div>
   </body>
 </html>

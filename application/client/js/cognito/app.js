@@ -3,8 +3,8 @@
 
 $(document).ready(function() {
 
-  $('.aws-loginButton').attr('href', 'http://berlingske-poc.local:8084/cognito_login.html?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app');
-  // $('#aws-loginButton3').attr('href', 'http://berlingske-poc.local:8084/cognito?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app');
+  $('.aws-loginButton').attr('href', 'http://berlingske-poc-server.local:8085/cognito_login.html?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app');
+  // $('#aws-loginButton3').attr('href', 'http://berlingske-poc-server.local:8085/cognito?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app');
 
   var ticket = readCookie('ticket');
   var rsvp = getUrlVar('rsvp');
@@ -110,8 +110,7 @@ function getUserProfile(callback){
 //
 //   $.ajax({
 //     type: 'POST',
-//     url: 'http://berlingske-poc.local:8084/cognito'.concat(path),
-//     // url: 'http://127.0.0.1:8084/cognito'.concat(path),
+//     url: 'http://berlingske-poc-server.local:8085/cognito'.concat(path),
 //     contentType: 'application/json; charset=utf-8',
 //     data: JSON.stringify(payload),
 //     xhrFields: {

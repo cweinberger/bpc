@@ -97,7 +97,6 @@ function callSsoServer(method, path, body, credentials, callback) {
   }
 
   var options = {
-    // hostname: 'berlingske-poc.local',
     hostname: POC_APPLICATION_SSO_URL,
     port: POC_APPLICATION_SSO_PORT,
     // path: path.concat('?apiKey=', GIGYA_APP_KEY, '&userKey=', GIGYA_USER_KEY, '&secret=', GIGYA_SECRET_KEY, parameters),

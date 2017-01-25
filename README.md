@@ -4,6 +4,8 @@
 
 127.0.0.1       berlingske-poc.local
 127.0.0.1       berlingske-poc-client.local
+127.0.0.1       berlingske-poc-server.local
+127.0.0.1       berlingske-poc-console.local
 
 ## MongoDB
 
@@ -46,7 +48,9 @@ db.grants.insert({
   user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
   scope: ['admin']})
 
+
 # Flows
+
 
 ## AWS Cognito / Oz
 

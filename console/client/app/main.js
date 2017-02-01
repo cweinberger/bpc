@@ -3,6 +3,7 @@ var React = require('react');
 var ReactDOM = require('react-dom');
 var Applications = require('./applications');
 var Application = require('./application');
+var Users = require('./users');
 
 // Add the event handler
 
@@ -56,7 +57,7 @@ var ConsoleApp = React.createClass({
 
     $.ajax({
       type: 'GET',
-      url: 'http://berlingske-poc-server.local:8085/tickets/rsvp?app=console'.concat('&UID=', uid, '&email=', email),
+      url: 'http://berlingske-poc-server.local:8085/rsvp?app=console'.concat('&UID=', uid, '&email=', email),
       success: [
         function(userTicket, status, jqXHR) {
           console.log('GET rsvp', userTicket, status);
@@ -193,6 +194,8 @@ var ConsoleApp = React.createClass({
           ? <Applications selectApplication={this.selectApplication} />
           : <Application app={this.state.selectedAppId} closeApplication={this.closeApplication} />
         }
+
+        <Users />
       </div>
     );
   }

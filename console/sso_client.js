@@ -19,7 +19,7 @@ function getAppTicket(callback) {
     key: CONSOLE_APPLICATION_APP_SECRET,
     algorithm: 'sha256'
   };
-  callSsoServer('POST', '/oz/app', {}, app, callback);
+  callSsoServer('POST', '/ticket/app', {}, app, callback);
 };
 
 
@@ -38,7 +38,7 @@ module.exports.getAppTicket = getAppTicket;
 
 
 module.exports.refreshAppTicket = function(callback){
-  callSsoServer('POST', '/oz/reissue', {}, appTicket, function(err, result){
+  callSsoServer('POST', '/ticket/reissue', {}, appTicket, function(err, result){
     if (err){
       console.error('refreshAppTicket:', err);
       callback(err);
@@ -52,22 +52,22 @@ module.exports.refreshAppTicket = function(callback){
 
 
 module.exports.validateAppTicket = function(appTicket, callback){
-  callSsoServer('POST', '/tickets/validateappticket', {}, appTicket, callback);
+  callSsoServer('POST', '/validate/appticket', {}, appTicket, callback);
 };
 
 
 module.exports.getUserTicket = function(rsvp, callback) {
-  callSsoServer('POST', '/oz/rsvp', {rsvp: rsvp}, appTicket, callback);
+  callSsoServer('POST', '/ticket/user', {rsvp: rsvp}, appTicket, callback);
 };
 
 
 module.exports.refreshUserTicket = function(userTicket, callback){
-  callSsoServer('POST', '/oz/refresh', {}, userTicket, callback);
+  callSsoServer('POST', '/ticket/refresh', {}, userTicket, callback);
 };
 
 
 module.exports.validateUserTicket = function(userTicket, scope, callback){
-  callSsoServer('POST', '/tickets/validateuserticket', {scope: scope}, userTicket, callback);
+  callSsoServer('POST', '/validate/userticket', {scope: scope}, userTicket, callback);
 };
 
 

@@ -37,7 +37,7 @@ function getGigyaAccountInfo(){
         } else if(ticket){
           console.log('User has ticket!!!');
         } else {
-          requestSso('GET', '/tickets/rsvp?app=test_sso_app'.concat('&UID=', response.UID, '&email=', response.profile.email), {}, function(rsvp){
+          requestSso('GET', '/rsvp?app=test_sso_app'.concat('&UID=', response.UID, '&email=', response.profile.email), {}, function(rsvp){
             console.log('RSVP', rsvp);
             getUserTicket(rsvp, function(ticket){
               removeUrlVar('rsvp');
@@ -63,8 +63,8 @@ gigya.accounts.addEventHandlers({ onLogout: onLogoutEventHandler});
 function getRsvp(uid, email) {
   // console.log('s', 'http://berlingske-poc-server.local:8085/cognito_login.html?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app');
   // windows.location = 'http://berlingske-poc-server.local:8085/cognito_login.html?returnUrl=' + window.location.origin + window.location.pathname + '&app=test_sso_app';
-  // requestSso('POST', '/tickets/rsvp', {UID: uid, email: email, app: 'test_sso_app'}, function(data){
-  requestSso('GET', '/tickets/rsvp?app=test_sso_app'.concat('&UID=', uid, '&email=', email), {}, function(data){
+  // requestSso('POST', '/rsvp', {UID: uid, email: email, app: 'test_sso_app'}, function(data){
+  requestSso('GET', '/rsvp?app=test_sso_app'.concat('&UID=', uid, '&email=', email), null, function(data){
     console.log('RSVP', data);
   });
 }
@@ -184,7 +184,7 @@ function requestSso(type, path, payload, callback){
     type: type,
     url: 'http://berlingske-poc-server.local:8085'.concat(path),
     contentType: 'application/json; charset=utf-8',
-    data: JSON.stringify(payload),
+    data: ['POST', 'PUT'].indexOf(type) > -1 && payload !== null ? JSON.stringify(payload) : null,
     xhrFields: {
       withCredentials: true
     },

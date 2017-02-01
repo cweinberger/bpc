@@ -4,8 +4,10 @@
 const Hapi = require('hapi');
 const Joi = require('joi');
 const crypto = require('crypto');
-const Tickets = require('./tickets');
+const Rsvp = require('./rsvp');
+const OzLoadFuncs = require('./oz_loadfuncs');
 const OzAdmin = require('./oz_admin');
+const Validate = require('./validate');
 const Scarecrow = require('scarecrow');
 const Good = require('good');
 const GoodConsole = require('good-console');
@@ -22,25 +24,31 @@ const goodOpts = {
   }
 };
 
-
 const server = new Hapi.Server();
 server.connection({ port: process.env.PORT ? parseInt(process.env.PORT) + 1 : 8000 + 1 });
 
 
 server.register({register: Good, options: goodOpts}, cb);
+// server.register(Scarecrow, function(err) {
 server.register(Scarecrow, function(err) {
   const oz_strategy_options = {
     oz: {
       encryptionPassword: process.env.ENCRYPTIONPASSWORD,
-      loadAppFunc: Tickets.loadAppFunc,
-      loadGrantFunc: Tickets.loadGrantFunc,
+      loadAppFunc: OzLoadFuncs.loadAppFunc,
+      loadGrantFunc: OzLoadFuncs.loadGrantFunc,
+    },
+    urls: {
+      app: '/ticket/app',
+      reissue: '/ticket/reissue',
+      rsvp: '/ticket/user'
     }
   };
 
   server.auth.strategy('oz', 'oz', true, oz_strategy_options);
 
-  server.register(Tickets, { routes: { prefix: '/tickets' } }, cb);
+  server.register(Rsvp, { routes: { prefix: '/rsvp' } }, cb);
   server.register(OzAdmin, { routes: { prefix: '/admin' } }, cb);
+  server.register(Validate, { routes: { prefix: '/validate' } }, cb);
 });
 
 server.start((err) => {

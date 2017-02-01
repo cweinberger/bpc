@@ -386,6 +386,23 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+  server.route({
+    method: 'GET',
+    path: '/users',
+    config: {
+      auth:  {
+        access: {
+          scope: ['+admin'],
+          entity: 'user'
+        }
+      },
+      cors: stdCors
+    },
+    handler: function(request, reply) {
+      MongoDB.collection('users').find().toArray(reply);
+    }
+  });
+
 
   next();
 };

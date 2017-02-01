@@ -50,7 +50,7 @@ module.exports.register = function (server, options, next) {
       // sso_client.validateUserTicket(request.state.ticket, 'read', function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, [], function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, 1, function (err, response){
-      sso_client.request('POST', '/tickets/validateuserpermissions', {permissions: ['read', 'admin']}, request.state.ticket, function (err, response){
+      sso_client.request('POST', '/validate/userpermissions', {permissions: ['read', 'admin']}, request.state.ticket, function (err, response){
       // sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: 'admin'}, request.state.ticket, function (err, response){
       // sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: ['read', 'admin'], all: true}, request.state.ticket, function (err, response){
         console.log('cc', err, response);

@@ -14,7 +14,7 @@ gulp.task('default', ['webpack_watch', 'watch'], function(){
   setTimeout(function() {
     start_console();
     start_application();
-  }, 2000);
+  }, 4000);
 });
 
 

@@ -52,7 +52,7 @@ module.exports.refreshAppTicket = function(callback){
 
 
 module.exports.validateAppTicket = function(appTicket, callback){
-  callSsoServer('POST', '/cognito/validateappticket', {}, appTicket, callback);
+  callSsoServer('POST', '/tickets/validateappticket', {}, appTicket, callback);
 };
 
 
@@ -62,22 +62,22 @@ module.exports.getUserTicket = function(rsvp, callback) {
 
 
 module.exports.refreshUserTicket = function(userTicket, callback){
-  callSsoServer('POST', '/oz/refresh', {}, userTicket, callback);
+  callSsoServer('POST', '/oz/reissue', {}, userTicket, callback);
 };
 
 
 module.exports.validateUserTicket = function(userTicket, scope, callback){
-  callSsoServer('POST', '/cognito/validateuserticket', {scope: scope}, userTicket, callback);
+  callSsoServer('POST', '/tickets/validateuserticket', {scope: scope}, userTicket, callback);
 };
 
 
 module.exports.validateUserPermissions = function(userTicket, permissions, callback){
-  callSsoServer('POST', '/cognito/validateuserpermissions', {permissions: permissions}, userTicket, callback);
+  callSsoServer('POST', '/tickets/validateuserpermissions', {permissions: permissions}, userTicket, callback);
 };
 
 
 module.exports.getUserProfile = function(userTicket, callback){
-  callSsoServer('GET', '/cognito/userprofile', {}, userTicket, callback);
+  callSsoServer('GET', '/tickets/userprofile', {}, userTicket, callback);
 };
 
 

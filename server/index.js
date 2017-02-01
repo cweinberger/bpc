@@ -5,8 +5,7 @@ const Hapi = require('hapi');
 const Inert = require('inert');
 const Joi = require('joi');
 const crypto = require('crypto');
-const Cognito = require('./cognito');
-const Gigya = require('./gigya');
+const Tickets = require('./tickets');
 const OzAdmin = require('./oz_admin');
 const Scarecrow = require('scarecrow');
 const Good = require('good');
@@ -35,15 +34,14 @@ server.register(Scarecrow, function(err) {
   const oz_strategy_options = {
     oz: {
       encryptionPassword: process.env.ENCRYPTIONPASSWORD,
-      loadAppFunc: Cognito.loadAppFunc,
-      loadGrantFunc: Cognito.loadGrantFunc,
+      loadAppFunc: Tickets.loadAppFunc,
+      loadGrantFunc: Tickets.loadGrantFunc,
     }
   };
 
   server.auth.strategy('oz', 'oz', true, oz_strategy_options);
 
-  server.register(Cognito, { routes: { prefix: '/cognito' } }, cb);
-  server.register(Gigya, { routes: { prefix: '/gigya' } }, cb);
+  server.register(Tickets, { routes: { prefix: '/tickets' } }, cb);
   server.register(OzAdmin, { routes: { prefix: '/admin' } }, cb);
 });
 

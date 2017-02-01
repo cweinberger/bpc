@@ -4,65 +4,102 @@ var ReactDOM = require('react-dom');
 var Applications = require('./applications');
 var Application = require('./application');
 
+// Add the event handler
+
 
 var ConsoleApp = React.createClass({
   getInitialState: function() {
     return {
       loggedIn: false,
       authenticated: false,
+      accountInfo: {},
       userprofile: {},
-      appId: null,
-      loginurl: 'http://berlingske-poc.local:8084/cognito_login.html?returnUrl=' + window.location.origin + window.location.pathname + '&app=console'
+      selectedAppId: null
     };
   },
   componentWillMount: function() {
-    var rsvp = this.getSearchParameter('rsvp'),
-        loginurl = this.state.loginurl;
-
-    if (rsvp) {
-      this.getUserTicket(rsvp, function(){
-        this.setSearchParameter('rsvp', null);
-        this.validateUserTicket();
-      }.bind(this));
-    } else {
-      this.validateUserTicket();
-    }
   },
-  validateUserTicket: function(){
-    return $.ajax({
+  componentDidMount: function() {
+
+    gigya.accounts.addEventHandlers({ onLogin: this.onLoginEventHandler});
+    gigya.accounts.addEventHandlers({ onLogout: this.onLogoutEventHandler});
+
+    gigya.accounts.getAccountInfo({
+      callback: function(response){
+        console.log('accounts.getAccountInfo', response);
+        if (response.status === 'OK') {
+
+          this.setState({ loggedIn: true, accountInfo: response });
+
+          this.getRsvp(function(rsvp){
+            console.log('getRsvp', rsvp);
+            this.getUserTicket(rsvp, function(date){
+            }.bind(this));
+          }.bind(this));
+
+        } else if (response.status === 'FAIL') {
+        }
+      }.bind(this)
+    });
+  },
+  onLoginEventHandler: function(response) {
+    console.log('onLoginEventHandler', response);
+    this.setState({ loggedIn: true });
+  },
+  onLogoutEventHandler: function(response) {
+    console.log('onLogoutEventHandler', response);
+    this.setState({ loggedIn: false });
+  },
+  getRsvp: function(callback) {
+    var uid = this.state.accountInfo.UID,
+        email = this.state.accountInfo.profile.email;
+
+    $.ajax({
       type: 'GET',
-      url: '/ticket',
-      contentType: 'application/json; charset=utf-8',
+      url: 'http://berlingske-poc-server.local:8085/tickets/rsvp?app=console'.concat('&UID=', uid, '&email=', email),
       success: [
         function(userTicket, status, jqXHR) {
-          console.log('GET ticket success', userTicket, status);
-          this.setState({ authenticated: true, loggedIn: true });
-          this.getUserProfile();
-        }.bind(this)
+          console.log('GET rsvp', userTicket, status);
+        }.bind(this),
+        callback
       ],
       error: function(jqXHR, textStatus, err) {
         console.error(textStatus, err.toString());
-        // The user is logged in, but just not an admin
-        if(jqXHR.status === 403){
-          this.setState({ loggedIn: true });
-          this.getUserProfile();
-        }
-        // window.location.href = loginurl;
       }.bind(this)
     });
   },
   getUserTicket: function(rsvp, callback){
     $.ajax({
       type: 'POST',
-      url: '/ticket',
+      url: '/tickets',
       contentType: 'application/json; charset=utf-8',
       data: JSON.stringify({rsvp: rsvp}),
       success: [
         function(userTicket, status, jqXHR) {
-          console.log('POST ticket success', userTicket, status);
+          console.log('POST tickets success', userTicket, status);
           this.setState({ authenticated: true, loggedIn: true });
         }.bind(this),
         callback
+      ],
+      error: function(jqXHR, textStatus, err) {
+        console.error(textStatus, err.toString());
+        // The user is logged in, but just not an admin
+        if(jqXHR.status === 403){
+          this.setState({ loggedIn: true });
+        }
+      }.bind(this)
+    });
+  },
+  refreshUserTicket: function(){
+    return $.ajax({
+      type: 'GET',
+      url: '/tickets',
+      contentType: 'application/json; charset=utf-8',
+      success: [
+        function(userTicket, status, jqXHR) {
+          console.log('GET tickets success', userTicket, status);
+          this.setState({ authenticated: true, loggedIn: true });
+        }.bind(this)
       ],
       error: function(jqXHR, textStatus, err) {
         console.error(textStatus, err.toString());
@@ -76,27 +113,11 @@ var ConsoleApp = React.createClass({
   deleteUserTicket: function(callback){
     $.ajax({
       type: 'DELETE',
-      url: '/ticket',
+      url: '/tickets',
       success: [
         function(data, status, jqXHR) {
           console.log('DELETE signout success', data, status);
           this.setState({ authenticated: false, loggedIn: false });
-        }.bind(this),
-        callback
-      ],
-      error: function(jqXHR, textStatus, err) {
-        console.error(textStatus, err.toString());
-      }
-    });
-  },
-  getUserProfile: function(callback){
-    $.ajax({
-      type: 'GET',
-      url: '/ticket/userprofile',
-      success: [
-        function(data, status, jqXHR) {
-          console.log('GET userprofile', data, status);
-          this.setState({userprofile: data});
         }.bind(this),
         callback
       ],
@@ -140,27 +161,25 @@ var ConsoleApp = React.createClass({
   },
   selectApplication: function(id){
     console.log('selectApplication', id);
-    this.setState({ appId: id });
+    this.setState({ selectedAppId: id });
   },
   closeApplication: function(){
     console.log('closeApplication');
-    this.setState({ appId: null });
+    this.setState({ selectedAppId: null });
+  },
+  showLoginScreen: function() {
+    gigya.accounts.showScreenSet({screenSet:'Default-RegistrationLogin'});
   },
   render: function() {
-
-
 
     return (
       <div className="container">
 
         <h1>SSO POC - Oz Admin</h1>
         <div>
-          {this.state.loggedIn !== true
-            ? <a className="btn btn-default" href={this.state.loginurl}>Login</a>
-            : <div>
-                <button type="button" className="btn btn-warning" onClick={this.deleteUserTicket}>Slet cookie</button>
-                <p>{this.state.userprofile.email}</p>
-              </div>
+          {this.state.loggedIn === true
+            ? <button id="gigya-logoutButton" type="button" className="btn btn-warning" onClick={gigya.accounts.logout}>Log out</button>
+            : <button id="gigya-loginButton" type="button" className="btn btn-default" onClick={this.showLoginScreen}>Login</button>
           }
         </div>
         <div>
@@ -170,9 +189,9 @@ var ConsoleApp = React.createClass({
           }
         </div>
         <br />
-        {this.state.appId === null
+        {this.state.selectedAppId === null
           ? <Applications selectApplication={this.selectApplication} />
-          : <Application app={this.state.appId} closeApplication={this.closeApplication} />
+          : <Application app={this.state.selectedAppId} closeApplication={this.closeApplication} />
         }
       </div>
     );

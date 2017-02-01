@@ -34,7 +34,7 @@
       type="text/javascript"
       src="https://cdns.gigya.com/js/gigya.js?apikey=3_Pax_srwZ6L6thNGQ4d8nFGSnCU5AxIrsQo6oR0SQD-yYibdLPKCPl_iZiWVr_0Wu"></script>
 
-    <script src="/js/gigya/app.js"></script>
+    <script src="/js/app.js"></script>
     <script src="/js/tools.js"></script>
     <script src="/js/hawk/browser.js"></script>
 
@@ -48,12 +48,21 @@
       <div>Username: <span id="gigya-currentuser"></span></div>
       <div>Permissions: <span id="gigya-currentuserpermissions"></span></div>
       <button id="gigya-loginButton" type="button" class="btn btn-default" onclick="gigya.accounts.showScreenSet({screenSet:'Default-RegistrationLogin'});">Login</button>
-      <button id="gigya-logoutButton" type="button" class="btn btn-warning" onclick="logoutGigya();">Log out</button>
+      <button id="gigya-logoutButton" type="button" class="btn btn-warning" onclick="gigya.accounts.logout();">Log out</button>
       <br />
       <br />
-      <button id="button1" type="button" class="btn btn-default" onclick="tl();">POST /</button>
+      <button type="button" class="btn btn-default" onclick="getResources();">GET resources</button>
+      <div>Message: <span id="public-resource"></span></div>
       <br/>
-      <button id="button2" type="button" class="btn btn-default" onclick="ti();">GET /</button>
+      <button type="button" class="btn btn-default" onclick="getProtectedResource();">GET protected resources</button>
+      <div>Message: <span id="protected-resource"></span></div>
+      <br/>
+      <br/>
+      <a href="#" class="btn btn-default" onclick="refreshUserTicket();">Refresh ticket</a>
+      <br/>
+      <br/>
+      <p><button type="button" class="btn btn-warning" onclick="deleteUserTicket();">Slet ticket</button></p>
+      <br/>
     </div>
   </body>
 </html>

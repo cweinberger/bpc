@@ -7,22 +7,6 @@ const sso_client = require('./sso_client');
 module.exports.register = function (server, options, next) {
 
   server.route({
-    method: 'GET',
-    path: '/',
-    config: {
-      cors: false,
-      state: {
-        parse: true,
-        failAction: 'log'
-      }
-    },
-    handler: function(request, reply) {
-      // sso_client.request('GET', '/cognito/validateuserticket?scope=admin', null, request.state.ticket, reply);
-      sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: 'admin'}, request.state.ticket, reply);
-    }
-  });
-
-  server.route({
     method: 'POST',
     path: '/',
     config: {
@@ -33,10 +17,9 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-
       sso_client.getUserTicket(request.payload.rsvp, function (err, userTicket){
+        console.log('getUserTicket', err, userTicket);
         if (err){
-          console.error('getUserTicket error', err);
           sso_client.refreshAppTicket(function(err, r){
             console.log('refreshAppTicket', err, r);
           });
@@ -68,7 +51,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/userprofile',
+    path: '/',
     config: {
       cors: false,
       state: {
@@ -77,14 +60,13 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('GET /userprofile (console)', request.state);
-      sso_client.request('GET', '/cognito/userprofile', null, request.state.ticket, function (err, profile){
-        console.log('getUserProfile', err, profile);
-        if (err){
+      sso_client.refreshUserTicket(request.state.ticket, function (err, userTicket){
+        console.log('refreshUserTicket', err, userTicket);
+        if (err) {
           return reply(err);
         }
-
-        reply(profile);
+        reply(userTicket)
+          .state('ticket', userTicket);
       });
     }
   });
@@ -94,6 +76,6 @@ module.exports.register = function (server, options, next) {
 
 
 module.exports.register.attributes = {
-  name: 'login',
+  name: 'tickets',
   version: '1.0.0'
 };

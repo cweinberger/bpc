@@ -7,21 +7,6 @@ const sso_client = require('./sso_client');
 module.exports.register = function (server, options, next) {
 
   server.route({
-    method: 'GET',
-    path: '/',
-    config: {
-      cors: false,
-      state: {
-        parse: true,
-        failAction: 'log'
-      }
-    },
-    handler: function(request, reply) {
-      sso_client.request('GET', '/cognito/validateuserticket?scope=test', null, request.state.ticket, reply);
-    }
-  });
-
-  server.route({
     method: 'POST',
     path: '/',
     config: {
@@ -32,7 +17,6 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-
       sso_client.getUserTicket(request.payload.rsvp, function (err, userTicket){
         console.log('getUserTicket', err, userTicket);
         if (err){
@@ -67,7 +51,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/userprofile',
+    path: '/',
     config: {
       cors: false,
       state: {
@@ -76,37 +60,13 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('GET /userprofile (app)', request.state);
-      sso_client.getUserProfile(request.state.ticket, function (err, profile){
-        console.log('getUserProfile', err, profile);
-        if (err){
+      sso_client.refreshUserTicket(request.state.ticket, function (err, userTicket){
+        console.log('refreshUserTicket', err, userTicket);
+        if (err) {
           return reply(err);
         }
-
-        reply(profile);
-      });
-    }
-  });
-
-  server.route({
-    method: 'GET',
-    path: '/validateuserticket',
-    config: {
-      cors: false,
-      state: {
-        parse: true,
-        failAction: 'log'
-      }
-    },
-    handler: function(request, reply) {
-      console.log('GET /validateuserticket (app)', request.state);
-      sso_client.request('GET', '/cognito/validateuserticket?scope=test', null, request.state.ticket, function (err, result){
-        console.log('validateuserticket (app result)', err, result);
-        if (err){
-          return reply(err);
-        }
-
-        reply();
+        reply(userTicket)
+          .state('ticket', userTicket);
       });
     }
   });
@@ -116,6 +76,6 @@ module.exports.register = function (server, options, next) {
 
 
 module.exports.register.attributes = {
-  name: 'login',
+  name: 'tickets',
   version: '1.0.0'
 };

@@ -52,7 +52,7 @@ module.exports.refreshAppTicket = function(callback){
 
 
 module.exports.validateAppTicket = function(appTicket, callback){
-  callSsoServer('POST', '/cognito/validateappticket', {}, appTicket, callback);
+  callSsoServer('POST', '/tickets/validateappticket', {}, appTicket, callback);
 };
 
 
@@ -67,7 +67,7 @@ module.exports.refreshUserTicket = function(userTicket, callback){
 
 
 module.exports.validateUserTicket = function(userTicket, scope, callback){
-  callSsoServer('POST', '/cognito/validateuserticket', {scope: scope}, userTicket, callback);
+  callSsoServer('POST', '/tickets/validateuserticket', {scope: scope}, userTicket, callback);
 };
 
 

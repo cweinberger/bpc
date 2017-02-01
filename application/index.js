@@ -4,7 +4,7 @@
 const Hapi = require('hapi');
 const Inert = require('inert');
 const Resources = require('./resources');
-const Ticket = require('./ticket');
+const Tickets = require('./tickets');
 
 const application = new Hapi.Server();
 application.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
@@ -20,7 +20,7 @@ application.state('ticket', {
 
 application.register(Inert, () => {});
 application.register(Resources, { routes: { prefix: '/resources' } }, cb);
-application.register(Ticket, { routes: { prefix: '/ticket' } }, cb);
+application.register(Tickets, { routes: { prefix: '/tickets' } }, cb);
 
 
 

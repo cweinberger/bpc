@@ -36,6 +36,7 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
 
       if(request.state.ticket === undefined || request.state.ticket === null){
+        console.log('GHGHG', request.state);
         return reply(Boom.unauthorized());
       }
 
@@ -49,15 +50,16 @@ module.exports.register = function (server, options, next) {
       // sso_client.validateUserTicket(request.state.ticket, 'read', function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, [], function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, 1, function (err, response){
-      sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: ['read', 'admin']}, request.state.ticket, function (err, response){
+      sso_client.request('POST', '/tickets/validateuserpermissions', {permissions: ['read', 'admin']}, request.state.ticket, function (err, response){
       // sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: 'admin'}, request.state.ticket, function (err, response){
       // sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: ['read', 'admin'], all: true}, request.state.ticket, function (err, response){
+        console.log('cc', err, response);
         if (err){
-          return reply(err);
+          // return reply(err);
+          reply({message: 'public resource'});
+        } else {
+          reply({message: 'protected resource'});
         }
-
-        // reply({message: 'public resource'});
-        reply({message: 'protected resource'});
       });
     }
   });

@@ -2,7 +2,6 @@
 'use strict';
 
 const Hapi = require('hapi');
-const Inert = require('inert');
 const Joi = require('joi');
 const crypto = require('crypto');
 const Tickets = require('./tickets');
@@ -29,7 +28,6 @@ server.connection({ port: process.env.PORT ? parseInt(process.env.PORT) + 1 : 80
 
 
 server.register({register: Good, options: goodOpts}, cb);
-server.register(Inert, () => {});
 server.register(Scarecrow, function(err) {
   const oz_strategy_options = {
     oz: {
@@ -43,33 +41,6 @@ server.register(Scarecrow, function(err) {
 
   server.register(Tickets, { routes: { prefix: '/tickets' } }, cb);
   server.register(OzAdmin, { routes: { prefix: '/admin' } }, cb);
-});
-
-
-server.route({
-  method: 'GET',
-  path: '/favicon.ico',
-  config: {
-    auth: false
-  },
-  handler: function(request, reply){
-    reply();
-  }
-});
-
-server.route({
-  method: 'GET',
-  path: '/{param*}',
-  config: {
-    auth: false
-  },
-  handler: {
-    directory: {
-      path: './server/client',
-      redirectToSlash: true,
-      index: true
-    }
-  }
 });
 
 server.start((err) => {

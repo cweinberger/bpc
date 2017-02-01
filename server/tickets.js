@@ -6,7 +6,6 @@ const Joi = require('joi');
 const Oz = require('oz');
 const crypto = require('crypto');
 const AWS = require('aws-sdk');
-const Facebook = require('./facebook');
 const Gigya = require('./gigya_client');
 const MongoDB = require('./mongodb_client');
 

@@ -13,39 +13,34 @@ const CONSOLE_APPLICATION_SSO_URL = process.env.CONSOLE_APPLICATION_SSO_URL;
 const CONSOLE_APPLICATION_SSO_PORT = process.env.CONSOLE_APPLICATION_SSO_PORT;
 
 
-function getAppTicket(callback) {
+function getAppTicket() {
   var app = {
     id: CONSOLE_APPLICATION_APP_ID,
     key: CONSOLE_APPLICATION_APP_SECRET,
     algorithm: 'sha256'
   };
-  callSsoServer('POST', '/ticket/app', {}, app, callback);
+
+  callSsoServer('POST', '/ticket/app', {}, app, function(err, result){
+    if (err){
+      console.error(err);
+      process.exit(1);
+    } else {
+      console.log('Got the console appTicket');
+      appTicket = result;
+      setTimeout(refreshAppTicket, result.exp - Date.now() - 10000)
+    }
+  });
 };
 
+getAppTicket();
 
-getAppTicket(function(err, result){
-  if (err){
-    console.error(err);
-    process.exit(1);
-  } else {
-    console.log('Got the console appTicket');
-    appTicket = result;
-  }
-});
-
-
-module.exports.getAppTicket = getAppTicket;
-
-
-module.exports.refreshAppTicket = function(callback){
+function refreshAppTicket(){
   callSsoServer('POST', '/ticket/reissue', {}, appTicket, function(err, result){
     if (err){
       console.error('refreshAppTicket:', err);
-      callback(err);
     } else {
       console.log('refreshAppTicket (console)', result);
       appTicket = result;
-      callback(null, {});
     }
   });
 };

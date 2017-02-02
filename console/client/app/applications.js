@@ -54,6 +54,8 @@ module.exports = React.createClass({
     return (
       <div className="applications">
         <h3>Applications</h3>
+        <CreateApplication createApplication={this.createApplication} />
+        <br />
         <table className="table">
           <tbody>
             <tr>
@@ -63,7 +65,6 @@ module.exports = React.createClass({
             {applications}
           </tbody>
         </table>
-        <CreateApplication createApplication={this.createApplication} />
       </div>
     );
   }

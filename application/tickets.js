@@ -20,9 +20,6 @@ module.exports.register = function (server, options, next) {
       sso_client.getUserTicket(request.payload.rsvp, function (err, userTicket){
         console.log('getUserTicket', err, userTicket);
         if (err){
-          sso_client.refreshAppTicket(function(err, r){
-            console.log('refreshAppTicket', err, r);
-          });
           return reply(err);
         }
 

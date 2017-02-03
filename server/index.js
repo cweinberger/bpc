@@ -8,6 +8,8 @@ const Rsvp = require('./rsvp');
 const OzLoadFuncs = require('./oz_loadfuncs');
 const OzAdmin = require('./oz_admin');
 const Validate = require('./validate');
+const Permissions = require('./permissions');
+const Settings = require('./settings');
 const Scarecrow = require('scarecrow');
 const Good = require('good');
 const GoodConsole = require('good-console');
@@ -49,6 +51,8 @@ server.register(Scarecrow, function(err) {
   server.register(Rsvp, { routes: { prefix: '/rsvp' } }, cb);
   server.register(OzAdmin, { routes: { prefix: '/admin' } }, cb);
   server.register(Validate, { routes: { prefix: '/validate' } }, cb);
+  server.register(Permissions, { routes: { prefix: '/permissions' } }, cb);
+  server.register(Settings, { routes: { prefix: '/settings' } }, cb);
 });
 
 server.start((err) => {

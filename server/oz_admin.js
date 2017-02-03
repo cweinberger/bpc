@@ -23,7 +23,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth:  {
         access: {
-          scope: ['+admin'],
+          scope: ['+admin:*'],
           entity: 'user'
         }
       },
@@ -40,7 +40,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['+admin'],
+          scope: ['+admin:*'],
           entity: 'user'
         }
       },
@@ -60,8 +60,6 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
 
-      // TODO: scope 'admin' is not allowed
-
       // Making sure app id (request.payload.id) is unique!
       MongoDB.collection('applications').find({id: {$regex: '^'.concat(request.payload.id)}}, {_id: 0, id: 1}).toArray(function(err, applications) {
         var ids = applications.map(function (app) { return app.id; });
@@ -75,6 +73,10 @@ module.exports.register = function (server, options, next) {
         }
 
         request.payload.id = uniqueId
+        request.payload.scope = request.payload.scope ? request.payload.scope : [];
+        // request.payload.scope.push('settings:'.concat(request.payload.id));
+        // request.payload.scope.push('admin:'.concat(request.payload.id));
+        // TODO: Add scope 'admin:'.concat(request.payload.id) to console app
 
         var application = Object.assign(request.payload, {
           scope: request.payload.scope ? filterArrayForDuplicates(request.payload.scope) : [],
@@ -103,7 +105,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         // scope: ['+admin:{params.id}'],
-        scope: ['+admin'],
+        scope: ['admin:{params.id}', 'admin:*'],
         entity: 'user'
       }
     },
@@ -126,8 +128,7 @@ module.exports.register = function (server, options, next) {
     path: '/applications/{id}',
     config: {
       auth: {
-        // scope: ['+admin:{params.id}'],
-        scope: ['+admin'],
+        scope: ['admin:{params.id}', 'admin:*'],
         entity: 'user'
       },
       validate: {
@@ -175,7 +176,7 @@ module.exports.register = function (server, options, next) {
       auth: {
         // scope: ['delete:{params.id}']
         // scope: ['+admin:{params.id}'],
-        scope: ['+admin'],
+        scope: ['admin:{params.id}', 'admin:*'],
         entity: 'user'
       // },
       // validate: {
@@ -215,7 +216,7 @@ module.exports.register = function (server, options, next) {
       auth: {
         access: {
           // scope: ['+admin:{params.id}'],
-          scope: ['+admin'],
+          scope: ['admin:{params.id}', 'admin:*'],
           entity: 'user'
         }
       },
@@ -242,7 +243,7 @@ module.exports.register = function (server, options, next) {
       auth: {
         access: {
           // scope: ['+admin:{params.id}'],
-          scope: ['+admin'],
+          scope: ['admin:{params.id}', 'admin:*'],
           entity: 'user'
         }
       },
@@ -261,7 +262,7 @@ module.exports.register = function (server, options, next) {
       auth: {
         access: {
           // scope: ['+admin', '+admin:create'],
-          scope: ['+admin'],
+          scope: ['admin:{params.id}', 'admin:*'],
           entity: 'user'
         }
       },
@@ -316,7 +317,7 @@ module.exports.register = function (server, options, next) {
         access: {
            // TODO: validate against the app id, so that only users that are admins of the app can create grants
           // scope: ['+admin', '+admin:create'],
-          scope: ['+admin'],
+          scope: ['admin:{params.id}', 'admin:*'],
           entity: 'user'
         }
       },
@@ -376,7 +377,7 @@ module.exports.register = function (server, options, next) {
         access: {
            // TODO: validate against the app id, so that only users that are admins of the app can create grants
           // scope: ['+admin', '+admin:create'],
-          scope: ['+admin'],
+          scope: ['admin:{params.id}', 'admin:*'],
           entity: 'user'
         }
       },
@@ -392,7 +393,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth:  {
         access: {
-          scope: ['+admin'],
+          scope: ['+admin:*'],
           entity: 'user'
         }
       },
@@ -409,7 +410,7 @@ module.exports.register = function (server, options, next) {
 
 
 module.exports.register.attributes = {
-  name: 'oz_admin',
+  name: 'admin',
   version: '1.0.0'
 };
 

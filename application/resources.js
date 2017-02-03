@@ -36,7 +36,6 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
 
       if(request.state.ticket === undefined || request.state.ticket === null){
-        console.log('GHGHG', request.state);
         return reply(Boom.unauthorized());
       }
 
@@ -50,9 +49,10 @@ module.exports.register = function (server, options, next) {
       // sso_client.validateUserTicket(request.state.ticket, 'read', function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, [], function (err, response){
       // sso_client.validateUserTicket(request.state.ticket, 1, function (err, response){
-      sso_client.request('POST', '/validate/userpermissions', {permissions: ['read', 'admin']}, request.state.ticket, function (err, response){
       // sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: 'admin'}, request.state.ticket, function (err, response){
       // sso_client.request('POST', '/cognito/validateuserpermissions', {permissions: ['read', 'admin'], all: true}, request.state.ticket, function (err, response){
+      // sso_client.request('POST', '/validate/userpermissions', {permissions: ['read', 'admin']}, request.state.ticket, function (err, response){
+      sso_client.getUserPermissions(request.state.ticket, 'berlingske', function (err, response){
         console.log('cc', err, response);
         if (err){
           // return reply(err);
@@ -60,6 +60,10 @@ module.exports.register = function (server, options, next) {
         } else {
           reply({message: 'protected resource'});
         }
+      });
+
+      sso_client.setUserPermissions(request.state.ticket.user, 'berlingske', {subscriber: true }, function (err, response){
+        console.log('setUserPermissions', err, response);
       });
     }
   });

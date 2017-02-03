@@ -103,8 +103,9 @@ module.exports = React.createClass({
     return (
       <div className="grants">
         <h3>Grants</h3>
-        {grants}
         <CreateGrant createGrant={this.createGrant} />
+        <br />
+        {grants}
       </div>
     );
   }

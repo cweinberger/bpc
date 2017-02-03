@@ -30,7 +30,18 @@ module.exports = React.createClass({
         ? user.Permissions.map(function(permission, index) {
             return (<li key={index}>{permission}</li>);
           })
-        : null;
+        : Object.keys(user.Permissions).map(function (name, index) {
+            if (typeof user.Permissions[name] === 'object') {
+              return Object.keys(user.Permissions[name]).map(function (key, index2){
+                return (
+                  <li key={index + index2}>
+                    {name}.{key}: {user.Permissions[name][key].toString()}
+                  </li>);
+              });
+            } else {
+              return (<li key={index}>{key}: {user.Permissions[key].toString()}</li>);
+            }
+        });
 
       return (
         <tr key={index}>

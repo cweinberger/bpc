@@ -132,9 +132,9 @@ function createUserRsvp(appId, data, callback){
         $currentDate: { 'LastLogin': { $type: "timestamp" } },
         //  $set: {
         //  },
-        $addToSet: {
-          Permissions: 'read'
-        }
+        // $addToSet: {
+        //   Permissions: 'read'
+        // }
       },
       {
         upsert: true
@@ -150,42 +150,54 @@ function createUserRsvp(appId, data, callback){
   }
 
   function findGrant(){
-    var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
-
-    MongoDB.collection('grants').findOne({user: data.UID, app: appId, $or: exp_conditions}, {fields: {_id: 0}}, function(err, grant){
+    MongoDB.collection('applications').findOne({ id: appId }, { fields: { _id: 0 } }, function(err, app){
       if (err) {
         console.error(err);
         return callback(Boom.unauthorized(err.message));
-      } else if (grant === null){
-        // return callback(Boom.unauthorized('Missing grant'));
-
-        // TODO: Perhaps it's better to use delegation. Eg. deletage a generic grant from a central app to the requesting app??
-
-        // Creating new grant
-        grant = {
-          id : crypto.randomBytes(20).toString('hex'), // (gives 40 characters)
-          app : appId,
-          user : data.UID,
-          scope : [],
-          exp : null
-        };
-
-        MongoDB.collection('grants').insertOne(grant);
+      } else if (app === null){
+        return callback(Boom.unauthorized('Unknown application'));
       }
 
-      // TODO: exp should be set by other logic than this. E.g. the system that handles subscriptions
-      // Or a default exp could be set per application and then added to the grant.
-      if (grant.exp === undefined || grant.exp === null) {
-        grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
-      }
+      // We only looking for grants that have not expired
+      var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
 
-      MongoDB.collection('applications').findOne({id: appId}, {fields: {_id: 0}}, function(err, app){
+      MongoDB.collection('grants').findOne({ user: data.UID, app: appId, $or: exp_conditions }, { fields: { _id: 0 } }, function(err, grant){
         if (err) {
           console.error(err);
           return callback(Boom.unauthorized(err.message));
-        } else if (app === null){
-          return callback(Boom.unauthorized('Unknown application'));
+        } else if (grant === null){
+          // return callback(Boom.unauthorized('Missing grant'));
+
+          // TODO: Perhaps it's better to use delegation. Eg. deletage a generic grant from a central app to the requesting app??
+
+          // Creating new grant
+          grant = {
+            id : crypto.randomBytes(20).toString('hex'), // (gives 40 characters)
+            app : appId,
+            user : data.UID,
+            scope : [],
+            exp : null
+          };
+
+          MongoDB.collection('grants').insertOne(grant);
+
+        // } else if (grantMissingScopeFromApp(app, grant)) {
+        //
+        //   var missingScopes = app.scope.filter(function (appScope){
+        //     return grant.scope.indexOf(appScope) === -1;
+        //   });
+
+          // MongoDB.collection('grants').update({id: grant.id}, { $addToSet: {scope: { $each: missingScopes } } });
+          // grant.scope = grant.scope.concat(missingScopes);
+
         }
+
+        // TODO: exp should be set by other logic than this. E.g. the system that handles subscriptions
+        // Or a default exp could be set per application and then added to the grant.
+        if (grant.exp === undefined || grant.exp === null) {
+          grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
+        }
+
 
         Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
           if (err){

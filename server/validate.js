@@ -265,6 +265,7 @@ module.exports.register.attributes = {
 };
 
 
+// TODO: Make a module instead of having this function in both validate.js and permissions.js
 function getTicketFromHawkHeader(requestHeaderAuthorization, callback){
   var id = requestHeaderAuthorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
   if (id === undefined || id === null || id === ''){

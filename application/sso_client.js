@@ -24,7 +24,7 @@ function getAppTicket(callback) {
       console.error(err);
       process.exit(1);
     } else {
-      console.log('Got the appTicket');
+      console.log('Got the appTicket', result);
       appTicket = result;
 
       setTimeout(refreshAppTicket, result.exp - Date.now() - 10000)
@@ -35,7 +35,7 @@ function getAppTicket(callback) {
 getAppTicket();
 
 function refreshAppTicket(){
-  callSsoServer('POST', '/ticket/reissue', {}, appTicket, function(err, result){
+  callSsoServer('POST', '/ticket/reissue', null, appTicket, function(err, result){
     if (err){
       console.error('refreshAppTicket:', err);
     } else {
@@ -57,7 +57,7 @@ module.exports.getUserTicket = function(rsvp, callback) {
 
 
 module.exports.refreshUserTicket = function(userTicket, callback){
-  callSsoServer('POST', '/ticket/reissue', {}, userTicket, callback);
+  callSsoServer('POST', '/ticket/reissue', null, userTicket, callback);
 };
 
 
@@ -66,10 +66,21 @@ module.exports.validateUserTicket = function(userTicket, scope, callback){
 };
 
 
-module.exports.validateUserPermissions = function(userTicket, permissions, callback){
-  callSsoServer('POST', '/validate/userpermissions', {permissions: permissions}, userTicket, callback);
+// module.exports.validateUserPermissions = function(userTicket, permissions, callback){
+//   callSsoServer('POST', '/validate/userpermissions', {permissions: permissions}, userTicket, callback);
+// };
+
+
+module.exports.getUserPermissions = function(userTicket, permission, callback){
+  // Example using appTicket
+  // callSsoServer('GET', '/permissions/'.concat(userTicket.user, '/', permission), null, appTicket, callback);
+  // Example using userTicket
+  callSsoServer('GET', '/permissions/'.concat(permission), null, userTicket, callback);
 };
 
+module.exports.setUserPermissions = function(user, permission, payload, callback){
+  callSsoServer('POST', '/permissions/'.concat(user, '/', permission), payload, appTicket, callback);
+};
 
 
 function callSsoServer(method, path, body, credentials, callback) {

@@ -35,7 +35,7 @@ function getAppTicket() {
 getAppTicket();
 
 function refreshAppTicket(){
-  callSsoServer('POST', '/ticket/reissue', {}, appTicket, function(err, result){
+  callSsoServer('POST', '/ticket/reissue', null, appTicket, function(err, result){
     if (err){
       console.error('refreshAppTicket:', err);
     } else {
@@ -57,7 +57,7 @@ module.exports.getUserTicket = function(rsvp, callback) {
 
 
 module.exports.refreshUserTicket = function(userTicket, callback){
-  callSsoServer('POST', '/ticket/refresh', {}, userTicket, callback);
+  callSsoServer('POST', '/ticket/refresh', null, userTicket, callback);
 };
 
 
@@ -67,7 +67,7 @@ module.exports.validateUserTicket = function(userTicket, scope, callback){
 
 
 module.exports.getApplications = function(userTicket, callback){
-  callSsoServer('GET', '/admin/applications', {}, userTicket, callback);
+  callSsoServer('GET', '/admin/applications', null, userTicket, callback);
 };
 
 

@@ -9,23 +9,12 @@ module.exports = React.createClass({
       application: {}
     };
   },
-  addScope: function(e) {
-    e.preventDefault();
-    var application = Object.assign(this.state.application);
-    application.scope.push(this.state.newScope);
-    this.setState({application: application});
-    this.setState({newScope: ''});
-  },
-  removeScope: function(index) {
-    var application = this.state.application;
-    application.scope.splice(index, 1);
-    this.setState({application: application});
-  },
   getApplication: function() {
     return $.ajax({
       type: 'GET',
       url: '/admin/applications/'.concat(this.props.app),
       success: function(data, status){
+        console.log('application', data);
         this.setState({application: data});
       }.bind(this),
       error: function(jqXHR, textStatus, err) {
@@ -60,21 +49,41 @@ module.exports = React.createClass({
       }
     });
   },
-  componentDidMount: function() {
-    this.getApplication();
+  addScope: function(e) {
+    e.preventDefault();
+    var application = Object.assign(this.state.application);
+    application.scope.push(this.state.newScope);
+    this.setState({application: application});
+    this.setState({newScope: ''});
   },
+  removeScope: function(index) {
+    var application = this.state.application;
+    application.scope.splice(index, 1);
+    this.setState({application: application});
+  },
+  componentWillMount: function() {
+    this.getApplication();
+   },
   render: function() {
+    console.log('cc', this.state.application);
+
+    var scopeList = this.state.application !== undefined && this.state.application.scope !== undefined
+      ? this.state.application.scope.map(function(s, index){
+          return (<li key={index}>{s}</li>);
+        })
+      : null;
+
     return (
       <div>
-      <div className="row">
-        <div className="col-xs-2">
-          <input className="btn btn-default" type="button" value="Tilbage" onClick={this.props.closeApplication} />
-        </div>
-        <div className="col-xs-2 col-xs-offset-8">
-          {['console', 'sso_client'].indexOf(this.state.application.id) === -1
-            ? <button className="btn btn-danger" type="button" onClick={this.deleteApplication}>Delete app</button>
-            : null
-          }
+        <div className="row">
+          <div className="col-xs-2">
+            <input className="btn btn-default" type="button" value="Tilbage" onClick={this.props.closeApplication} />
+            </div>
+            <div className="col-xs-2 col-xs-offset-8">
+            {['console'].indexOf(this.state.application.id) === -1
+              ? <button className="btn btn-danger" type="button" onClick={this.deleteApplication}>Delete app</button>
+              : null
+            }
           </div>
         </div>
         <div className="row">
@@ -85,6 +94,14 @@ module.exports = React.createClass({
               <dt>Application Key</dt>
               <dd>{this.state.application.key}</dd>
             </dl>
+          </div>
+        </div>
+        <div className="row">
+          <div className="col-xs-12">
+            <h2>Scope</h2>
+            <ul className="list-unstyled">
+              {scopeList}
+            </ul>
           </div>
         </div>
         <div className="row">

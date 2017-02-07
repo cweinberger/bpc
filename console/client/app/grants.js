@@ -118,8 +118,7 @@ var Grant = React.createClass({
   render: function() {
     return (
       <div className="row">
-        <div className="col-xs-2"><div>{this.props.grant.app}</div></div>
-        <div className="col-xs-8"><div>{this.props.grant.user}</div></div>
+        <div className="col-xs-10"><div>{this.props.grant.user}</div></div>
         <div className="col-xs-2">
           <button className="btn btn-default" type="button" onClick={this.deleteGrant}>Delete grant</button>
         </div>

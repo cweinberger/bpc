@@ -41,6 +41,7 @@ function refreshAppTicket(){
     } else {
       console.log('refreshAppTicket (app)', result);
       appTicket = result;
+      setTimeout(refreshAppTicket, result.exp - Date.now() - 10000);
     }
   });
 };

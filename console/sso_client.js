@@ -27,7 +27,7 @@ function getAppTicket() {
     } else {
       console.log('Got the console appTicket');
       appTicket = result;
-      setTimeout(refreshAppTicket, result.exp - Date.now() - 10000)
+      setTimeout(refreshAppTicket, result.exp - Date.now() - 10000);
     }
   });
 };
@@ -41,6 +41,7 @@ function refreshAppTicket(){
     } else {
       console.log('refreshAppTicket (console)', result);
       appTicket = result;
+      setTimeout(refreshAppTicket, result.exp - Date.now() - 10000);
     }
   });
 };

@@ -11,6 +11,27 @@ const MongoDB = require('./mongodb_client');
 //Declaration of all properties linked to the environment (beanstalk configuration)
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
+const corsRules = {
+  credentials: true,
+  origin: ['*'],
+  // access-control-allow-methods:POST
+  headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+  exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+  maxAge: 86400
+};
+
+// TODO: Make UID, UIDSignature and signatureTimestamp required when provider is 'gigya'
+
+const rsvpValidation = {
+  provider: Joi.string().valid('gigya', 'google').required(),
+  UID: Joi.string().required(),
+  UIDSignature: Joi.string(),
+  signatureTimestamp: Joi.string(),
+  email: Joi.string().email().required(),
+  app: Joi.string().required(),
+  returnUrl: Joi.string().uri()
+};
+
 
 module.exports.register = function (server, options, next) {
 
@@ -19,29 +40,13 @@ module.exports.register = function (server, options, next) {
     path: '/',
     config: {
       auth: false,
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
-      state: {
-        parse: true,
-        failAction: 'log'
-      },
+      cors: corsRules,
       validate: {
-        query: {
-          UID: Joi.string().required(),
-          email: Joi.string().email().required(),
-          app: Joi.string().required(),
-          returnUrl: Joi.string().uri()
-        }
+        query: rsvpValidation
       }
     },
     handler: function (request, reply) {
-      createUserRsvp(request.query.app, {UID: request.query.UID, email: request.query.email}, function(err, rsvp){
+      createUserRsvp(request.query, function(err, rsvp){
         if (err){
           return reply(err);
         }
@@ -63,28 +68,13 @@ module.exports.register = function (server, options, next) {
     path: '/',
     config: {
       auth: false,
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
-      state: {
-        parse: true,
-        failAction: 'log'
-      },
+      cors: corsRules,
       validate: {
-        payload: {
-          UID: Joi.string().required(),
-          email: Joi.string().email().required(),
-          app: Joi.string().required()
-        }
+        payload: rsvpValidation
       }
     },
     handler: function (request, reply) {
-      createUserRsvp(request.payload.app, {UID: request.payload.UID, email: request.payload.email}, function(err, rsvp){
+      createUserRsvp(request.payload, function(err, rsvp){
         if (err){
           return reply(err);
         }
@@ -108,23 +98,38 @@ module.exports.register.attributes = {
 
 
 // Here we are creating the user->app rsvp
-function createUserRsvp(appId, data, callback){
+function createUserRsvp(data, callback){
 
-  // Vefify the user is created in Gigya
-  Gigya.getAccountInfo(data, function (err, result) {
-    if (err){
-      return callback(err);
-    } else if(data.email !== result.profile.email){
-      return callback(Boom.badRequest());
-    }
+  // 1. first find the app.
+  // 2. Check if the app allows for dynamic creating of grants
+  // 3. Check if the app uses Gigya accounts or perhaps pre-defined users (e.g. server-to-server auth keys)
 
-    updateUserInDB(result);
-    findGrant();
-  });
+  if (data.provider === 'gigya'){
+
+    // Vefify the user is created in Gigya
+    // TODO: Also verify using exchangeUIDSignature (UIDSignature + signatureTimestamp)
+    Gigya.getAccountInfo({ UID: data.UID }, function (err, result) {
+      if (err){
+        return callback(err);
+      } else if(data.email !== result.profile.email){
+        return callback(Boom.badRequest());
+      }
+
+      updateUserInDB(result);
+      findGrant({ user: data.UID, app: data.app });
+    });
+
+  } else if (data.provider === 'google'){
+
+    // TODO: Verify the user with Google
+
+  }
+
 
   function updateUserInDB(accountInfo){
     MongoDB.collection('users').updateOne(
       {
+        provider: data.provider,
         UID: accountInfo.UID,
         email: accountInfo.profile.email
       },
@@ -149,8 +154,8 @@ function createUserRsvp(appId, data, callback){
     );
   }
 
-  function findGrant(){
-    MongoDB.collection('applications').findOne({ id: appId }, { fields: { _id: 0 } }, function(err, app){
+  function findGrant(input){
+    MongoDB.collection('applications').findOne({ id: input.app }, { fields: { _id: 0 } }, function(err, app){
       if (err) {
         console.error(err);
         return callback(Boom.unauthorized(err.message));
@@ -161,20 +166,22 @@ function createUserRsvp(appId, data, callback){
       // We only looking for grants that have not expired
       var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
 
-      MongoDB.collection('grants').findOne({ user: data.UID, app: appId, $or: exp_conditions }, { fields: { _id: 0 } }, function(err, grant){
+      MongoDB.collection('grants').findOne({ user: input.user, app: input.app, $or: exp_conditions }, { fields: { _id: 0 } }, function(err, grant){
         if (err) {
           console.error(err);
           return callback(Boom.unauthorized(err.message));
-        } else if (grant === null){
-          // return callback(Boom.unauthorized('Missing grant'));
 
-          // TODO: Perhaps it's better to use delegation. Eg. deletage a generic grant from a central app to the requesting app??
+        } else if (app.disallowAutoGrant && grant === null){
+
+          return callback(Boom.forbidden());
+
+        } else if (grant === null){
 
           // Creating new grant
           grant = {
             id : crypto.randomBytes(20).toString('hex'), // (gives 40 characters)
-            app : appId,
-            user : data.UID,
+            app : input.app,
+            user : input.user,
             scope : [],
             exp : null
           };

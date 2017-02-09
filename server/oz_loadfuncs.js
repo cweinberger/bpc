@@ -44,7 +44,7 @@ module.exports.loadGrantFunc = function(id, next) {
         var missingScopes = app.scope.filter(function (appScope){
           return appScope.indexOf('admin:') === -1 && grant.scope.indexOf(appScope) === -1;
         });
-console.log('missingScopes', missingScopes);
+
         grant.scope = grant.scope.concat(missingScopes);
 
         // // Finding private details to encrypt in the ticket for later usage.

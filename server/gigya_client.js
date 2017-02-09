@@ -10,9 +10,7 @@ const GIGYA_USER_KEY = process.env.GIGYA_USER_KEY;
 const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY;
 
 
-
-
-
+// https://developers.gigya.com/display/GD/accounts.getAccountInfo+REST
 module.exports.getAccountInfo = function(payload, callback){
   var parameters = payload.regToken ?
   {
@@ -26,9 +24,18 @@ module.exports.getAccountInfo = function(payload, callback){
   callGigyaRestApi('GET', '/ids.getAccountInfo', parameters, callback);
 };
 
+
+// https://developers.gigya.com/display/GD/accounts.setAccountInfo+REST
 module.exports.setAccountInfo = function(payload, callback){
   callGigyaRestApi('POST', '/ids.setAccountInfo', payload, callback);
 };
+
+
+// https://developers.gigya.com/display/GD/accounts.exchangeUIDSignature+REST
+module.exports.exchangeUIDSignature = function(payload, callback){
+  callGigyaRestApi('POST', '/accounts.exchangeUIDSignature', payload, callback);
+};
+
 
 module.exports.request = callGigyaRestApi;
 

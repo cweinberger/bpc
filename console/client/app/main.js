@@ -22,6 +22,15 @@ var ConsoleApp = React.createClass({
   },
   componentDidMount: function() {
 
+    gapi.signin2.render('g-signin2', {
+      'scope': 'https://www.googleapis.com/auth/plus.login',
+      'width': 200,
+      'height': 50,
+      'longtitle': true,
+      'theme': 'dark',
+      'onsuccess': this.onSignIn
+    });
+
     gigya.accounts.addEventHandlers({ onLogin: this.onLoginEventHandler});
     gigya.accounts.addEventHandlers({ onLogout: this.onLogoutEventHandler});
 
@@ -32,7 +41,7 @@ var ConsoleApp = React.createClass({
 
           this.setState({ loggedIn: true, accountInfo: response });
 
-          this.getRsvp(function(rsvp){
+          this.getRsvp({ uid: response.UID, email: response.profile.email, provider: 'gigya' }, function(rsvp){
             console.log('getRsvp', rsvp);
             this.getUserTicket(rsvp, function(date){
             }.bind(this));
@@ -51,13 +60,37 @@ var ConsoleApp = React.createClass({
     console.log('onLogoutEventHandler', response);
     this.setState({ loggedIn: false });
   },
-  getRsvp: function(callback) {
-    var uid = this.state.accountInfo.UID,
-        email = this.state.accountInfo.profile.email;
+  onSignIn: function(googleUser) {
+    console.log('Google login success');
+    // Useful data for your client-side scripts:
+    var profile = googleUser.getBasicProfile();
+    var authReponse = googleUser.getAuthResponse();
+
+    var t = {
+      ID: profile.getId(),
+      email: profile.getEmail(),
+      id_token: authReponse.id_token,
+      access_token: authReponse.access_token,
+      provider: 'google'
+    };
+
+    this.setState({ profile: t });
+
+    this.getRsvp(t, function(rsvp){
+      console.log('getRsvp', rsvp);
+      this.getUserTicket(rsvp, function(date){
+      }.bind(this));
+    }.bind(this));
+  },
+  getRsvp: function(params, callback) {
+
+    var rsvpParams = Object.keys(params).map(function(k){
+      return k.concat('=', params[k]);
+    }).join('&');
 
     $.ajax({
       type: 'GET',
-      url: 'http://berlingske-poc-server.local:8085/rsvp?app=console'.concat('&UID=', uid, '&email=', email),
+      url: 'http://berlingske-poc-server.local:8085/rsvp?app=console&'.concat(rsvpParams),
       success: [
         function(userTicket, status, jqXHR) {
           console.log('GET rsvp', userTicket, status);
@@ -177,6 +210,9 @@ var ConsoleApp = React.createClass({
       <div className="container">
 
         <h1>SSO POC - Oz Admin</h1>
+
+        <div id="g-signin2" className="g-signin2" data-onsuccess={this.onSignIn} data-theme="dark"></div>
+
         <div>
           {this.state.loggedIn === true
             ? <button id="gigya-logoutButton" type="button" className="btn btn-warning" onClick={gigya.accounts.logout}>Log out</button>

@@ -5,8 +5,9 @@ const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
 const crypto = require('crypto');
-const Gigya = require('./gigya_client');
 const MongoDB = require('./mongodb_client');
+const Gigya = require('./gigya_client');
+const Google = require('./google_client');
 
 //Declaration of all properties linked to the environment (beanstalk configuration)
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
@@ -27,6 +28,7 @@ const rsvpValidation = Joi.object().keys({
   signatureTimestamp: Joi.string().when('provider', { is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden() }),
   ID: Joi.string().when('provider', { is: 'google', then: Joi.required(), otherwise: Joi.forbidden() }),
   id_token: Joi.string().when('provider', { is: 'google', then: Joi.required(), otherwise: Joi.forbidden() }),
+  access_token: Joi.string().when('provider', { is: 'google', then: Joi.required(), otherwise: Joi.forbidden() }),
   email: Joi.string().email().required(),
   app: Joi.string().required(),
   returnUrl: Joi.string().uri().optional()
@@ -125,19 +127,30 @@ function createUserRsvp(data, callback){
       findGrant({ user: data.UID, app: data.app });
     });
 
+
+
   } else if (data.provider === 'google'){
 
-    // TODO: Verify the user with Google
+    // Verify the user with Google
+    Google.tokeninfo(data, function(err, result){
+      if (err){
+        return callback(err);
+      } else if(data.email !== result.email){
+        return callback(Boom.badRequest());
+      } else {
 
-    var query = {
-      provider: data.provider,
-      id: accountInfo.UID,
-      email: accountInfo.profile.email
-    };
+        var query = {
+          provider: data.provider,
+          id: result.user_id,
+          email: result.email
+        };
 
-    // updateUserInDB(query);
+        updateUserInDB(query);
 
-    reply();
+        findGrant({ user: data.ID, app: data.app });
+
+      }
+    });
   }
 
 

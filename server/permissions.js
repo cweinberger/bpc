@@ -90,7 +90,7 @@ module.exports.register = function (server, options, next) {
 
       MongoDB.collection('users').findOne(
         {
-          UID: request.params.user
+          id: request.params.user
         },
         queryProject
         , function (err, result){
@@ -188,7 +188,7 @@ module.exports.register = function (server, options, next) {
 
       MongoDB.collection('users').updateOne(
         {
-          UID: request.params.user
+          id: request.params.user
         },
         {
           $currentDate: { 'Updated': { $type: "timestamp" } },

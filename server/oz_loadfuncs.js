@@ -48,7 +48,7 @@ module.exports.loadGrantFunc = function(id, next) {
         grant.scope = grant.scope.concat(missingScopes);
 
         // // Finding private details to encrypt in the ticket for later usage.
-        MongoDB.collection('users').findOne({UID: grant.user}, {fields: {_id: 0, email: 1, UID: 1, Permissions: 1}}, function(err, user){
+        MongoDB.collection('users').findOne({id: grant.user}, {fields: {_id: 0, email: 1, id: 1, Permissions: 1}}, function(err, user){
           if (err) {
             return next(err);
           } else if (user === null) {

@@ -20,17 +20,17 @@ const corsRules = {
   maxAge: 86400
 };
 
-// TODO: Make UID, UIDSignature and signatureTimestamp required when provider is 'gigya'
-
-const rsvpValidation = {
+const rsvpValidation = Joi.object().keys({
   provider: Joi.string().valid('gigya', 'google').required(),
-  UID: Joi.string().required(),
-  UIDSignature: Joi.string(),
-  signatureTimestamp: Joi.string(),
+  UID: Joi.string().when('provider', { is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden() }),
+  UIDSignature: Joi.string().when('provider', { is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden() }),
+  signatureTimestamp: Joi.string().when('provider', { is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden() }),
+  ID: Joi.string().when('provider', { is: 'google', then: Joi.required(), otherwise: Joi.forbidden() }),
+  id_token: Joi.string().when('provider', { is: 'google', then: Joi.required(), otherwise: Joi.forbidden() }),
   email: Joi.string().email().required(),
   app: Joi.string().required(),
-  returnUrl: Joi.string().uri()
-};
+  returnUrl: Joi.string().uri().optional()
+});
 
 
 module.exports.register = function (server, options, next) {
@@ -115,7 +115,13 @@ function createUserRsvp(data, callback){
         return callback(Boom.badRequest());
       }
 
-      updateUserInDB(result);
+      var query = {
+        provider: data.provider,
+        id: accountInfo.UID,
+        email: accountInfo.profile.email
+      };
+
+      updateUserInDB(query);
       findGrant({ user: data.UID, app: data.app });
     });
 
@@ -123,16 +129,29 @@ function createUserRsvp(data, callback){
 
     // TODO: Verify the user with Google
 
+    var query = {
+      provider: data.provider,
+      id: accountInfo.UID,
+      email: accountInfo.profile.email
+    };
+
+    // updateUserInDB(query);
+
+    reply();
   }
 
 
-  function updateUserInDB(accountInfo){
+  function updateUserInDB(query, callback){
+    if (callback === undefined){
+        callback = function(err, result){
+        if (err) {
+          console.error(err);
+        }
+      };
+    }
+
     MongoDB.collection('users').updateOne(
-      {
-        provider: data.provider,
-        UID: accountInfo.UID,
-        email: accountInfo.profile.email
-      },
+      query,
       {
         $currentDate: { 'LastLogin': { $type: "timestamp" } },
         //  $set: {
@@ -146,11 +165,7 @@ function createUserRsvp(data, callback){
         //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
         //  collation: <document>
       },
-      function(err, result){
-        if (err) {
-          console.error(err);
-        }
-      }
+      callback
     );
   }
 

@@ -167,6 +167,7 @@ function createUserRsvp(data, callback){
       query,
       {
         $currentDate: { 'LastLogin': { $type: "timestamp" } },
+        $setOnInsert: { 'Permissions': {} },
         //  $set: {
         //  },
         // $addToSet: {

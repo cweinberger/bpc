@@ -26,7 +26,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth:  {
         access: {
-          scope: ['admin:console', 'admin:*'],
+          scope: ['admin'],
           entity: 'user'
         }
       },
@@ -44,7 +44,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['admin:console', 'admin:*'],
+          scope: ['admin'],
           entity: 'user'
         }
       },
@@ -347,20 +347,6 @@ module.exports.register = function (server, options, next) {
 
         MongoDB.collection('grants').update({id: request.params.grantId}, {$set: grant}, reply);
       });
-      // TODO: Make sure you cannot grant any scopes that are not present in the app's scope.
-
-      // var ops = {
-      //   $set: {
-      //     scope: grant.scope
-      //   },
-      //   $unset: {}
-      // };
-      //
-      // if (grant.exp === undefined || grant.exp === null){
-      //   ops.$unset.exp = '';
-      // } else {
-      //   ops.$set.exp = grant.exp;
-      // }
     }
   });
 
@@ -396,6 +382,57 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
       MongoDB.collection('users').find().toArray(reply);
+    }
+  });
+
+
+  server.route({
+    method: 'GET',
+    path: '/users/{id}',
+    config: {
+      auth:  {
+        access: {
+          scope: ['+admin:*'],
+          entity: 'user'
+        }
+      },
+      cors: stdCors
+    },
+    handler: function(request, reply) {
+      MongoDB.collection('users').findOne({id: request.params.id}, function(err, user){
+        if(err){
+          return reply(err);
+        } else if (user === null){
+          return reply(Boom.notFound());
+        }
+
+        MongoDB.collection('grants').find({user: request.params.id}).toArray(function(err, grants){
+          if(err){
+            return reply(err);
+          }
+          user.grants = grants;
+
+          reply(user);
+        });
+      });
+    }
+  });
+
+
+  server.route({
+    method: 'GET',
+    path: '/users/{id}/grants',
+    config: {
+      auth:  {
+        access: {
+          scope: ['+admin:*'],
+          entity: 'user'
+        }
+      },
+      cors: stdCors
+    },
+    handler: function(request, reply) {
+      MongoDB.collection('grants').find({user: request.params.id}).toArray(reply);
     }
   });
 

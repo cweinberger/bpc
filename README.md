@@ -67,8 +67,8 @@ TODO
 Each application registeret with BPC can be assigned one or more arbitrary scopes e.g. "berlingske", "bt" or "marketinganalytics". When a website validates a user ticket with BPC, only permissions that are within that specific applications scope are accessible. This means that only applications with e.g. the "berlingske" scope are allowed to read or make changes to the permissions within that scope. Other scopes are restricted.
 
 Scopes cannot be named starting with "admin". There is a reserves scope named be the convention "admin:<client ID>". These are used to promote specific users as an admin for that application in the BPC console.
+The reserved scope "admin" is used for users that are allowed to see and create apps. This scope will be added automatically to the ticket, if the grant is to the console app.
 The reserved scope "admin:\*" is used for superadmins.
-The reserved scope "admin:console" is used for users that are allowed to see and create apps.
 
 ## RSVP
 

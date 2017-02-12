@@ -43,6 +43,7 @@ function loadGrantFunc(id, next) {
         }
 
         // Adding all the missing app scopes to the ticket - unless they are and admin:scope
+        // Note: We want the scope "admin" (reserved scope of the console app) to be added to the ticket.
         var missingScopes = app.scope.filter(function (appScope){
           return appScope.indexOf('admin:') === -1 && grant.scope.indexOf(appScope) === -1;
         });

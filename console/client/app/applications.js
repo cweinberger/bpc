@@ -45,7 +45,7 @@ module.exports = React.createClass({
         <tr key={index}>
           <td className="col-xs-10">{application.id}</td>
           <td className="col-xs-2">
-            <input className="btn btn-default" type="button" value="Vis" onClick={this.props.selectApplication.bind(null, application.id)} />
+            <input className="btn btn-default" type="button" value="Edit" onClick={this.props.selectApplication.bind(null, application.id)} />
           </td>
         </tr>
       );

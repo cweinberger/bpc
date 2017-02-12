@@ -61,25 +61,36 @@ module.exports = React.createClass({
     application.scope.splice(index, 1);
     this.setState({application: application});
   },
+  onChange: function(e) {
+    var temp = {};
+    temp[e.target.name] = e.target.value;
+    this.setState(temp);
+  },
   componentWillMount: function() {
     this.getApplication();
    },
   render: function() {
-    console.log('cc', this.state.application);
 
     var scopeList = this.state.application !== undefined && this.state.application.scope !== undefined
-      ? this.state.application.scope.map(function(s, index){
-          return (<li key={index}>{s}</li>);
-        })
+      ? this.state.application.scope.map(function(s, i){
+          return (
+            <li key={i}>
+              <span className="glyphicon glyphicon-remove-circle" aria-hidden="true" onClick={this.removeScope.bind(this, i)}></span>
+              {s}
+            </li>);
+        }.bind(this))
       : null;
 
     return (
       <div>
         <div className="row">
           <div className="col-xs-2">
-            <input className="btn btn-default" type="button" value="Tilbage" onClick={this.props.closeApplication} />
+            <input className="btn btn-default" type="button" value="Back" onClick={this.props.closeApplication} />
+          </div>
+          <div className="col-xs-2">
+            <input className="btn btn-success" type="button" value="Save" onClick={this.updateApplication} />
             </div>
-            <div className="col-xs-2 col-xs-offset-8">
+            <div className="col-xs-2 col-xs-offset-6">
             {['console'].indexOf(this.state.application.id) === -1
               ? <button className="btn btn-danger" type="button" onClick={this.deleteApplication}>Delete app</button>
               : null
@@ -101,6 +112,14 @@ module.exports = React.createClass({
             <h2>Scope</h2>
             <ul className="list-unstyled">
               {scopeList}
+              <form onSubmit={this.addScope}>
+                <input
+                 type="text"
+                 name="newScope"
+                 value={this.state.newScope}
+                 onChange={this.onChange}
+                 placeholder="Add scope"/>
+               </form>
             </ul>
           </div>
         </div>

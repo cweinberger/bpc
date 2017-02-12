@@ -4,10 +4,12 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
+const OzLoadFuncs = require('./oz_loadfuncs');
 const crypto = require('crypto');
 const MongoDB = require('./mongodb_client');
 
 module.exports.register = function (server, options, next) {
+
 
   const stdCors = {
     credentials: true,
@@ -17,13 +19,14 @@ module.exports.register = function (server, options, next) {
     maxAge: 86400
   };
 
+
   server.route({
     method: 'GET',
     path: '/applications',
     config: {
       auth:  {
         access: {
-          scope: ['+admin:*'],
+          scope: ['admin:console', 'admin:*'],
           entity: 'user'
         }
       },
@@ -34,13 +37,14 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+
   server.route({
     method: 'POST',
     path: '/applications',
     config: {
       auth: {
         access: {
-          scope: ['+admin:*'],
+          scope: ['admin:console', 'admin:*'],
           entity: 'user'
         }
       },
@@ -74,9 +78,7 @@ module.exports.register = function (server, options, next) {
 
         request.payload.id = uniqueId
         request.payload.scope = request.payload.scope ? request.payload.scope : [];
-        // request.payload.scope.push('settings:'.concat(request.payload.id));
-        // request.payload.scope.push('admin:'.concat(request.payload.id));
-        // TODO: Add scope 'admin:'.concat(request.payload.id) to console app
+
 
         var application = Object.assign(request.payload, {
           scope: request.payload.scope ? filterArrayForDuplicates(request.payload.scope) : [],
@@ -90,7 +92,21 @@ module.exports.register = function (server, options, next) {
               return reply(err);
             }
 
-            // TODO: Add grant/scope 'admin:XXX' to the user that created the application
+            // Adding the 'admin:' scope to console app, so that users can be admins
+            var consoleScope = 'admin:'.concat(uniqueId);
+            MongoDB.collection('applications').updateOne({ id:'console' }, { $addToSet: { scope: consoleScope } });
+
+            // Adding scope 'admin:' to the grant of user that created the application
+            OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+              MongoDB.collection('grants').update(
+                {
+                  id: ticket.grant
+                },
+                {
+                  $addToSet: { scope: consoleScope }
+                }
+              )
+            });
 
             reply(application);
           });
@@ -104,10 +120,10 @@ module.exports.register = function (server, options, next) {
     path: '/applications/{id}',
     config: {
       auth: {
-        // scope: ['+admin:{params.id}'],
         scope: ['admin:{params.id}', 'admin:*'],
         entity: 'user'
-      }
+      },
+      cors: stdCors
     },
     handler: function (request, reply) {
       MongoDB.collection('applications').findOne({id: request.params.id}, function(err, result) {
@@ -131,6 +147,7 @@ module.exports.register = function (server, options, next) {
         scope: ['admin:{params.id}', 'admin:*'],
         entity: 'user'
       },
+      cors: stdCors,
       validate: {
         payload: {
           _id: Joi.strip(),
@@ -169,45 +186,30 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+
   server.route({
     method: 'DELETE',
     path: '/applications/{id}',
     config: {
       auth: {
-        // scope: ['delete:{params.id}']
-        // scope: ['+admin:{params.id}'],
         scope: ['admin:{params.id}', 'admin:*'],
         entity: 'user'
-      // },
-      // validate: {
-      //   params: {
-      //     id: Joi.string().required()
-      //   }
-      }
+      },
+      cors: stdCors
     },
     handler: function (request, reply) {
-      MongoDB.collection('applications').remove({id: request.params.id});
-      MongoDB.collection('grants').remove({app: request.params.id});
+
+      MongoDB.collection('applications').remove({ id: request.params.id });
+      MongoDB.collection('grants').remove({ app: request.params.id } );
+
+      var consoleScope = 'admin:'.concat(request.params.id);
+      MongoDB.collection('applications').updateOne({ id: 'console' }, { $pull: { scope: consoleScope } });
+      MongoDB.collection('grants').update({ app: 'console' }, { $pull: { scope: consoleScope } }, { multi: true });
+
       reply();
     }
   });
 
-  // server.route({
-  //   method: 'GET',
-  //   path: '/grants',
-  //   config: {
-  //     auth: {
-  //       access: {
-  //         scope: ['+admin'],
-  //         entity: 'user'
-  //       }
-  //     },
-  //     cors: stdCors
-  //   },
-  //   handler: function(request, reply) {
-  //     MongoDB.collection('grants').find().toArray(reply);
-  //   }
-  // });
 
   server.route({
     method: 'GET',
@@ -215,7 +217,6 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          // scope: ['+admin:{params.id}'],
           scope: ['admin:{params.id}', 'admin:*'],
           entity: 'user'
         }
@@ -242,7 +243,6 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          // scope: ['+admin:{params.id}'],
           scope: ['admin:{params.id}', 'admin:*'],
           entity: 'user'
         }
@@ -261,7 +261,6 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          // scope: ['+admin', '+admin:create'],
           scope: ['admin:{params.id}', 'admin:*'],
           entity: 'user'
         }
@@ -280,8 +279,6 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-
-      // TODO: validate against the app id, so that only users that are admins of the app can create grants
 
       var grant = Object.assign(
           request.payload,
@@ -309,14 +306,13 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+
   server.route({
     method: 'PUT',
     path: '/applications/{id}/grants/{grantId}',
     config: {
       auth: {
         access: {
-           // TODO: validate against the app id, so that only users that are admins of the app can create grants
-          // scope: ['+admin', '+admin:create'],
           scope: ['admin:{params.id}', 'admin:*'],
           entity: 'user'
         }
@@ -351,7 +347,7 @@ module.exports.register = function (server, options, next) {
 
         MongoDB.collection('grants').update({id: request.params.grantId}, {$set: grant}, reply);
       });
-      // TODO: Make sure you can grant any scopes that are not present in the app's default scope.
+      // TODO: Make sure you cannot grant any scopes that are not present in the app's scope.
 
       // var ops = {
       //   $set: {
@@ -375,12 +371,11 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-           // TODO: validate against the app id, so that only users that are admins of the app can create grants
-          // scope: ['+admin', '+admin:create'],
           scope: ['admin:{params.id}', 'admin:*'],
           entity: 'user'
         }
       },
+      cors: stdCors
     },
     handler: function(request, reply) {
       MongoDB.collection('grants').remove({id: request.params.grantId, app: request.params.id}, reply);

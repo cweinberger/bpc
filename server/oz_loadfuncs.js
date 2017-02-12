@@ -5,8 +5,10 @@ const Boom = require('boom');
 const Oz = require('oz');
 const MongoDB = require('./mongodb_client');
 
+const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
+
 // Here we are creating the app ticket
-module.exports.loadAppFunc = function(id, callback) {
+function loadAppFunc(id, callback) {
   console.log('loadAppFunc', id);
   MongoDB.collection('applications').findOne({id:id}, {fields: {_id: 0}}, function(err, app) {
     if (err) {
@@ -20,7 +22,7 @@ module.exports.loadAppFunc = function(id, callback) {
 };
 
 // Here we are creating the user ticket
-module.exports.loadGrantFunc = function(id, next) {
+function loadGrantFunc(id, next) {
   console.log('loadGrantFunc', id);
   MongoDB.collection('grants').findOne({id: id}, {fields: {_id: 0}}, function(err, grant) {
     if (err) {
@@ -62,3 +64,27 @@ module.exports.loadGrantFunc = function(id, next) {
     }
   });
 };
+
+
+module.exports.strategyOptions = {
+  oz: {
+    encryptionPassword: ENCRYPTIONPASSWORD,
+    loadAppFunc: loadAppFunc,
+    loadGrantFunc: loadGrantFunc,
+  },
+  urls: {
+    app: '/ticket/app',
+    reissue: '/ticket/reissue',
+    rsvp: '/ticket/user'
+  }
+};
+
+
+module.exports.parseAuthorizationHeader = function (requestHeaderAuthorization, callback){
+  var id = requestHeaderAuthorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
+  if (id === undefined || id === null || id === ''){
+    return callback(Boom.unauthorized('Authorization Hawk ticket not found'));
+  }
+
+  Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
+}

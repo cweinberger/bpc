@@ -33,20 +33,8 @@ server.connection({ port: process.env.PORT ? parseInt(process.env.PORT) + 1 : 80
 server.register({register: Good, options: goodOpts}, cb);
 // server.register(Scarecrow, function(err) {
 server.register(Scarecrow, function(err) {
-  const oz_strategy_options = {
-    oz: {
-      encryptionPassword: process.env.ENCRYPTIONPASSWORD,
-      loadAppFunc: OzLoadFuncs.loadAppFunc,
-      loadGrantFunc: OzLoadFuncs.loadGrantFunc,
-    },
-    urls: {
-      app: '/ticket/app',
-      reissue: '/ticket/reissue',
-      rsvp: '/ticket/user'
-    }
-  };
 
-  server.auth.strategy('oz', 'oz', true, oz_strategy_options);
+  server.auth.strategy('oz', 'oz', true, OzLoadFuncs.strategyOptions);
 
   server.register(Rsvp, { routes: { prefix: '/rsvp' } }, cb);
   server.register(Admin, { routes: { prefix: '/admin' } }, cb);

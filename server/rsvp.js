@@ -9,7 +9,6 @@ const MongoDB = require('./mongodb_client');
 const Gigya = require('./gigya_client');
 const Google = require('./google_client');
 
-//Declaration of all properties linked to the environment (beanstalk configuration)
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
 const corsRules = {

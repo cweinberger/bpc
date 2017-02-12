@@ -4,10 +4,8 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
+const OzLoadFuncs = require('./oz_loadfuncs');
 const MongoDB = require('./mongodb_client');
-
-//Declaration of all properties linked to the environment (beanstalk configuration)
-const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
 module.exports.register = function (server, options, next) {
 
@@ -146,7 +144,7 @@ module.exports.register = function (server, options, next) {
      }
 
      // We check if the requested scope (subset) is contained in the users grant scope (superset)
-     getTicketFromHawkHeader(request.headers.authorization, function(err, ticket){
+     OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
 
        var superset = ticket.scope;
        var err = Oz.scope.validate(superset);
@@ -200,7 +198,7 @@ module.exports.register = function (server, options, next) {
         permissions = [permissions];
       }
 
-      getTicketFromHawkHeader(request.headers.authorization, function(err, ticket){
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
 
         const validatePermissionsInTicketInsteadOfMongo = true;
 
@@ -263,14 +261,3 @@ module.exports.register.attributes = {
   name: 'validate',
   version: '1.0.0'
 };
-
-
-// TODO: Make a module instead of having this function in both validate.js and permissions.js
-function getTicketFromHawkHeader(requestHeaderAuthorization, callback){
-  var id = requestHeaderAuthorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
-  if (id === undefined || id === null || id === ''){
-    return callback(Boom.unauthorized('Authorization Hawk ticket not found'));
-  }
-
-  Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
-}

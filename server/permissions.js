@@ -4,9 +4,8 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
+const OzLoadFuncs = require('./oz_loadfuncs');
 const MongoDB = require('./mongodb_client');
-
-const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
 module.exports.register = function (server, options, next) {
 
@@ -36,7 +35,7 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
       console.log('permissions USER', request.params.name);
 
-      getTicketFromHawkHeader(request.headers.authorization, function(err, ticket){
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
 
         if (ticket.ext.private.Permissions === undefined || ticket.ext.private.Permissions[request.params.name] === undefined){
           reply(Boom.forbidden());
@@ -219,13 +218,3 @@ module.exports.register.attributes = {
   name: 'permissions',
   version: '1.0.0'
 };
-
-// TODO: Make a module instead of having this function in both validate.js and permissions.js
-function getTicketFromHawkHeader(requestHeaderAuthorization, callback){
-  var id = requestHeaderAuthorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
-  if (id === undefined || id === null || id === ''){
-    return callback(Boom.unauthorized('Authorization Hawk ticket not found'));
-  }
-
-  Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
-}

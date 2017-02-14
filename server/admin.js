@@ -8,8 +8,9 @@ const OzLoadFuncs = require('./oz_loadfuncs');
 const crypto = require('crypto');
 const MongoDB = require('./mongodb_client');
 
-module.exports.register = function (server, options, next) {
+const scopeValidation = Joi.array().items(Joi.string().regex(/^(?!admin).*$/, { name: 'admin', invert: true }));
 
+module.exports.register = function (server, options, next) {
 
   const stdCors = {
     credentials: true,
@@ -54,7 +55,7 @@ module.exports.register = function (server, options, next) {
           _id: Joi.strip(),
           key: Joi.strip(),
           id: Joi.string().required(),
-          scope: Joi.array().items(Joi.string().valid('admin').forbidden(), Joi.string()),
+          scope: scopeValidation,
           algorithm: Joi.string(),
           delegate: Joi.boolean(),
           callbackurl: Joi.string().uri(),
@@ -153,7 +154,8 @@ module.exports.register = function (server, options, next) {
           _id: Joi.strip(),
           key: Joi.strip(),
           id: Joi.strip(),
-          scope: Joi.array().items(Joi.string().valid('admin').forbidden(), Joi.string()),
+          // scope: Joi.array().items(Joi.string().valid('admin').forbidden(), Joi.string()),
+          scope: scopeValidation,
           algorithm: Joi.string(),
           delegate: Joi.boolean(),
           callbackurl: Joi.string().uri(),
@@ -162,8 +164,6 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function (request, reply) {
-
-      // TODO: scope 'admin' is not allowed
 
       MongoDB.collection('applications').findOne({id: request.params.id}, function(err, result) {
         if (err) {
@@ -213,32 +213,6 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/applications/{id}/scope',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      MongoDB.collection('applications').findOne({ id: request.params.id }, {fields: {_id: 0, scope: 1}}, function(err, result){
-        if(err){
-          reply(err);
-        } else if (result === null){
-          return reply(Boom.notFound());
-        } else {
-          reply(result.scope)
-        }
-      });
-    }
-  });
-
-
-  server.route({
-    method: 'GET',
     path: '/applications/{id}/grants',
     config: {
       auth: {
@@ -250,7 +224,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      MongoDB.collection('grants').find({ app: request.params.id }).toArray(reply);
+      MongoDB.collection('grants').find({ app: request.params.id }, {fields: {_id: 0}}).toArray(reply);
     }
   });
 
@@ -273,8 +247,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.string().required(),
           exp: Joi.date().timestamp('unix').raw(),
-          scope: Joi.array().items(Joi.string())
-          // scope: Joi.array().items(Joi.string().valid('admin').forbidden(), Joi.string())
+          scope: scopeValidation
         }
       }
     },
@@ -291,16 +264,26 @@ module.exports.register = function (server, options, next) {
         if (err){
           return reply(err);
         } else if (app === null){
-          return reply(Boom.notFound());
+          return reply(Boom.badRequest());
         }
 
-        if (grant.scope instanceof Array){
-          grant.scope = filterArrayForDuplicates(grant.scope);
-          grant.scope = grant.scope.filter((i) => {return app.scope.indexOf(i) > -1;})
-        }
+        MongoDB.collection('users').findOne({id: grant.user}, function(err, user){
+          if (err){
+            return reply(err);
+          } else if (user === null){
+            return reply(Boom.badRequest());
+          }
 
-        MongoDB.collection('grants').insertOne(grant, function(err, result) {
-          reply(grant);
+          if (grant.scope instanceof Array){
+            grant.scope = filterArrayForDuplicates(grant.scope);
+            grant.scope = grant.scope.filter((i) => {return app.scope.indexOf(i) > -1;})
+          }
+
+          // TODO: Make sure the user does not already have a grant to that app
+
+          MongoDB.collection('grants').insert(grant, function(err, result) {
+            reply(grant);
+          });
         });
       });
     }
@@ -308,7 +291,7 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
-    method: 'PUT',
+    method: 'POST',
     path: '/applications/{id}/grants/{grantId}',
     config: {
       auth: {
@@ -325,8 +308,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.strip(),
           exp: Joi.date().timestamp('unix').raw().valid(null),
-          scope: Joi.array().items(Joi.string())
-          // scope: Joi.array().items(Joi.string().valid('admin').forbidden(), Joi.string())
+          scope: scopeValidation
         }
       }
     },
@@ -374,7 +356,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth:  {
         access: {
-          scope: ['+admin:*'],
+          scope: ['admin'],
           entity: 'user'
         }
       },
@@ -392,36 +374,47 @@ module.exports.register = function (server, options, next) {
     config: {
       auth:  {
         access: {
-          scope: ['+admin:*'],
+          scope: ['admin'],
           entity: 'user'
         }
       },
       cors: stdCors
     },
     handler: function(request, reply) {
-      MongoDB.collection('users').findOne({id: request.params.id}, function(err, user){
-        if(err){
-          return reply(err);
-        } else if (user === null){
-          return reply(Boom.notFound());
-        }
-
-        MongoDB.collection('grants').find({user: request.params.id}).toArray(function(err, grants){
+      MongoDB.collection('users').aggregate(
+        [
+          {
+            $match:
+            {
+              id: request.params.id
+            }
+          },
+          {
+            $lookup:
+            {
+              from: 'grants',
+              localField: 'id',
+              foreignField: 'user',
+              as: 'grants'
+            }
+          }
+        ],
+        function(err, result){
           if(err){
             return reply(err);
+          } else if (result === null || result.length !== 1){
+            return reply(Boom.notFound());
           }
-          user.grants = grants;
 
-          reply(user);
-        });
+          reply(result[0]);
       });
     }
   });
 
 
   server.route({
-    method: 'GET',
-    path: '/users/{id}/grants',
+    method: 'POST',
+    path: '/users/{id}/superadmin',
     config: {
       auth:  {
         access: {
@@ -432,12 +425,61 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      MongoDB.collection('grants').find({user: request.params.id}).toArray(reply);
+      MongoDB.collection('grants').update(
+        {
+          app: 'console',
+          user: request.params.id
+        },
+        {
+          $addToSet: { scope: 'admin:*' }
+        },
+        function(err, result){
+          if(err){
+            return reply(err);
+          }
+
+          reply();
+        }
+      );
+    }
+  });
+
+
+  server.route({
+    method: 'DELETE',
+    path: '/users/{id}/superadmin',
+    config: {
+      auth:  {
+        access: {
+          scope: ['+admin:*'],
+          entity: 'user'
+        }
+      },
+      cors: stdCors
+    },
+    handler: function(request, reply) {
+      MongoDB.collection('grants').update(
+        {
+          app: 'console',
+          user: request.params.id
+        },
+        {
+          $pull: { scope: 'admin:*' }
+        },
+        function(err, result){
+          if(err){
+            return reply(err);
+          }
+
+          reply();
+        }
+      );
     }
   });
 
 
   next();
+
 };
 
 

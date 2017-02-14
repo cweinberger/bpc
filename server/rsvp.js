@@ -192,6 +192,8 @@ function createUserRsvp(data, callback){
       }
 
       // We only looking for grants that have not expired
+      // TODO: Actually, I think we drop the exp_conditions. Instead find any grant and only insert a new one, the the old is not expired.
+      // If the old grant is expired, the user should be denied access.
       var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
 
       MongoDB.collection('grants').findOne({ user: input.user, app: input.app, $or: exp_conditions }, { fields: { _id: 0 } }, function(err, grant){

@@ -350,6 +350,7 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+
   server.route({
     method: 'GET',
     path: '/users',

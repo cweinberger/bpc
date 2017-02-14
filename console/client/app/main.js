@@ -4,6 +4,7 @@ var ReactDOM = require('react-dom');
 var Applications = require('./applications');
 var Application = require('./application');
 var Users = require('./users');
+var AdminUsers = require('./adminUsers');
 
 // Add the event handler
 
@@ -31,52 +32,52 @@ var ConsoleApp = React.createClass({
       'onsuccess': this.onSignIn
     });
 
-    gigya.accounts.addEventHandlers({ onLogin: this.onLoginEventHandler});
-    gigya.accounts.addEventHandlers({ onLogout: this.onLogoutEventHandler});
-
-    gigya.accounts.getAccountInfo({
-      callback: function(response){
-        console.log('accounts.getAccountInfo', response);
-        if (response.status === 'OK') {
-
-          this.setState({ loggedIn: true, accountInfo: response });
-
-          this.getRsvp({ uid: response.UID, email: response.profile.email, provider: 'gigya' }, function(rsvp){
-            console.log('getRsvp', rsvp);
-            this.getUserTicket(rsvp, function(date){
-            }.bind(this));
-          }.bind(this));
-
-        } else if (response.status === 'FAIL') {
-        }
-      }.bind(this)
-    });
+    // gigya.accounts.addEventHandlers({ onLogin: this.onLoginEventHandler});
+    // gigya.accounts.addEventHandlers({ onLogout: this.onLogoutEventHandler});
+    //
+    // gigya.accounts.getAccountInfo({
+    //   callback: function(response){
+    //     console.log('accounts.getAccountInfo', response);
+    //     if (response.status === 'OK') {
+    //
+    //       this.setState({ loggedIn: true, accountInfo: response });
+    //
+    //       this.getRsvp({ uid: response.UID, email: response.profile.email, provider: 'gigya' }, function(rsvp){
+    //         console.log('getRsvp', rsvp);
+    //         this.getUserTicket(rsvp, function(date){
+    //         }.bind(this));
+    //       }.bind(this));
+    //
+    //     } else if (response.status === 'FAIL') {
+    //     }
+    //   }.bind(this)
+    // });
   },
-  onLoginEventHandler: function(response) {
-    console.log('onLoginEventHandler', response);
-    this.setState({ loggedIn: true });
-  },
-  onLogoutEventHandler: function(response) {
-    console.log('onLogoutEventHandler', response);
-    this.setState({ loggedIn: false });
-  },
+  // onLoginEventHandler: function(response) {
+  //   console.log('onLoginEventHandler', response);
+  //   this.setState({ loggedIn: true });
+  // },
+  // onLogoutEventHandler: function(response) {
+  //   console.log('onLogoutEventHandler', response);
+  //   this.setState({ loggedIn: false });
+  // },
   onSignIn: function(googleUser) {
     console.log('Google login success');
     // Useful data for your client-side scripts:
-    var profile = googleUser.getBasicProfile();
+    var basicProfile = googleUser.getBasicProfile();
     var authReponse = googleUser.getAuthResponse();
 
-    var t = {
-      ID: profile.getId(),
-      email: profile.getEmail(),
+    var profile = {
+      ID: basicProfile.getId(),
+      email: basicProfile.getEmail(),
       id_token: authReponse.id_token,
       access_token: authReponse.access_token,
       provider: 'google'
     };
 
-    this.setState({ profile: t });
+    this.setState({ loggedIn: true, profile: profile });
 
-    this.getRsvp(t, function(rsvp){
+    this.getRsvp(profile, function(rsvp){
       console.log('getRsvp', rsvp);
       this.getUserTicket(rsvp, function(date){
       }.bind(this));
@@ -118,6 +119,7 @@ var ConsoleApp = React.createClass({
       error: function(jqXHR, textStatus, err) {
         console.error(textStatus, err.toString());
         // The user is logged in, but just not an admin
+        this.setState({ insufficientPermissions: true });
         if(jqXHR.status === 403){
           this.setState({ loggedIn: true });
         }
@@ -214,24 +216,29 @@ var ConsoleApp = React.createClass({
         <div id="g-signin2" className="g-signin2" data-onsuccess={this.onSignIn} data-theme="dark"></div>
 
         <div>
-          {this.state.loggedIn === true
-            ? <button id="gigya-logoutButton" type="button" className="btn btn-warning" onClick={gigya.accounts.logout}>Log out</button>
-            : <button id="gigya-loginButton" type="button" className="btn btn-default" onClick={this.showLoginScreen}>Login</button>
-          }
-        </div>
-        <div>
-          {this.state.loggedIn === true && this.state.authenticated !== true
+          {this.state.insufficientPermissions === true
             ? <p>Du har ikke de fornødne rettigheder</p>
             : null
           }
         </div>
+
         <br />
-        {this.state.selectedAppId === null
-          ? <Applications selectApplication={this.selectApplication} />
-          : <Application app={this.state.selectedAppId} closeApplication={this.closeApplication} />
+
+        {this.state.authenticated === true
+          ? <div>
+              {this.state.selectedAppId === null
+                ? <div>
+                    <Applications selectApplication={this.selectApplication} />
+                    <AdminUsers />
+                    <Users />
+                  </div>
+                : <Application app={this.state.selectedAppId} closeApplication={this.closeApplication} />
+              }
+
+            </div>
+          : null
         }
 
-        <Users />
       </div>
     );
   }

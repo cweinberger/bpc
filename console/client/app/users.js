@@ -45,9 +45,9 @@ module.exports = React.createClass({
 
       return (
         <tr key={index}>
-          <td className="col-xs-2">{user.UID}</td>
           <td className="col-xs-2">{user.email}</td>
-          <td className="col-xs-10">
+          <td className="col-xs-2">{user.provider}</td>
+          <td className="col-xs-8">
             <ul className="list-unstyled">
               {permissions}
             </ul>
@@ -62,8 +62,8 @@ module.exports = React.createClass({
         <table className="table">
           <tbody>
             <tr>
-              <th className="col-xs-2">UID</th>
               <th className="col-xs-2">Email</th>
+              <th className="col-xs-2">Provider</th>
               <th className="col-xs-8">Permissions</th>
             </tr>
             {users}

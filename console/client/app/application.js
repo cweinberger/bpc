@@ -22,14 +22,14 @@ module.exports = React.createClass({
       }
     });
   },
-  updateApplication: function() {
+  updateApplication: function(application) {
     return $.ajax({
       type: 'PUT',
       url: '/admin/applications/'.concat(this.props.app),
       contentType: "application/json; charset=utf-8",
-      data: JSON.stringify(this.state.application),
+      data: JSON.stringify(application),
       success: function(data, status){
-        this.setState({application: data});
+        this.setState({application: application});
       }.bind(this),
       error: function(jqXHR, textStatus, err) {
         console.error(textStatus, err.toString());
@@ -51,15 +51,21 @@ module.exports = React.createClass({
   },
   addScope: function(e) {
     e.preventDefault();
-    var application = Object.assign(this.state.application);
-    application.scope.push(this.state.newScope);
-    this.setState({application: application});
-    this.setState({newScope: ''});
+    var application = Object.assign({}, this.state.application);
+    var newLength = application.scope.push(this.state.newScope);
+    this.updateApplication(application)
+    .done(function(){
+      this.setState({newScope: ''});
+    }.bind(this))
+    .fail(function(){
+      console.log('fail');
+      application.scope.splice(newLength - 1, 1);
+    });
   },
   removeScope: function(index) {
-    var application = this.state.application;
+    var application = Object.assign({}, this.state.application);
     application.scope.splice(index, 1);
-    this.setState({application: application});
+    this.updateApplication(application);
   },
   onChange: function(e) {
     var temp = {};
@@ -75,7 +81,8 @@ module.exports = React.createClass({
       ? this.state.application.scope.map(function(s, i){
           return (
             <li key={i}>
-              <span className="glyphicon glyphicon-remove-circle" aria-hidden="true" onClick={this.removeScope.bind(this, i)}></span>
+              <button type="button" className="btn btn-danger btn-xs" onClick={this.removeScope.bind(this, i)}>Remove scope</button>
+              &nbsp;
               {s}
             </li>);
         }.bind(this))
@@ -85,14 +92,13 @@ module.exports = React.createClass({
       <div>
         <div className="row">
           <div className="col-xs-2">
-            <input className="btn btn-default" type="button" value="Back" onClick={this.props.closeApplication} />
+            <button type="button" className="btn btn-default" onClick={this.props.closeApplication}>Back</button>
           </div>
           <div className="col-xs-2">
-            <input className="btn btn-success" type="button" value="Save" onClick={this.updateApplication} />
-            </div>
-            <div className="col-xs-2 col-xs-offset-6">
+          </div>
+          <div className="col-xs-2 col-xs-offset-6">
             {['console'].indexOf(this.state.application.id) === -1
-              ? <button className="btn btn-danger" type="button" onClick={this.deleteApplication}>Delete app</button>
+              ? <button type="button" className="btn btn-danger" onClick={this.deleteApplication}>Delete app</button>
               : null
             }
           </div>
@@ -110,16 +116,17 @@ module.exports = React.createClass({
         <div className="row">
           <div className="col-xs-12">
             <h2>Scope</h2>
+            <form style={{paddingTop: '30px', paddingBottom: '30px'}} onSubmit={this.addScope} className="form-inline">
+              <input
+               type="text"
+               name="newScope"
+               className="form-control"
+               value={this.state.newScope}
+               onChange={this.onChange}
+               placeholder="Add scope"/>
+             </form>
             <ul className="list-unstyled">
               {scopeList}
-              <form onSubmit={this.addScope}>
-                <input
-                 type="text"
-                 name="newScope"
-                 value={this.state.newScope}
-                 onChange={this.onChange}
-                 placeholder="Add scope"/>
-               </form>
             </ul>
           </div>
         </div>

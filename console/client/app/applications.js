@@ -4,6 +4,7 @@ var React = require('react');
 module.exports = React.createClass({
   getInitialState: function() {
     return {
+      adminUsers: [],
       applications: []
     };
   },
@@ -13,7 +14,7 @@ module.exports = React.createClass({
       url: '/admin/applications',
       contentType: "application/json; charset=utf-8",
       success: function(data, status){
-        this.setState({applications: data});
+        this.setState({applications: data.filter((a) => {return a.id !== 'console';})});
       }.bind(this),
       error: function(jqXHR, textStatus, err) {
         console.error(textStatus, err.toString());
@@ -55,7 +56,6 @@ module.exports = React.createClass({
       <div className="applications">
         <h3>Applications</h3>
         <CreateApplication createApplication={this.createApplication} />
-        <br />
         <table className="table">
           <tbody>
             <tr>
@@ -90,18 +90,15 @@ var CreateApplication = React.createClass({
   },
   render: function() {
     return (
-      <form style={{paddingTop: '30px'}} onSubmit={this.handleSubmit}>
-        <div className="row">
-          <div className="col-xs-12">
-            <input
-              type="text"
-              name="id"
-              placeholder="Application ID"
-              value={this.state.value}
-              onChange={this.onChange} />
-            <button type="submit">Create application</button>
-          </div>
-        </div>
+      <form style={{paddingTop: '30px', paddingBottom: '30px'}} onSubmit={this.handleSubmit} className="form-inline">
+        <input
+          type="text"
+          name="id"
+          className='form-control'
+          placeholder="Application ID"
+          value={this.state.value}
+          onChange={this.onChange} />
+        <button type="submit" className="btn btn-default">Create application</button>
       </form>
     );
   }

@@ -8,21 +8,6 @@ module.exports = React.createClass({
       grants: []
     };
   },
-  getApplicationScopes: function() {
-    return $.ajax({
-      type: 'GET',
-      // url: '/admin/grants',
-      url: '/admin/applications/'.concat(this.props.app, '/scope'),
-      contentType: "application/json; charset=utf-8",
-      success: function(data, status){
-        console.log('validScopes', data);
-        this.setState({validScopes: data});
-      }.bind(this),
-      error: function(jqXHR, textStatus, err) {
-        console.error(textStatus, err.toString());
-      }
-    });
-  },
   getGrants: function() {
     return $.ajax({
       type: 'GET',
@@ -86,7 +71,6 @@ module.exports = React.createClass({
   },
   componentDidMount: function() {
     this.getGrants();
-    // this.getApplicationScopes();
   },
   render: function() {
 
@@ -151,18 +135,15 @@ var CreateGrant = React.createClass({
   },
   render: function() {
     return (
-      <form onSubmit={this.handleSubmit}>
-        <div className="row">
-          <div className="col-xs-12">
-            <input
-              type="text"
-              name="user"
-              placeholder="User"
-              value={this.state.user}
-              onChange={this.onChange} />
-            <button type="submit">Add user</button>
-          </div>
-        </div>
+      <form style={{paddingTop: '30px', paddingBottom: '30px'}} onSubmit={this.handleSubmit} className="form-inline">
+        <input
+          type="text"
+          name="user"
+          className="form-control"
+          placeholder="User"
+          value={this.state.user}
+          onChange={this.onChange} />
+        <button type="submit" className="btn btn-default">Add user</button>
       </form>
     );
   }

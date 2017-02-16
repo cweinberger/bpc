@@ -194,43 +194,27 @@ function createUserRsvp(data, callback){
       // We only looking for grants that have not expired
       // TODO: Actually, I think we drop the exp_conditions. Instead find any grant and only insert a new one, the the old is not expired.
       // If the old grant is expired, the user should be denied access.
-      var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
-
-      MongoDB.collection('grants').findOne({ user: input.user, app: input.app, $or: exp_conditions }, { fields: { _id: 0 } }, function(err, grant){
+      // var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
+      // MongoDB.collection('grants').findOne({ user: input.user, app: input.app, $or: exp_conditions }, { fields: { _id: 0 } }, function(err, grant){
+      MongoDB.collection('grants').findOne({ user: input.user, app: input.app }, { fields: { _id: 0 } }, function(err, grant){
         if (err) {
+
           console.error(err);
           return callback(Boom.unauthorized(err.message));
 
-        } else if (app.disallowAutoGrant && grant === null){
+        } else if (grantIsExpired(grant)) {
 
           return callback(Boom.forbidden());
 
-        } else if (grant === null){
+          // The setting disallowAutoCreationGrants makes sure that no grants are created automatically
+        } else if (!app.disallowAutoCreationGrants && grant === null) {
 
-          // Creating new grant
-          grant = {
-            id : crypto.randomBytes(20).toString('hex'), // (gives 40 characters)
-            app : input.app,
-            user : input.user,
-            scope : [],
-            exp : null
-          };
-
-          MongoDB.collection('grants').insertOne(grant);
-
-        // } else if (grantMissingScopeFromApp(app, grant)) {
-        //
-        //   var missingScopes = app.scope.filter(function (appScope){
-        //     return grant.scope.indexOf(appScope) === -1;
-        //   });
-
-          // MongoDB.collection('grants').update({id: grant.id}, { $addToSet: {scope: { $each: missingScopes } } });
-          // grant.scope = grant.scope.concat(missingScopes);
+          // Creating new clean grant
+          grant = createNewCleanGrant(input.app, input.user);
 
         }
 
-        // TODO: exp should be set by other logic than this. E.g. the system that handles subscriptions
-        // Or a default exp could be set per application and then added to the grant.
+        // This exp is only the expiration of the rsvp - not the expiration of the grant/ticket.
         if (grant.exp === undefined || grant.exp === null) {
           grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
         }
@@ -247,4 +231,23 @@ function createUserRsvp(data, callback){
       });
     });
   }
+}
+
+function grantIsExpired(grant){
+  // var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
+  return grant !== undefined && grant !== null && grant.exp !== undefined && grant.exp !== null && grant.exp < Oz.hawk.utils.now();
+}
+
+function createNewCleanGrant(app, user) {
+  grant = {
+    id : crypto.randomBytes(20).toString('hex'), // (gives 40 characters)
+    app : app,
+    user : user,
+    scope : [],
+    exp : null
+  };
+
+  MongoDB.collection('grants').insertOne(grant);
+
+  return grant;
 }

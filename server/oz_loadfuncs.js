@@ -27,10 +27,11 @@ function loadGrantFunc(id, next) {
   MongoDB.collection('grants').findOne({id: id}, {fields: {_id: 0}}, function(err, grant) {
     if (err) {
       return next(err);
-    } else if (grant === null) {
-      next(Boom.unauthorized('Missing grant'));
+    } else if (grantIsMissingOrExpired(grant)) {
+      next(Boom.unauthorized());
     } else {
 
+      // TODO: Perhaps the app should define the default ticket expiration. See below.
       if (grant.exp === undefined || grant.exp === null) {
         grant.exp = Oz.hawk.utils.now() + (60000 * 60 * 24); // 60000 = 1 minute
       }
@@ -41,6 +42,8 @@ function loadGrantFunc(id, next) {
         if (err) {
           return next(err);
         }
+
+        // TODO: Perhaps the app should override the default ticket expiration, if the grant has not expiration. See above.
 
         // Adding all the missing app scopes to the ticket - unless they are and admin:scope
         // Note: We want the scope "admin" (reserved scope of the console app) to be added to the ticket.
@@ -88,4 +91,10 @@ module.exports.parseAuthorizationHeader = function (requestHeaderAuthorization, 
   }
 
   Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
+}
+
+
+function grantIsMissingOrExpired(grant){
+  // var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
+  return grant === undefined || grant === null || (grant.exp !== undefined && grant.exp !== null && grant.exp < Oz.hawk.utils.now());
 }

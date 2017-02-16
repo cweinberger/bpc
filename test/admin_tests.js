@@ -3,15 +3,22 @@ const expect = Code.expect;
 const Lab = require('lab');
 const lab = exports.lab = Lab.script();
 
-const Joi = require('joi');
+
+// const BPC = require('../server');
 
 // const scopeValidation = Joi.array().items(Joi.string().alphanum().regex(/^(.*?(\badmin\b)[^$]*)$/, { name: 'admin', invert: true }));
 // const scopeValidation = Joi.array().items(Joi.string());
 
 // const scopeValidation = Joi.array().items(Joi.string().regex(/^((?!admin).)*$/, { name: 'admin', invert: true })); // 7 ud af 8
-const scopeValidation = Joi.array().items(Joi.string().regex(/^(?!admin).*$/, { name: 'admin', invert: true }));
 
+
+
+
+// TODO: I know these tests do NOT test the actual code.These are just examples.
 lab.experiment('the scope containing', () => {
+
+  const Joi = require('joi');
+  const scopeValidation = Joi.array().items(Joi.string().regex(/^(?!admin).*$/, { name: 'admin', invert: true }));
 
   lab.test('only admin not allowed', (done) => {
     Joi.validate(['admin'], scopeValidation, validate_test_expect_err_to_exist_callback(done));
@@ -62,11 +69,3 @@ function validate_test_expect_err_to_exist_callback(done){
     done();
   };
 }
-
-// const BPC = require('../server');
-
-// lab.test('returns true when 1 + 1 equals 2', (done) => {
-//
-//     Code.expect(1 + 1).to.equal(2);
-//     done();
-// });

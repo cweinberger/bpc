@@ -93,20 +93,15 @@ module.exports.register = function (server, options, next) {
               return reply(err);
             }
 
-            // Adding the 'admin:' scope to console app, so that users can be admins
-            var consoleScope = 'admin:'.concat(uniqueId);
-            MongoDB.collection('applications').updateOne({ id:'console' }, { $addToSet: { scope: consoleScope } });
 
-            // Adding scope 'admin:' to the grant of user that created the application
             OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
-              MongoDB.collection('grants').update(
-                {
-                  id: ticket.grant
-                },
-                {
-                  $addToSet: { scope: consoleScope }
-                }
-              )
+
+
+              // Adding the 'admin:' scope to console app, so that users can be admins.
+              var consoleScope = 'admin:'.concat(uniqueId);
+              MongoDB.collection('applications').updateOne({ id: ticket.app }, { $addToSet: { scope: consoleScope } });
+              // Adding scope 'admin:' to the grant of user that created the application
+              MongoDB.collection('grants').update({ id: ticket.grant }, { $addToSet: { scope: consoleScope } } );
             });
 
             reply(application);
@@ -202,9 +197,11 @@ module.exports.register = function (server, options, next) {
       MongoDB.collection('applications').remove({ id: request.params.id });
       MongoDB.collection('grants').remove({ app: request.params.id } );
 
-      var consoleScope = 'admin:'.concat(request.params.id);
-      MongoDB.collection('applications').updateOne({ id: 'console' }, { $pull: { scope: consoleScope } });
-      MongoDB.collection('grants').update({ app: 'console' }, { $pull: { scope: consoleScope } }, { multi: true });
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+        var consoleScope = 'admin:'.concat(request.params.id);
+        MongoDB.collection('applications').updateOne({ id: ticket.app }, { $pull: { scope: consoleScope } });
+        MongoDB.collection('grants').update({ app: ticket.app }, { $pull: { scope: consoleScope } }, { multi: true });
+      });
 
       reply();
     }
@@ -426,22 +423,24 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      MongoDB.collection('grants').update(
-        {
-          app: 'console',
-          user: request.params.id
-        },
-        {
-          $addToSet: { scope: 'admin:*' }
-        },
-        function(err, result){
-          if(err){
-            return reply(err);
-          }
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+        MongoDB.collection('grants').update(
+          {
+            app: ticket.app,
+            user: request.params.id
+          },
+          {
+            $addToSet: { scope: 'admin:*' }
+          },
+          function(err, result){
+            if(err){
+              return reply(err);
+            }
 
-          reply();
-        }
-      );
+            reply();
+          }
+        );
+      });
     }
   });
 
@@ -459,22 +458,24 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      MongoDB.collection('grants').update(
-        {
-          app: 'console',
-          user: request.params.id
-        },
-        {
-          $pull: { scope: 'admin:*' }
-        },
-        function(err, result){
-          if(err){
-            return reply(err);
-          }
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+        MongoDB.collection('grants').update(
+          {
+            app: ticket.app,
+            user: request.params.id
+          },
+          {
+            $pull: { scope: 'admin:*' }
+          },
+          function(err, result){
+            if(err){
+              return reply(err);
+            }
 
-          reply();
-        }
-      );
+            reply();
+          }
+        );
+      });
     }
   });
 

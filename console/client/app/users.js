@@ -26,31 +26,16 @@ module.exports = React.createClass({
   render: function() {
 
     var users = this.state.users.map(function(user, index) {
-      var permissions = user.Permissions instanceof Array
-        ? user.Permissions.map(function(permission, index) {
-            return (<li key={index}>{permission}</li>);
-          })
-        : Object.keys(user.Permissions).map(function (name, index) {
-            if (typeof user.Permissions[name] === 'object') {
-              return Object.keys(user.Permissions[name]).map(function (key, index2){
-                return (
-                  <li key={index + index2}>
-                    {name}.{key}: {user.Permissions[name][key].toString()}
-                  </li>);
-              });
-            } else {
-              return (<li key={index}>{key}: {user.Permissions[key].toString()}</li>);
-            }
-        });
+      var permissions = Object.keys(user.Permissions).map(function (name, index) {
+        return <PermissionScope key={index} scopeName={name} permissions={user.Permissions[name]} />
+      });
 
       return (
         <tr key={index}>
           <td className="col-xs-2">{user.email}</td>
           <td className="col-xs-2">{user.provider}</td>
           <td className="col-xs-8">
-            <ul className="list-unstyled">
-              {permissions}
-            </ul>
+            {permissions}
           </td>
         </tr>
       );
@@ -69,6 +54,49 @@ module.exports = React.createClass({
             {users}
           </tbody>
         </table>
+      </div>
+    );
+  }
+});
+
+
+var PermissionScope = React.createClass({
+  render: function() {
+    var permissions = this.props.permissions instanceof Array
+      ? this.props.permissions.map(function(permission, index) {
+          return (
+            <span>
+              <dt>{index}</dt>
+              <dd>{permission}</dd>
+            </span>
+          );
+        })
+      : Object.keys(this.props.permissions).map(function (name, index) {
+          if (typeof this.props.permissions[name] === 'object') {
+            return Object.keys(this.props.permissions[name]).map(function (key, index2){
+              return (
+                <span key={index + index2}>
+                  <dt>{name}.{key}</dt>
+                  <dd>{this.props.permissions[name][key].toString()}</dd>
+                </span>
+              );
+            }.bind(this));
+          } else {
+            return (
+              <span key={index}>
+                <dt>{name}</dt>
+                <dd>{this.props.permissions[name].toString()}</dd>
+              </span>
+            );
+          }
+      }.bind(this));
+
+    return (
+      <div>
+        <div>Scope: <strong>{this.props.scopeName}</strong></div>
+        <dl className="dl-horizontal">
+          {permissions}
+        </dl>
       </div>
     );
   }

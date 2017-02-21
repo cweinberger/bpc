@@ -158,7 +158,7 @@ module.exports.register = function (server, options, next) {
       auth: {
         access: {
           scope: ['{params.name}', 'admin'],
-          entity: 'app' // <-- Important. Users must not be allowed to query permissions
+          entity: 'app' // <-- Important. Users must not be allowed to set permissions
         }
       },
       cors: {

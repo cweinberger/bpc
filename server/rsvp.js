@@ -118,8 +118,8 @@ function createUserRsvp(data, callback){
 
       var query = {
         provider: data.provider,
-        id: accountInfo.UID,
-        email: accountInfo.profile.email
+        id: result.UID,
+        email: result.profile.email
       };
 
       updateUserInDB(query);

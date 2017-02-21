@@ -1,5 +1,5 @@
 $( document ).ready(function() {
-  getGigyaAccountInfo();
+  newUserTicket();
 });
 
 // $(document).on("click", "#loginDiv", function() {
@@ -9,7 +9,7 @@ $( document ).ready(function() {
 // The function to run on the onLogin event
 function onLoginEventHandler(response) {
   console.log('onLoginEventHandler', response);
-  getGigyaAccountInfo();
+  newUserTicket();
 }
 
 function onLogoutEventHandler(response){
@@ -21,7 +21,32 @@ function onLogoutEventHandler(response){
 }
 
 
-function getGigyaAccountInfo(){
+
+// Add the event handler
+gigya.accounts.addEventHandlers({ onLogin: onLoginEventHandler});
+gigya.accounts.addEventHandlers({ onLogout: onLogoutEventHandler});
+
+
+function getUserTicket(rsvp, callback){
+  $.ajax({
+    type: 'POST',
+    url: '/tickets',
+    contentType: 'application/json; charset=utf-8',
+    data: JSON.stringify({rsvp: rsvp}),
+    success: [
+      function(userTicket, status, jqXHR) {
+        console.log('POST ticket sucess', userTicket, status);
+      },
+      callback
+    ],
+    error: function(jqXHR, textStatus, err) {
+      console.error(textStatus, err.toString());
+    }
+  });
+}
+
+
+function newUserTicket(callback){
   gigya.accounts.getAccountInfo({
     callback: function(response){
       console.log('accounts.getAccountInfo', response);
@@ -55,30 +80,6 @@ function getGigyaAccountInfo(){
     }
   });
 }
-
-// Add the event handler
-gigya.accounts.addEventHandlers({ onLogin: onLoginEventHandler});
-gigya.accounts.addEventHandlers({ onLogout: onLogoutEventHandler});
-
-
-function getUserTicket(rsvp, callback){
-  $.ajax({
-    type: 'POST',
-    url: '/tickets',
-    contentType: 'application/json; charset=utf-8',
-    data: JSON.stringify({rsvp: rsvp}),
-    success: [
-      function(userTicket, status, jqXHR) {
-        console.log('POST ticket sucess', userTicket, status);
-      },
-      callback
-    ],
-    error: function(jqXHR, textStatus, err) {
-      console.error(textStatus, err.toString());
-    }
-  });
-}
-
 
 function refreshUserTicket(callback){
   $.ajax({

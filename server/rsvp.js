@@ -239,7 +239,7 @@ function grantIsExpired(grant){
 }
 
 function createNewCleanGrant(app, user) {
-  grant = {
+  var grant = {
     id : crypto.randomBytes(20).toString('hex'), // (gives 40 characters)
     app : app,
     user : user,

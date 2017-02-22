@@ -175,7 +175,7 @@ function requestSso(type, path, payload, callback){
 
   $.ajax({
     type: type,
-    url: 'http://berlingske-poc-server.local:8085'.concat(path),
+    url: 'http://localhost:8085'.concat(path),
     contentType: 'application/json; charset=utf-8',
     data: ['POST', 'PUT'].indexOf(type) > -1 && payload !== null ? JSON.stringify(payload) : null,
     xhrFields: {

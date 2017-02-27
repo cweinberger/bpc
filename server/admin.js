@@ -459,6 +459,11 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+
+        if (ticket.user === request.params.id){
+          return reply(Boom.badRequest('You cannot demote yourself'));
+        }
+
         MongoDB.collection('grants').update(
           {
             app: ticket.app,

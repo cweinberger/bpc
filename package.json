@@ -30,6 +30,15 @@
     "type": "git",
     "url": "github.com/BerlingskeMedia/bpc"
   },
-  "author": "Daniel Kokott",
+  "contributors": [
+    {
+      "name": "Daniel Kokott",
+      "email": "dako@berlingskeMedia.dk"
+    },
+    {
+      "name": "Martin Kock",
+      "email": "mkoc@berlingskeMedia.dk"
+    }
+  ],
   "license": "ISC"
 }

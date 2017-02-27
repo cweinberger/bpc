@@ -23,7 +23,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/applications',
+    path: '/',
     config: {
       auth:  {
         access: {
@@ -41,7 +41,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/applications',
+    path: '/',
     config: {
       auth: {
         access: {
@@ -113,7 +113,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/applications/{id}',
+    path: '/{id}',
     config: {
       auth: {
         scope: ['admin:{params.id}', 'admin:*'],
@@ -137,7 +137,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'PUT',
-    path: '/applications/{id}',
+    path: '/{id}',
     config: {
       auth: {
         scope: ['admin:{params.id}', 'admin:*'],
@@ -184,7 +184,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'DELETE',
-    path: '/applications/{id}',
+    path: '/{id}',
     config: {
       auth: {
         scope: ['admin:{params.id}', 'admin:*'],
@@ -210,7 +210,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/applications/{id}/grants',
+    path: '/{id}/grants',
     config: {
       auth: {
         access: {
@@ -228,7 +228,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/applications/{id}/grants',
+    path: '/{id}/grants',
     config: {
       auth: {
         access: {
@@ -289,7 +289,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/applications/{id}/grants/{grantId}',
+    path: '/{id}/grants/{grantId}',
     config: {
       auth: {
         access: {
@@ -332,7 +332,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'DELETE',
-    path: '/applications/{id}/grants/{grantId}',
+    path: '/{id}/grants/{grantId}',
     config: {
       auth: {
         access: {
@@ -348,150 +348,13 @@ module.exports.register = function (server, options, next) {
   });
 
 
-  server.route({
-    method: 'GET',
-    path: '/users',
-    config: {
-      auth:  {
-        access: {
-          scope: ['admin'],
-          entity: 'user'
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      MongoDB.collection('users').find().toArray(reply);
-    }
-  });
-
-
-  server.route({
-    method: 'GET',
-    path: '/users/{id}',
-    config: {
-      auth:  {
-        access: {
-          scope: ['admin'],
-          entity: 'user'
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      MongoDB.collection('users').aggregate(
-        [
-          {
-            $match:
-            {
-              id: request.params.id
-            }
-          },
-          {
-            $lookup:
-            {
-              from: 'grants',
-              localField: 'id',
-              foreignField: 'user',
-              as: 'grants'
-            }
-          }
-        ],
-        function(err, result){
-          if(err){
-            return reply(err);
-          } else if (result === null || result.length !== 1){
-            return reply(Boom.notFound());
-          }
-
-          reply(result[0]);
-      });
-    }
-  });
-
-
-  server.route({
-    method: 'POST',
-    path: '/users/{id}/superadmin',
-    config: {
-      auth:  {
-        access: {
-          scope: ['+admin:*'],
-          entity: 'user'
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
-        MongoDB.collection('grants').update(
-          {
-            app: ticket.app,
-            user: request.params.id
-          },
-          {
-            $addToSet: { scope: 'admin:*' }
-          },
-          function(err, result){
-            if(err){
-              return reply(err);
-            }
-
-            reply();
-          }
-        );
-      });
-    }
-  });
-
-
-  server.route({
-    method: 'DELETE',
-    path: '/users/{id}/superadmin',
-    config: {
-      auth:  {
-        access: {
-          scope: ['+admin:*'],
-          entity: 'user'
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
-
-        if (ticket.user === request.params.id){
-          return reply(Boom.badRequest('You cannot demote yourself'));
-        }
-
-        MongoDB.collection('grants').update(
-          {
-            app: ticket.app,
-            user: request.params.id
-          },
-          {
-            $pull: { scope: 'admin:*' }
-          },
-          function(err, result){
-            if(err){
-              return reply(err);
-            }
-
-            reply();
-          }
-        );
-      });
-    }
-  });
-
-
   next();
 
 };
 
 
 module.exports.register.attributes = {
-  name: 'admin',
+  name: 'applications',
   version: '1.0.0'
 };
 

@@ -6,7 +6,8 @@ const Joi = require('joi');
 const crypto = require('crypto');
 const Rsvp = require('./rsvp');
 const OzLoadFuncs = require('./oz_loadfuncs');
-const Admin = require('./admin');
+const Applications = require('./applications');
+const Users = require('./users');
 const Validate = require('./validate');
 const Permissions = require('./permissions');
 const Settings = require('./settings');
@@ -37,7 +38,8 @@ server.register(Scarecrow, function(err) {
   server.auth.strategy('oz', 'oz', true, OzLoadFuncs.strategyOptions);
 
   server.register(Rsvp, { routes: { prefix: '/rsvp' } }, cb);
-  server.register(Admin, { routes: { prefix: '/admin' } }, cb);
+  server.register(Applications, { routes: { prefix: '/applications' } }, cb);
+  server.register(Users, { routes: { prefix: '/users' } }, cb);
   server.register(Validate, { routes: { prefix: '/validate' } }, cb);
   server.register(Permissions, { routes: { prefix: '/permissions' } }, cb);
   server.register(Settings, { routes: { prefix: '/settings' } }, cb);

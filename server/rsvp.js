@@ -165,8 +165,12 @@ function createUserRsvp(data, callback){
     MongoDB.collection('users').updateOne(
       query,
       {
-        $currentDate: { 'LastLogin': { $type: "timestamp" } },
-        $setOnInsert: { 'Permissions': {} },
+        $setOnInsert: {
+          'Permissions': {}
+        },
+        $currentDate: {
+          'LastLogin': { $type: "timestamp" }
+        }
         //  $set: {
         //  },
         // $addToSet: {

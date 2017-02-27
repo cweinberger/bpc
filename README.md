@@ -1,8 +1,6 @@
-# SSO Poc
+# Berlingske Permission Central (BPC)
 
-# SSO (Single Sign On) and BPC (Berlingske Permission Central)
-
-SSO is implementet using Gigya RaaS and Site Groups. Websites and apps use Gigyas SDK to show a login screen to the user. Gigya has the options to have multiple screenSets depending on what device the user is on.
+Single Sign-On (SSO) is implementet using Gigya RaaS and Site Groups. Websites and apps use Gigyas SDK to show a login screen to the user. Gigya has the options to have multiple screenSets depending on what device the user is on.
 
 Gigya RaaS (Registration-as-a-Service) means our Gigya platform is a cloud hosted platform. RaaS has the support for Social Logins as standard.
 
@@ -85,7 +83,6 @@ The BPC console is a special application for managing BPC. It enabled it's users
 
 
 ```
-
 db.applications.insert({
   id: 'console',
   scope: ['admin', 'admin:*'],
@@ -99,5 +96,4 @@ db.grants.insert({
   app: 'console',
   user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
   scope: ['admin:*']})
-  
 ```

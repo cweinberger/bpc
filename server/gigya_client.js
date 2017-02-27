@@ -1,13 +1,13 @@
 /*jshint node: true */
 'use strict';
 
-const http = require('http');
-const https = require('https');
-const Boom = require('boom');
-
 const GIGYA_APP_KEY = process.env.GIGYA_APP_KEY;
 const GIGYA_USER_KEY = process.env.GIGYA_USER_KEY;
 const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY;
+
+const http = require('http');
+const https = require('https');
+const Boom = require('boom');
 
 
 // https://developers.gigya.com/display/GD/accounts.getAccountInfo+REST

@@ -27,7 +27,7 @@ const goodOpts = {
 };
 
 const server = new Hapi.Server();
-server.connection({ port: process.env.PORT ? parseInt(process.env.PORT) + 1 : 8000 + 1 });
+server.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
 
 
 server.register({register: Good, options: goodOpts}, cb);

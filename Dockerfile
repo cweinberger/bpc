@@ -1,12 +1,12 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
-MAINTAINER Daniel Kokott <dako@berlingskemedia.dk>
+LABEL authors="Daniel Kokott <dako@berlingskemedia.dk>, Martin Kock <mkoc@berlingskemedia.dk>"
 
 # Installing wget - needed to download node.js
-RUN apt-get update
-RUN apt-get install -y wget
+RUN apt-get update && apt-get install -y wget
 
-ENV NODE_VERSION v6.9.1
+# Using latest LTS release.
+ENV NODE_VERSION v6.10.0
 
 # Downloading and installing Node.
 RUN wget -O - https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.gz \
@@ -19,9 +19,10 @@ WORKDIR /bpc
 # Copying the code into image. Be aware no config files are including.
 COPY ./node_modules /bpc/node_modules
 COPY ./server /bpc/server
+COPY ./package.json /bpc/package.json
 
 # Exposing our endpoint to Docker.
-EXPOSE  8000
+EXPOSE 8000
 
 # When starting a container with our image, this command will be run.
 CMD ["node", "server/index.js"]

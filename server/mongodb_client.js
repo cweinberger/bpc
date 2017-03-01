@@ -1,22 +1,38 @@
-/*jshint node: true */
+/* jshint node: true */
 'use strict';
 
-var MongoClient = require('mongodb').MongoClient,
-    db;
+// Import dependencies.
+const MongoClient = require('mongodb').MongoClient;
 
-var mongodb_host = process.env.MONGODB_HOST ? process.env.MONGODB_HOST : 'localhost';
-var mongodb_port = process.env.MONGODB_PORT ? process.env.MONGODB_PORT : '27017';
-var mongodb_database = process.env.MONGODB_DATABASE ? process.env.MONGODB_DATABASE : 'sso';
-var connect_string = mongodb_host + ':' + mongodb_port + '/' + mongodb_database
+// Configure database connection.
+const mongoHost = process.env.MONGODB_HOST || 'localhost';
+const mongoPort = process.env.MONGODB_PORT || '27017';
+const mongoDB = process.env.MONGODB_DATABASE || 'sso';
+const connectionString = mongoHost + ':' + mongoPort + '/' + mongoDB;
+let db, user = '', opts = {};
 
-MongoClient.connect('mongodb://' + connect_string, function(err, database) {
+// Handle user+password combination if provided.
+if (process.env.MONGODB_USER && process.env.MONGODB_PASS) {
+  user = `${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@`;
+}
+
+// Set up as replica set if provided.
+if (process.env.MONGODB_REPLSET) {
+  opts.replSet = process.env.MONGODB_REPLSET;
+  opts.readPreference = process.env.MONGODB_READPREFERENCE || 'primaryPreferred';
+}
+
+// Establish connection and perform error handling.
+MongoClient.connect('mongodb://' + connectionString, (err, database) => {
+  if (err) {
+    throw err;
+  }
   db = database;
-  if (err) throw err;
-  console.log('Connecting to Mongo on', connect_string);
+  console.log(`Connecting to MongoDB on "${connectionString}"`);
 });
 
 module.exports.close = function(callback) {
-  db.close(callback);
+  return db.close(callback);
 };
 
 module.exports.collection = function(collectionName) {

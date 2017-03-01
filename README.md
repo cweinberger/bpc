@@ -137,7 +137,7 @@ register other applications in BPC, set scopes and administer users.
 
 # Setup
 
-## Building and Running the application
+## Building and Running the Application
 
 Build the Docker image using the following command;
 
@@ -163,6 +163,8 @@ docker run \
   berlingskemedia/bpc
 ```
 
+Please see the environment variable reference below for complete details.
+
 A Docker container should now be running and providing an API on port 80
 (or otherwise, if you've reconfigured the `publish` parameter).
 
@@ -186,3 +188,25 @@ db.grants.insert({
   user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
   scope: ['admin:*']})
 ```
+
+# Environment Variable Reference
+
+BPC supports the following environment variables:
+
+  * `PORT` - port number that the application should listen on.
+  * `MONGODB_HOST` - host name or IP address of server running MongoDB. If
+    replica sets are used, this would be a comma-separated list of hostnames for
+    each server in the set.
+  * `MONGODB_PORT` - port number to connect to MongoDB on.
+  * `MONGODB_DATABASE` - name of database to use on MongoDB.
+  * `MONGODB_REPLSET` - name of MongoDB replica set (optional).
+  * `MONGODB_READPREFERENCE` - type of MongoDB read preference if using replica
+    sets (optional). Refer to the MongoDB documentation for choices. The default
+    is `primaryPreferred`.
+  * `GIGYA_APP_KEY` - application key to the Gigya API.
+  * `GIGYA_USER_KEY` - user key to the Gigya API.
+  * `GIGYA_SECRET_KEY` - secret to the Gigya API.
+  * `ENCRYPTIONPASSWORD` - used by the Oz protocol for data encryption.
+
+If not using replica sets, `MONGODB_REPLSET` and `MONGODB_READPREFERENCE` can
+be ignored.

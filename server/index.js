@@ -4,6 +4,7 @@
 const Hapi = require('hapi');
 const Joi = require('joi');
 const crypto = require('crypto');
+const Health = require('./health');
 const Rsvp = require('./rsvp');
 const OzLoadFuncs = require('./oz_loadfuncs');
 const Applications = require('./applications');
@@ -21,7 +22,7 @@ const goodOpts = {
       module: 'good-squeeze',
       name: 'Squeeze',
       args: [{ log: '*', response: '*' }]
-    },{
+    }, {
       module: 'good-console'
     }, 'stdout']
   }
@@ -30,13 +31,13 @@ const goodOpts = {
 const server = new Hapi.Server();
 server.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
 
-
 server.register({register: Good, options: goodOpts}, cb);
-// server.register(Scarecrow, function(err) {
+
 server.register(Scarecrow, function(err) {
 
   server.auth.strategy('oz', 'oz', true, OzLoadFuncs.strategyOptions);
 
+  server.register(Health, cb);
   server.register(Rsvp, { routes: { prefix: '/rsvp' } }, cb);
   server.register(Applications, { routes: { prefix: '/applications' } }, cb);
   server.register(Users, { routes: { prefix: '/users' } }, cb);
@@ -52,7 +53,7 @@ server.start((err) => {
   console.log(`Server running at: ${server.info.uri}`);
 });
 
-function cb (err) {
+function cb(err) {
   if (err) {
     console.log('Error when loading plugin', err);
     server.stop();

@@ -33,7 +33,6 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('permissions USER', request.params.name);
 
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
 
@@ -80,7 +79,6 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('permissions APP', request.params.user, request.params.name);
 
       var queryProject = {
         _id: 0
@@ -178,7 +176,6 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('PUT permissions key', request.params.user, request.params.name);
 
       var set = {};
       Object.keys(request.payload).forEach(function(key){

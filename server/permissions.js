@@ -35,22 +35,26 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
 
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
-
-        if (ticket.ext.private.Permissions === undefined || ticket.ext.private.Permissions[request.params.name] === undefined){
-          reply(Boom.forbidden());
+        if (err) {
+          return reply(err)
         }
 
-        // We only want to reply the permissions within the requested scope
-        var Permissions = Object.assign({}, ticket.ext.private.Permissions);
+        // Should we query the database or look in the private part of the ticket?
+        if (true) {
 
-        Object.keys(Permissions).filter(function (k) {
-            return k !== request.params.name;
-        }).forEach(function (v) {
-            delete Permissions[v];
-        });
+          queryPermissionsScope(ticket.user, request.params.name, reply);
 
-        reply({Permissions: Permissions});
+        } else {
 
+          if (ticket.ext.private.Permissions === undefined || ticket.ext.private.Permissions[request.params.name] === undefined){
+            reply(Boom.forbidden());
+          }
+
+          // We only want to reply the permissions within the requested scope
+          var Permissions = Object.assign({}, ticket.ext.private.Permissions[request.params.name]);
+
+          reply(Permissions);
+        }
       });
     }
   });
@@ -79,25 +83,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-
-      var queryProject = {
-        _id: 0
-      };
-      queryProject['Permissions.'.concat(request.params.name)] = 1;
-
-      MongoDB.collection('users').findOne(
-        {
-          id: request.params.user
-        },
-        queryProject
-        , function (err, result){
-          if (err) {
-            console.error(err);
-          }
-
-          reply(err, result);
-        }
-      );
+      queryPermissionsScope(request.params.user, request.params.name, reply);
     }
   });
 
@@ -211,7 +197,31 @@ module.exports.register = function (server, options, next) {
   next();
 };
 
+
 module.exports.register.attributes = {
   name: 'permissions',
   version: '1.0.0'
 };
+
+
+function queryPermissionsScope(user, scope, callback) {
+  var queryProject = {
+    _id: 0
+  };
+  queryProject['Permissions.'.concat(scope)] = 1;
+
+  MongoDB.collection('users').findOne(
+    {
+      id: user
+    },
+    queryProject
+    , function (err, result){
+      if (err) {
+        console.error(err);
+        return callback(err);
+      }
+
+      callback(null, result.Permissions[scope]);
+    }
+  );
+}

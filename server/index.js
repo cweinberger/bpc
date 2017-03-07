@@ -10,6 +10,7 @@ const OzLoadFuncs = require('./oz_loadfuncs');
 const Applications = require('./applications');
 const Users = require('./users');
 const Permissions = require('./permissions');
+const Me = require('./me');
 const Settings = require('./settings');
 const Scarecrow = require('scarecrow');
 const Good = require('good');
@@ -41,6 +42,7 @@ server.register(Scarecrow, function(err) {
   server.register(Applications, { routes: { prefix: '/applications' } }, cb);
   server.register(Users, { routes: { prefix: '/users' } }, cb);
   server.register(Permissions, { routes: { prefix: '/permissions' } }, cb);
+  server.register(Me, { routes: { prefix: '/me' } }, cb);
   server.register(Settings, { routes: { prefix: '/settings' } }, cb);
 });
 

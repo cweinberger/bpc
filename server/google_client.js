@@ -2,18 +2,10 @@
 'use strict';
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
 const google = require('googleapis');
 const plus = google.plus('v1');
 const oauth2 = google.oauth2('v2');
-// const OAuth2 = google.auth.OAuth2;
-// const oauth2Client = new OAuth2(
-//   GOOGLE_CLIENT_ID,
-//   GOOGLE_CLIENT_SECRET
-//   // YOUR_REDIRECT_URL
-// );
 
 
 module.exports.getPeople = function(userId, callback){

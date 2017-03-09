@@ -3,6 +3,8 @@
 This is the server (REST-based API) for the SSO solution that replaces
 the previous BOND-based SSO solution.
 
+![poc gigya 1](https://cloud.githubusercontent.com/assets/6349363/23746906/027f6946-04be-11e7-8f6c-419e95cb5bbc.png)
+
 
 ## Description
 

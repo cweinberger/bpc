@@ -6,7 +6,8 @@ LABEL authors="Daniel Kokott <dako@berlingskemedia.dk>, Martin Kock <mkoc@berlin
 RUN apt-get update && apt-get install -y wget
 
 # Using latest LTS release.
-ENV NODE_VERSION v6.10.0
+# Latest LTS v6.10.0 is not supported by our jenkins
+ENV NODE_VERSION v6.9.1
 
 # Downloading and installing Node.
 RUN wget -O - https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.gz \

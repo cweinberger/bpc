@@ -177,7 +177,8 @@ db.applications.insert({
   scope: ['admin', 'admin:*'],
   delegate: false,
   key: 'something_long_and_random',
-  algorithm: 'sha256'})
+  algorithm: 'sha256',
+  settings: {}})
 
 db.grants.insert({
   id:'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',

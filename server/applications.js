@@ -85,7 +85,9 @@ module.exports.register = function (server, options, next) {
           scope: request.payload.scope ? filterArrayForDuplicates(request.payload.scope) : [],
           delegate: request.payload.delegate ? request.payload.delegate : false,
           key: crypto.randomBytes(40).toString('hex'),
-          algorithm: 'sha256'});
+          algorithm: 'sha256',
+          settings: request.payload.settings ? request.payload.settings : {}
+        });
 
           MongoDB.collection('applications').insertOne(application, function(err, result) {
             if (err) {

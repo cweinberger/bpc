@@ -18,11 +18,6 @@ mutiple sites and apps. This means the user only needs one account to access
 all Berlingske Media websites and apps, even though the user might be
 presented with different login screens with different media brandings.
 
-Gigya does not directly support automatic login on all websites, once the user
-has logged in at one website. To support this, we build a central login-portal,
-and delegate sessions securely from the portal to all websites. Whether or not
-to support this, comes down to a user experience decision.
-
 After creating an account in Gigya or logging in to an existing account, the
 user is identified and authenticated. Is this point, the user has no
 authorizations or permissions. The user is simply an identified guest.

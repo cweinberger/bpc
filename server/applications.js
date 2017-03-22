@@ -266,7 +266,7 @@ module.exports.register = function (server, options, next) {
           return reply(Boom.badRequest());
         }
 
-        MongoDB.collection('users').findOne({id: grant.user}, function(err, user){
+        MongoDB.collection('users').findOne({$or : [{id: grant.user}, {email: grant.user}]}, function(err, user){
           if (err){
             return reply(err);
           } else if (user === null){

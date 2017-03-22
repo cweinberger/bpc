@@ -11,6 +11,7 @@ const Applications = require('./applications');
 const Users = require('./users');
 const Permissions = require('./permissions');
 const Me = require('./me');
+const Auth = require('./auth');
 const Settings = require('./settings');
 const Scarecrow = require('scarecrow');
 const Good = require('good');
@@ -43,6 +44,7 @@ server.register(Scarecrow, function(err) {
   server.register(Users, { routes: { prefix: '/users' } }, cb);
   server.register(Permissions, { routes: { prefix: '/permissions' } }, cb);
   server.register(Me, { routes: { prefix: '/me' } }, cb);
+  server.register(Auth, { routes: { prefix: '/auth' } }, cb);
   server.register(Settings, { routes: { prefix: '/settings' } }, cb);
 });
 

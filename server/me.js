@@ -5,7 +5,7 @@ const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
 const OzLoadFuncs = require('./oz_loadfuncs');
-const MongoDB = require('./mongodb_client');
+const MongoDB = require('./mongo/mongodb_client');
 
 module.exports.register = function (server, options, next) {
 
@@ -38,7 +38,7 @@ module.exports.register = function (server, options, next) {
           return reply(err)
         }
 
-        MongoDB.collection('users').findOne({ id: ticket.user }, { _id: 0, Permissions: 0 }, reply);
+        MongoDB.collection('users').findOne({ id: ticket.user }, { _id: 0, dataScopes: 0 }, reply);
       });
     }
   });

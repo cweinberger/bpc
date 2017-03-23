@@ -6,7 +6,7 @@ const Joi = require('joi');
 const Oz = require('oz');
 const OzLoadFuncs = require('./oz_loadfuncs');
 const crypto = require('crypto');
-const MongoDB = require('./mongodb_client');
+const MongoDB = require('./mongo/mongodb_client');
 
 const scopeValidation = Joi.array().items(Joi.string().regex(/^(?!admin).*$/, { name: 'admin', invert: true }));
 

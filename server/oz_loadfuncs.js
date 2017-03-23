@@ -3,7 +3,7 @@
 
 const Boom = require('boom');
 const Oz = require('oz');
-const MongoDB = require('./mongodb_client');
+const MongoDB = require('./mongo/mongodb_client');
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
@@ -54,7 +54,7 @@ function loadGrantFunc(id, next) {
         grant.scope = grant.scope.concat(missingScopes);
 
         // // Finding private details to encrypt in the ticket for later usage.
-        MongoDB.collection('users').findOne({id: grant.user}, {fields: {_id: 0, email: 1, id: 1, Permissions: 1}}, function(err, user){
+        MongoDB.collection('users').findOne({id: grant.user}, {fields: {_id: 0, email: 1, id: 1, dataScopes: 1}}, function(err, user){
           if (err) {
             return next(err);
           } else if (user === null) {

@@ -1,21 +1,33 @@
 /*jshint node: true */
 'use strict';
 
+
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
 const OzLoadFuncs = require('./oz_loadfuncs');
 const crypto = require('crypto');
-const MongoDB = require('./mongodb_client');
+const MongoDB = require('./mongo/mongodb_client');
+const Accounts = require('./accounts/accounts');
+const GigyaAccounts = require('./gigya/gigya_accounts');
+const GigyaUtils = require('./gigya/gigya_utils');
 
-// Note: this is almost the same as in rsvp.js/rsvpValiudation
+
+// Note: this is almost the same as in rsvp.js/rsvpValidation
 // This could be programmed better.
 const userValidation = Joi.object().keys({
-  provider: Joi.string().valid('gigya', 'google').required(),
-  UID: Joi.string().when('provider', { is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden() }),
-  ID: Joi.string().when('provider', { is: 'google', then: Joi.required(), otherwise: Joi.forbidden() }),
+  UID: Joi.string().required(),
+  ID: Joi.string().required(),
   email: Joi.string().email().required()
 });
+
+
+const registrationValidation = Joi.object().keys({
+  email: Joi.string().email().required(),
+  password: Joi.string().required(),
+  profile: Joi.object().optional()
+});
+
 
 module.exports.register = function (server, options, next) {
 
@@ -47,6 +59,109 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
+    method: 'GET',
+    path: '/schema',
+    config: {
+      auth:  false,
+      cors: stdCors
+    },
+    handler: function(request, reply) {
+      GigyaAccounts.getAccountSchema().then(
+        res => reply(res.body),
+        err => reply(GigyaUtils.toError(err))
+      );
+    }
+  });
+
+
+  /**
+   * GET /users/search
+   * 
+   * Query parameter:
+   * - query=<Gigya SQL-style query> eg.;
+   *   SELECT * FROM accounts WHERE profile.email = "mkoc@berlingskemedia.dk"
+   */
+  server.route({
+    method: 'GET',
+    path: '/search',
+    config: {
+      auth:  false,
+      cors: stdCors
+    },
+    handler: (request, reply) => {
+      return GigyaAccounts.searchAccount(request.query.query)
+        .then(res => reply(res.body), err => reply(GigyaUtils.toError(err)));
+    }
+  });
+
+
+  server.route({
+    method: 'GET',
+    path: '/exists',
+    config: {
+      auth:  false,
+      cors: stdCors
+    },
+    handler: (request, reply) => {
+      return GigyaAccounts.isEmailAvailable(request.query.email)
+        .then(res => reply(res.body), err => reply(GigyaUtils.toError(err)));
+    }
+  });
+
+
+  server.route({
+    method: 'DELETE',
+    path: '/{id}',
+    config: {
+      auth:  false,
+      cors: stdCors
+    },
+    handler: (request, reply) => {
+      return GigyaAccounts.deleteAccount(request.params.id) .then(
+        res => reply(GigyaUtils.isError(res) ? GigyaUtils.toError(res) : res),
+        err => reply(GigyaUtils.toError(err))
+      );
+    }
+  });
+
+
+  server.route({
+    method: 'POST',
+    path: '/register',
+    config: {
+      auth: false,
+      cors: stdCors,
+      validate: {
+        payload: registrationValidation
+      }
+    },
+    handler: (request, reply) => {
+
+      const user = request.payload;
+      Accounts.register(user).then(
+        data => {
+          if (GigyaUtils.isError(data.body)) {
+            if (data.body.errorCode === 400003) {
+              // Email exists.
+              return reply({message: data.body.errorMessage}).status(409);
+            } else {
+              return reply(GigyaUtils.toError(data.body));
+            }
+          } else {
+            return reply(data.body ? data.body : data);
+          }
+        },
+        err => {
+          console.log(err);
+          return reply(GigyaUtils.toError(err, err.validationErrors));
+        }
+      );
+
+    }
+  });
+
+
+  server.route({
     method: 'POST',
     path: '/',
     config: {
@@ -65,16 +180,16 @@ module.exports.register = function (server, options, next) {
 
       var user = {
         email: request.payload.email,
-        provider: request.payload.provider,
-        id: request.payload.provider === 'gigya' ? request.payload.UID : request.payload.ID
+        provider: 'gigya',
+        id: request.payload.UID
       };
 
       MongoDB.collection('users').updateOne(
         user,
         {
           $setOnInsert: {
-            'Permissions': {},
-            'LastLogin': null
+            dataScopes: {},
+            LastLogin: null
           }
         },
         {

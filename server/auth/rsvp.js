@@ -5,9 +5,9 @@ const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
 const crypto = require('crypto');
-const MongoDB = require('./mongodb_client');
-const Gigya = require('./gigya_client');
-const Google = require('./google_client');
+const MongoDB = require('./../mongo/mongodb_client');
+const Gigya = require('./../gigya/gigya_client');
+const Google = require('./../google/google_client');
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
@@ -22,12 +22,24 @@ const corsRules = {
 
 const rsvpValidation = Joi.object().keys({
   provider: Joi.string().valid('gigya', 'google').required(),
-  UID: Joi.string().when('provider', { is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden() }),
-  UIDSignature: Joi.string().when('provider', { is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden() }),
-  signatureTimestamp: Joi.string().when('provider', { is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden() }),
-  ID: Joi.string().when('provider', { is: 'google', then: Joi.required(), otherwise: Joi.forbidden() }),
-  id_token: Joi.string().when('provider', { is: 'google', then: Joi.required(), otherwise: Joi.forbidden() }),
-  access_token: Joi.string().when('provider', { is: 'google', then: Joi.required(), otherwise: Joi.forbidden() }),
+  UID: Joi.string().when('provider', {
+    is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden()
+  }),
+  UIDSignature: Joi.string().when('provider', {
+    is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden()
+  }),
+  signatureTimestamp: Joi.string().when('provider', {
+    is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden()
+  }),
+  ID: Joi.string().when('provider', {
+    is: 'google', then: Joi.required(), otherwise: Joi.forbidden()
+  }),
+  id_token: Joi.string().when('provider', {
+    is: 'google', then: Joi.required(), otherwise: Joi.forbidden()
+  }),
+  access_token: Joi.string().when('provider', {
+    is: 'google', then: Joi.required(), otherwise: Joi.forbidden()
+  }),
   email: Joi.string().email().required(),
   app: Joi.string().required(),
   returnUrl: Joi.string().uri().optional()
@@ -62,8 +74,6 @@ module.exports.register = function (server, options, next) {
     }
   });
 
-
-
   server.route({
     method: 'POST',
     path: '/',
@@ -96,8 +106,6 @@ module.exports.register.attributes = {
 };
 
 
-
-
 // Here we are creating the user->app rsvp
 function createUserRsvp(data, callback){
 
@@ -105,7 +113,7 @@ function createUserRsvp(data, callback){
   // 2. Check if the app allows for dynamic creating of grants
   // 3. Check if the app uses Gigya accounts or perhaps pre-defined users (e.g. server-to-server auth keys)
 
-  if (data.provider === 'gigya'){
+  if (data.provider === 'gigya') {
 
     // Vefify the user is created in Gigya
     // TODO: Also verify using exchangeUIDSignature (UIDSignature + signatureTimestamp)
@@ -126,15 +134,13 @@ function createUserRsvp(data, callback){
       findGrant({ user: data.UID, app: data.app });
     });
 
-
-
-  } else if (data.provider === 'google'){
+  } else if (data.provider === 'google') {
 
     // Verify the user with Google
-    Google.tokeninfo(data, function(err, result){
+    Google.tokeninfo(data, function(err, result) {
       if (err){
         return callback(err);
-      } else if(data.email !== result.email){
+      } else if(data.email !== result.email) {
         return callback(Boom.badRequest());
       } else {
 
@@ -166,16 +172,11 @@ function createUserRsvp(data, callback){
       query,
       {
         $setOnInsert: {
-          'Permissions': {}
+          dataScopes: {}
         },
         $currentDate: {
           'LastLogin': { $type: "timestamp" }
         }
-        //  $set: {
-        //  },
-        // $addToSet: {
-        //   Permissions: 'read'
-        // }
       },
       {
         upsert: true

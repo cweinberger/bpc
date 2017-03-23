@@ -4,7 +4,7 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
-const MongoDB = require('./mongodb_client');
+const MongoDB = require('./mongo/mongodb_client');
 
 
 module.exports.register = function (server, options, next) {

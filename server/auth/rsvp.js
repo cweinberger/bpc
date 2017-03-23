@@ -6,7 +6,7 @@ const Joi = require('joi');
 const Oz = require('oz');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
-const Gigya = require('./../gigya/gigya_client');
+const Gigya = require('./../gigya/gigya_accounts');
 const Google = require('./../google/google_client');
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
@@ -117,10 +117,9 @@ function createUserRsvp(data, callback){
 
     // Vefify the user is created in Gigya
     // TODO: Also verify using exchangeUIDSignature (UIDSignature + signatureTimestamp)
-    Gigya.getAccountInfo({ UID: data.UID }, function (err, result) {
-      if (err){
-        return callback(err);
-      } else if(data.email !== result.profile.email){
+    GigyaAccounts.getAccountInfo({ UID: data.UID }).then(result => {
+
+      if (data.email !== result.profile.email) {
         return callback(Boom.badRequest());
       }
 
@@ -132,7 +131,7 @@ function createUserRsvp(data, callback){
 
       updateUserInDB(query);
       findGrant({ user: data.UID, app: data.app });
-    });
+    }, err => callback(err));
 
   } else if (data.provider === 'google') {
 

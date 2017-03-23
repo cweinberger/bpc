@@ -7,9 +7,10 @@ const Joi = require('joi');
 const Oz = require('oz');
 const OzLoadFuncs = require('./oz_loadfuncs');
 const crypto = require('crypto');
-const MongoDB = require('./mongodb_client');
-const GigyaClient = require('./gigya_client');
-const GigyaUtils = require('./gigya_utils');
+const MongoDB = require('./mongo/mongodb_client');
+const Accounts = require('./accounts/accounts');
+const GigyaAccounts = require('./gigya/gigya_accounts');
+const GigyaUtils = require('./gigya/gigya_utils');
 
 
 // Note: this is almost the same as in rsvp.js/rsvpValidation
@@ -65,7 +66,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      GigyaClient.getAccountSchema().then(
+      GigyaAccounts.getAccountSchema().then(
         res => reply(res.body),
         err => reply(GigyaUtils.toError(err))
       );
@@ -88,7 +89,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: (request, reply) => {
-      return GigyaClient.searchAccount(request.query.query)
+      return GigyaAccounts.searchAccount(request.query.query)
         .then(res => reply(res.body), err => reply(GigyaUtils.toError(err)));
     }
   });
@@ -102,7 +103,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: (request, reply) => {
-      return GigyaClient.isEmailAvailable(request.query.email)
+      return GigyaAccounts.isEmailAvailable(request.query.email)
         .then(res => reply(res.body), err => reply(GigyaUtils.toError(err)));
     }
   });
@@ -116,7 +117,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: (request, reply) => {
-      return GigyaClient.deleteAccount(request.params.id) .then(
+      return GigyaAccounts.deleteAccount(request.params.id) .then(
         res => reply(GigyaUtils.isError(res) ? GigyaUtils.toError(res) : res),
         err => reply(GigyaUtils.toError(err))
       );
@@ -137,7 +138,7 @@ module.exports.register = function (server, options, next) {
     handler: (request, reply) => {
 
       const user = request.payload;
-      GigyaClient.registerUser(user).then(
+      Accounts.register(user).then(
         data => {
           if (GigyaUtils.isError(data.body)) {
             if (data.body.errorCode === 400003) {
@@ -147,10 +148,13 @@ module.exports.register = function (server, options, next) {
               return reply(GigyaUtils.toError(data.body));
             }
           } else {
-            return reply(data.body);
+            return reply(data.body ? data.body : data);
           }
         },
-        err => reply(GigyaUtils.toError(err, err.validationErrors))
+        err => {
+          console.log(err);
+          return reply(GigyaUtils.toError(err, err.validationErrors));
+        }
       );
 
     }
@@ -184,8 +188,8 @@ module.exports.register = function (server, options, next) {
         user,
         {
           $setOnInsert: {
-            'Permissions': {},
-            'LastLogin': null
+            dataScopes: {},
+            LastLogin: null
           }
         },
         {

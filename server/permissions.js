@@ -5,7 +5,7 @@ const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
 const OzLoadFuncs = require('./oz_loadfuncs');
-const MongoDB = require('./mongodb_client');
+const MongoDB = require('./mongo/mongodb_client');
 
 module.exports.register = function (server, options, next) {
 
@@ -165,7 +165,7 @@ module.exports.register = function (server, options, next) {
 
       var set = {};
       Object.keys(request.payload).forEach(function(key){
-        set['Permissions.'.concat(request.params.name,'.', key)] = request.payload[key];
+        set['dataScopes.'.concat(request.params.name,'.', key)] = request.payload[key];
       });
 
       MongoDB.collection('users').updateOne(
@@ -208,7 +208,7 @@ function queryPermissionsScope(user, scope, callback) {
   var queryProject = {
     _id: 0
   };
-  queryProject['Permissions.'.concat(scope)] = 1;
+  queryProject['dataScopes.'.concat(scope)] = 1;
 
   MongoDB.collection('users').findOne(
     {
@@ -221,7 +221,7 @@ function queryPermissionsScope(user, scope, callback) {
         return callback(err);
       }
 
-      callback(null, result.Permissions[scope]);
+      callback(null, result.dataScopes[scope]);
     }
   );
 }

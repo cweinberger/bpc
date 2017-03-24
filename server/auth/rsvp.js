@@ -6,7 +6,7 @@ const Joi = require('joi');
 const Oz = require('oz');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
-const Gigya = require('./../gigya/gigya_accounts');
+const GigyaAccounts = require('./../gigya/gigya_accounts');
 const Google = require('./../google/google_client');
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;

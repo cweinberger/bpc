@@ -6,15 +6,14 @@ const Joi = require('joi');
 const Oz = require('oz');
 const OzLoadFuncs = require('./oz_loadfuncs');
 const MongoDB = require('./mongo/mongodb_client');
-const Gigya = require('./gigya_client');
+const Gigya = require('./gigya/gigya_client');
 
 // We're getting the policies to make sure the security check is not set
-Gigya.request('GET', '/accounts.getPolicies', null, function (err, policies){
-    // console.log('getPolicies', err, policies);
+Gigya.callApi('/accounts.getPolicies').then(function(response){
 
-    if(policies.passwordReset.requireSecurityCheck){
-      console.warn('Gigya site requires security check');
-    }
+  if(response.body.passwordReset.requireSecurityCheck){
+    console.warn('Gigya site requires security check');
+  }
 });
 
 module.exports.register = function (server, options, next) {
@@ -95,24 +94,21 @@ module.exports.register = function (server, options, next) {
             sendEmail: false
           };
 
-          Gigya.request('GET', '/accounts.resetPassword', parameters, function (err, result){
-            if (err){
-              return reply(err);
-            }
+          Gigya.callApi('/accounts.resetPassword', parameters).then(function (response){
 
             var parameters_two = {
-              passwordResetToken: result.passwordResetToken,
+              passwordResetToken: response.body.passwordResetToken,
               newPassword: newPassword,
               sendEmail: false
             };
 
-            Gigya.request('GET', '/accounts.resetPassword', parameters_two, function (err, result){
-              if (err){
-                return reply(err);
-              }
-
+            Gigya.callApi('/accounts.resetPassword', parameters_two).then(function(response){
               reply();
+            }).catch(function(err){
+              return reply(err);
             });
+          }).catch(function(err){
+            return reply(err);
           });
         // });
       });

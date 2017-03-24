@@ -33,3 +33,6 @@ config.sh
 
 #tmp files
 *~
+
+# JetBrains meta folder
+.idea

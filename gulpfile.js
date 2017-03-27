@@ -13,5 +13,5 @@ gulp.task('start_server', function (){
 });
 
 gulp.task('watch', function(){
-  gulp.watch(['./server/*.js'], ['start_server']);
+  gulp.watch(['./server/**/*.js'], ['start_server']);
 });

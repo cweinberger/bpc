@@ -25,6 +25,7 @@ part of the endpoint in question.
 * [`GET /users/{id}`](#get-user)
 
 <a name="get-healthcheck" />
+
 ## [GET /healthcheck]
 
 Query parameters: _None_
@@ -34,6 +35,7 @@ availability services. Returns 200 OK and a confirmation message.
 
 
 <a name="get-version" />
+
 ## [GET /version]
 
 Query parameters: _None_
@@ -51,6 +53,7 @@ Returns an object with information about the application:
 
 
 <a name="get-users" />
+
 ## [GET /users]
 
 Query parameters: _None_
@@ -59,6 +62,7 @@ Returns a list of all users currently created in BPC. Deleted users are omitted.
 
 
 <a name="register-user" />
+
 ## [POST /users/register]
 
 Query parameters: _None_
@@ -87,6 +91,7 @@ allowed.
 
 
 <a name="delete-user" />
+
 ## [DELETE /users/{id}]
 
 Query parameters: _None_
@@ -96,6 +101,7 @@ user from Gigya, and if successful, mark the local user as deleted.
 
 
 <a name="search-user" />
+
 ## [GET /users/search]
 
 Query parameters:
@@ -154,6 +160,7 @@ Example result:
 
 
 <a name="get-user-schema" />
+
 ## [GET /users/schema]
 
 Query parameters: _None_
@@ -181,6 +188,7 @@ Example result:
 
 
 <a name="user-exists" />
+
 ## [GET /users/exists]
 
 Query parameters:
@@ -212,6 +220,7 @@ Looks up the user with the given id (UID).
 
 
 <a name="create-user" />
+
 ## [POST /users] **Deprecated**
 
 Query parameters: _None_

@@ -7,7 +7,8 @@ const GigyaUtils = require('./../gigya/gigya_utils');
 const MongoDB = require('./../mongo/mongodb_client');
 
 module.exports = {
-  register
+  register,
+  deleteOne
 };
 
 
@@ -25,36 +26,25 @@ function register(user) {
     // Create user and provide the user object to the resolved promise.
     return MongoDB.collection('users').insert(_user).then(res => res.ops[0]);
 
-  }, err => {
+  }, err => Promise.reject(err));
 
-    if (err.output.payload && err.output.payload[0].errorCode === 400003) {
-      // Email exists. Check if account exists in Gigya.
-      return GigyaAccounts.searchAccount(
-        `SELECT * FROM accounts WHERE profile.email = "${user.email}"`
-      ).then(res => {
+}
 
-        if (res.objectsCount > 1) {
-          // TODO: Perhaps do account linking here if there is more than one?
-          return Promise.reject(new Error(
-            `Gigya already has ${res.objectsCount} accounts with that email address`
-          ));
-        }
 
-        const _user = assembleDbUser(res.body.results[0]);
+/**
+ * Deletes a single account from Gigya, and marks the local one as deleted
+ * 
+ * @param {String} Gigya user id 
+ */
+function deleteOne(id) {
 
-        return MongoDB.collection('users')
-          .findOneAndUpdate({id: _user.id}, {$set: _user}, {
-            upsert: true,
-            returnOriginal: false
-          })
-          .then(res => res.value);
+  return GigyaAccounts.deleteAccount(id).then(data => {
 
-      });
-    } else {
-      return Promise.reject(err);
-    }
+    // TODO: Set deletedAt timestamp? Or should we do more?
+    return MongoDB.collection('users')
+      .findOneAndUpdate({id: id}, {$set: {deletedAt: new Date()}});
 
-  });
+  }, err => Promise.reject(err));
 
 }
 

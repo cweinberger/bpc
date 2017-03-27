@@ -3,11 +3,11 @@
 
 
 const Boom = require('boom');
-
+const GigyaError = require('./gigya_error');
 
 module.exports = {
   isError,
-  toError,
+  errorToResponse,
   stringify
 }
 
@@ -28,18 +28,25 @@ function isError(data) {
  * Wraps existing errors or response data with the expected error fields into
  * an error object wrapped by Boom.js
  * 
- * @param {Mixed} data 
+ * @param {Mixed} GigyaError|Error|Gigya response
  * @param {Object} extra (optional)
  * @return {Object} Boom-wrapped error object
  */
-function toError(data, extra) {
+function errorToResponse(data, extra) {
 
-  const error = data instanceof Error ? Boom.wrap(data) : Boom.wrap(
-    new Error(data.errorDetails), data.statusCode, data.errorMessage
-  );
-  if (extra) {
-    error.output.payload = extra;
+  let error;
+
+  if (data instanceof GigyaError) {
+    error = Boom.wrap(data);
+    error.output.payload = data.details;
+  } else if (data instanceof Error) {
+    error = Boom.wrap(data);
+  } else {
+    error = Boom.wrap(
+      new Error(data.errorDetails), data.statusCode, data.errorMessage
+    );
   }
+
   return error;
 
 }

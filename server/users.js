@@ -62,13 +62,18 @@ module.exports.register = function (server, options, next) {
     method: 'GET',
     path: '/schema',
     config: {
-      auth:  false,
+      auth:  {
+        access: {
+          scope: ['admin'],
+          entity: 'user'
+        }
+      },
       cors: stdCors
     },
     handler: function(request, reply) {
       GigyaAccounts.getAccountSchema().then(
         res => reply(res.body),
-        err => reply(GigyaUtils.toError(err))
+        err => reply(GigyaUtils.errorToResponse(err))
       );
     }
   });
@@ -77,7 +82,7 @@ module.exports.register = function (server, options, next) {
   /**
    * GET /users/search
    * 
-   * Query parameter:
+   * Query parameters:
    * - query=<Gigya SQL-style query> eg.;
    *   SELECT * FROM accounts WHERE profile.email = "mkoc@berlingskemedia.dk"
    */
@@ -85,26 +90,42 @@ module.exports.register = function (server, options, next) {
     method: 'GET',
     path: '/search',
     config: {
-      auth:  false,
+      auth:  {
+        access: {
+          scope: ['admin'],
+          entity: 'user'
+        }
+      },
       cors: stdCors
     },
     handler: (request, reply) => {
       return GigyaAccounts.searchAccount(request.query.query)
-        .then(res => reply(res.body), err => reply(GigyaUtils.toError(err)));
+        .then(res => reply(res.body), err => reply(GigyaUtils.errorToResponse(err)));
     }
   });
 
 
+  /**
+   * GET /users/exists
+   * 
+   * Query parameters:
+   * - email=email to check
+   */
   server.route({
     method: 'GET',
     path: '/exists',
     config: {
-      auth:  false,
+      auth:  {
+        access: {
+          scope: ['admin'],
+          entity: 'user'
+        }
+      },
       cors: stdCors
     },
     handler: (request, reply) => {
       return GigyaAccounts.isEmailAvailable(request.query.email)
-        .then(res => reply(res.body), err => reply(GigyaUtils.toError(err)));
+        .then(res => reply(res.body), err => reply(GigyaUtils.errorToResponse(err)));
     }
   });
 
@@ -113,13 +134,27 @@ module.exports.register = function (server, options, next) {
     method: 'DELETE',
     path: '/{id}',
     config: {
-      auth:  false,
+      auth:  {
+        access: {
+          scope: ['admin'],
+          entity: 'user'
+        }
+      },
+      auth: false,
       cors: stdCors
     },
     handler: (request, reply) => {
-      return GigyaAccounts.deleteAccount(request.params.id) .then(
-        res => reply(GigyaUtils.isError(res) ? GigyaUtils.toError(res) : res),
-        err => reply(GigyaUtils.toError(err))
+      return Accounts.deleteOne(request.params.id).then(
+        res => reply(GigyaUtils.isError(res) ? GigyaUtils.errorToResponse(res) : res),
+        err => {
+          if (err.code === 403005) {
+            // Unknown id, so reply 404 Not Found.
+            return reply(Boom.notFound(`[${err.code}] ${err.message}`));
+          } else {
+            // Everything else is Internal Server Error.
+            return reply(GigyaUtils.errorToResponse(err));
+          }
+        }
       );
     }
   });
@@ -129,7 +164,12 @@ module.exports.register = function (server, options, next) {
     method: 'POST',
     path: '/register',
     config: {
-      auth: false,
+      auth:  {
+        access: {
+          scope: ['admin'],
+          entity: 'user'
+        }
+      },
       cors: stdCors,
       validate: {
         payload: registrationValidation
@@ -139,21 +179,18 @@ module.exports.register = function (server, options, next) {
 
       const user = request.payload;
       Accounts.register(user).then(
-        data => {
-          if (GigyaUtils.isError(data.body)) {
-            if (data.body.errorCode === 400003) {
-              // Email exists.
-              return reply({message: data.body.errorMessage}).status(409);
-            } else {
-              return reply(GigyaUtils.toError(data.body));
-            }
-          } else {
-            return reply(data.body ? data.body : data);
-          }
-        },
+        data => reply(data.body ? data.body : data),
         err => {
-          console.log(err);
-          return reply(GigyaUtils.toError(err, err.validationErrors));
+          if (err.code === 400009 && Array.isArray(err.details) &&
+              err.details.length && err.details[0].errorCode === 400003) {
+            // Reply with a conflict if the email address exists.
+            return reply(Boom.conflict(
+              `[${err.details[0].errorCode}] ${err.details[0].message}`
+            ));
+          } else {
+            // Reply with the usual Internal Server Error otherwise.
+            return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+          }
         }
       );
 

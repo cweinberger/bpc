@@ -15,6 +15,7 @@ const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY;
 const qs = require('qs');
 const request = require('request');
 const GigyaUtils = require('./gigya_utils');
+const GigyaError = require('./gigya_error');
 
 
 module.exports = {
@@ -77,7 +78,9 @@ function callApi(path, payload = null, api = 'accounts') {
           );
           console.log(`  Validation errors:${errors}`);
         }
-        return reject(GigyaUtils.toError(_body, _body.validationErrors));
+        return reject(new GigyaError(
+          _body.errorMessage, _body.errorCode, _body.validationErrors
+        ));
       }
 
       return resolve({response, body: _body});

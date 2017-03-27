@@ -23,7 +23,7 @@ module.exports = {
 
 /**
  * Returns account information for the account with the given regToken or UID
- * 
+ *
  * @see https://developers.gigya.com/display/GD/accounts.getAccountInfo+REST
  * @param {Object} Payload containing "regToken" or "UID"
  * @return {Promise}
@@ -38,6 +38,7 @@ function getAccountInfo(payload) {
     // UIDSignature: payload.UIDSignature,
     // signatureTimestamp: payload.signatureTimestamp
   };
+
   return gigyaClient.callApi('/ids.getAccountInfo', parameters);
 
 }
@@ -45,7 +46,7 @@ function getAccountInfo(payload) {
 
 /**
  * Updates account information for a single account
- * 
+ *
  * @see https://developers.gigya.com/display/GD/accounts.setAccountInfo+REST
  * @param {Object} Account information to set/update
  * @return {Promise}
@@ -59,7 +60,7 @@ function setAccountInfo(payload) {
 
 /**
  * ???
- * 
+ *
  * @see https://developers.gigya.com/display/GD/accounts.exchangeUIDSignature+REST
  * @param {Object}
  * @return {Promise}
@@ -74,9 +75,9 @@ function exchangeUIDSignature(payload) {
 
 /**
  * Initializes a registration flow for a new account.
- * 
+ *
  * This function call should be followed up by a call to "register".
- * 
+ *
  * @see http://developers.gigya.com/display/GD/accounts.initRegistration+REST
  * @return {Promise}
  */
@@ -89,9 +90,9 @@ function initRegistration() {
 
 /**
  * Checks if the given email address is available for account registration
- * 
+ *
  * @see http://developers.gigya.com/display/GD/accounts.isAvailableLoginID+REST
- * @param {String} email 
+ * @param {String} email
  * @return {Promise}
  */
 function isEmailAvailable(email) {
@@ -103,7 +104,7 @@ function isEmailAvailable(email) {
 
 /**
  * Searches for accounts using a custom query language
- * 
+ *
  * @see http://developers.gigya.com/display/GD/accounts.search+REST
  * @param {String} SQL-like query as supported by the Gigya REST API
  */
@@ -121,8 +122,8 @@ function searchAccount(query) {
 
 /**
  * @see http://developers.gigya.com/display/GD/accounts.linkAccounts+REST
- * @param {Object} body 
- * @param {String} regToken 
+ * @param {Object} body
+ * @param {String} regToken
  * @return {Promise}
  */
 function linkAccounts(body, regToken) {
@@ -143,8 +144,8 @@ function linkAccounts(body, regToken) {
 
 /**
  * @see http://developers.gigya.com/display/GD/accounts.register+REST
- * @param {Object} body 
- * @param {String} regToken 
+ * @param {Object} body
+ * @param {String} regToken
  * @return {Promise}
  */
 function register(body, regToken) {
@@ -172,7 +173,7 @@ function register(body, regToken) {
 
 /**
  * Deletes the account with the given UID
- * 
+ *
  * @see http://developers.gigya.com/display/GD/accounts.deleteAccount+REST
  * @param {String} UID
  * @return {Promise}
@@ -198,10 +199,10 @@ function getAccountSchema() {
 
 /**
  * Registers a new user in Gigya, with specified login credentials
- * 
+ *
  * If a user with the specified UID (username? email?) already exists, his or
  * her account is linked to the login credentials.
- * 
+ *
  * @param {Object} User data
  * @return {Promise}
  */
@@ -210,7 +211,7 @@ function registerUser(userData) {
   return initRegistration().then(initRes => {
     return register(userData, initRes.body.regToken);
   });
-  
+
   /* (err, initRes) => {
     if (err) {
       return reject(err);

@@ -53,7 +53,8 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      MongoDB.collection('users').find().toArray(reply);
+      MongoDB.collection('users').find({deletedAt: {$exists: false}})
+        .toArray(reply);
     }
   });
 

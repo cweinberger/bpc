@@ -112,21 +112,20 @@ function createUserRsvp(data, callback){
   // 1. first find the app.
   // 2. Check if the app allows for dynamic creating of grants
   // 3. Check if the app uses Gigya accounts or perhaps pre-defined users (e.g. server-to-server auth keys)
-
   if (data.provider === 'gigya') {
 
     // Vefify the user is created in Gigya
     // TODO: Also verify using exchangeUIDSignature (UIDSignature + signatureTimestamp)
     GigyaAccounts.getAccountInfo({ UID: data.UID }).then(result => {
 
-      if (data.email !== result.profile.email) {
+      if (data.email !== result.body.profile.email) {
         return callback(Boom.badRequest());
       }
 
       var query = {
         provider: data.provider,
-        id: result.UID,
-        email: result.profile.email
+        id: result.body.UID,
+        email: result.body.profile.email
       };
 
       updateUserInDB(query);

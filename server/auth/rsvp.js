@@ -119,14 +119,14 @@ function createUserRsvp(data, callback){
     // TODO: Also verify using exchangeUIDSignature (UIDSignature + signatureTimestamp)
     GigyaAccounts.getAccountInfo({ UID: data.UID }).then(result => {
 
-      if (data.email !== result.profile.email) {
+      if (data.email !== result.body.profile.email) {
         return callback(Boom.badRequest());
       }
 
       var query = {
         provider: data.provider,
-        id: result.UID,
-        email: result.profile.email
+        id: result.body.UID,
+        email: result.body.profile.email
       };
 
       updateUserInDB(query);

@@ -7,6 +7,7 @@ const Oz = require('oz');
 const OzLoadFuncs = require('./oz_loadfuncs');
 const MongoDB = require('./mongo/mongodb_client');
 const Gigya = require('./gigya/gigya_client');
+const EventLog = require('./audit/eventlog');
 
 // We're getting the policies to make sure the security check is not set
 Gigya.callApi('/accounts.getPolicies').then(function(response){
@@ -80,7 +81,7 @@ module.exports.register = function (server, options, next) {
 
       var newPassword = request.payload.newPassword;
 
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket){
 
         // MongoDB.collection('users').findOne({ id: ticket.user }, { _id: 0, email: 1 }, function(err, user){
 
@@ -102,12 +103,15 @@ module.exports.register = function (server, options, next) {
               sendEmail: false
             };
 
-            Gigya.callApi('/accounts.resetPassword', parameters_two).then(function(response){
+            Gigya.callApi('/accounts.resetPassword', parameters_two).then(function (response) {
+              EventLog.logUserEvent(null, 'Password Change', {email: user.email});
               reply();
-            }).catch(function(err){
+            }).catch(function (err){
+              EventLog.logUserEvent(null, 'Password Change Failure', {email: user.email});
               return reply(err);
             });
-          }).catch(function(err){
+          }).catch(function (err){
+            EventLog.logUserEvent(null, 'Password Change Failure', {email: user.email});
             return reply(err);
           });
         // });

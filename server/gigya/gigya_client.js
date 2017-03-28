@@ -16,7 +16,7 @@ const qs = require('qs');
 const request = require('request');
 const GigyaUtils = require('./gigya_utils');
 const GigyaError = require('./gigya_error');
-
+const EventLog = require('./../audit/eventlog');
 
 module.exports = {
   callApi
@@ -60,6 +60,12 @@ function callApi(path, payload = null, api = 'accounts') {
       let _body = {};
 
       if (err) {
+        // Log errors in the auditing system before returning an error.
+        EventLog.logSystemEvent(
+          'Gigya Request Failed',
+          `Request failed: HTTP/${options.method} ${options.url} Response: ${err.message}`,
+          options.form
+        );
         return reject(err);
       }
 

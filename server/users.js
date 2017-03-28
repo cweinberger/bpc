@@ -11,6 +11,7 @@ const MongoDB = require('./mongo/mongodb_client');
 const Accounts = require('./accounts/accounts');
 const GigyaAccounts = require('./gigya/gigya_accounts');
 const GigyaUtils = require('./gigya/gigya_utils');
+const EventLog = require('./audit/eventlog');
 
 
 // Note: this is almost the same as in rsvp.js/rsvpValidation
@@ -223,20 +224,24 @@ module.exports.register = function (server, options, next) {
       };
 
       MongoDB.collection('users').updateOne(
-        user,
-        {
+        user, {
           $setOnInsert: {
             dataScopes: {},
             LastLogin: null
           }
-        },
-        {
+        }, {
           upsert: true
-          //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+          // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+          //  writeConcern: <document>,
           //  collation: <document>
-        },
-        reply
-      );
+        }, (err, res) => {
+          if (err) {
+            EventLog.logUserEvent(null, 'User Creation Failed', err.message, user);
+          } else {
+            EventLog.logUserEvent(user.id, 'New User Creation', user);
+          }
+          return reply(err, res);
+        });
     }
   });
 
@@ -255,30 +260,23 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
       MongoDB.collection('users').aggregate(
-        [
-          {
-            $match:
-            {
-              id: request.params.id
-            }
-          },
-          {
-            $lookup:
-            {
-              from: 'grants',
-              localField: 'id',
-              foreignField: 'user',
-              as: 'grants'
-            }
+        [{
+          $match: {
+            id: request.params.id
           }
-        ],
-        function(err, result){
-          if(err){
+        }, {
+          $lookup: {
+            from: 'grants',
+            localField: 'id',
+            foreignField: 'user',
+            as: 'grants'
+          }
+        }], (err, result) => {
+          if (err) {
             return reply(err);
-          } else if (result === null || result.length !== 1){
+          } else if (result === null || result.length !== 1) {
             return reply(Boom.notFound());
           }
-
           reply(result[0]);
       });
     }
@@ -298,23 +296,29 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization,
+          function(err, ticket) {
         MongoDB.collection('grants').update(
           {
             app: ticket.app,
             user: request.params.id
-          },
-          {
+          }, {
             $addToSet: { scope: 'admin:*' }
-          },
-          function(err, result){
-            if(err){
+          }, function (err, result) {
+            
+            if (err) {
+              EventLog.logUserEvent(
+                request.params.id, 'Scope Change Failed', {scope: 'admin:*'}
+              );
               return reply(err);
             }
 
+            EventLog.logUserEvent(
+              request.params.id, 'Add Scope to User', {scope: 'admin:*'}
+            );
             reply();
-          }
-        );
+
+          });
       });
     }
   });
@@ -343,15 +347,20 @@ module.exports.register = function (server, options, next) {
           {
             app: ticket.app,
             user: request.params.id
-          },
-          {
+          }, {
             $pull: { scope: 'admin:*' }
           },
-          function(err, result){
-            if(err){
+          function(err, result) {
+            if (err) {
+              EventLog.logUserEvent(
+                request.params.id, 'Scope Change Failed', {scope: 'admin:*'}
+              );
               return reply(err);
             }
 
+            EventLog.logUserEvent(
+              request.params.id, 'Remove Scope from User', {scope: 'admin:*'}
+            );
             reply();
           }
         );

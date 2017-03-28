@@ -1,15 +1,18 @@
 /*jshint node: true */
 'use strict';
 
+
+const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
+
+
 const Boom = require('boom');
 const Oz = require('oz');
 const MongoDB = require('./mongo/mongodb_client');
 
-const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
 // Here we are creating the app ticket
 function loadAppFunc(id, callback) {
-  console.log('loadAppFunc', id);
+  // console.log('loadAppFunc', id);
   MongoDB.collection('applications').findOne({id:id}, {fields: {_id: 0}}, function(err, app) {
     if (err) {
       return callback(err);
@@ -21,9 +24,10 @@ function loadAppFunc(id, callback) {
   });
 };
 
+
 // Here we are creating the user ticket
 function loadGrantFunc(id, next) {
-  console.log('loadGrantFunc', id);
+  // console.log('loadGrantFunc', id);
   MongoDB.collection('grants').findOne({id: id}, {fields: {_id: 0}}, function(err, grant) {
     if (err) {
       return next(err);

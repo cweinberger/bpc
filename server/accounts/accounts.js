@@ -5,6 +5,8 @@
 const GigyaAccounts = require('./../gigya/gigya_accounts');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const MongoDB = require('./../mongo/mongodb_client');
+const EventLog = require('./../audit/eventlog');
+
 
 module.exports = {
   register,
@@ -24,9 +26,17 @@ function register(user) {
 
     const _user = assembleDbUser(data.body);
     // Create user and provide the user object to the resolved promise.
-    return MongoDB.collection('users').insert(_user).then(res => res.ops[0]);
+    return MongoDB.collection('users').insert(_user)
+      .then(res => res.ops[0])
+      .then(res => {
+        EventLog.logUserEvent(res.id, 'User registered');
+        return res;
+      });
 
-  }, err => Promise.reject(err));
+  }, err => {
+    EventLog.logUserEvent(null, 'User registration failed', {email: user.email});
+    return Promise.reject(err);
+  });
 
 }
 
@@ -39,6 +49,8 @@ function register(user) {
 function deleteOne(id) {
 
   return GigyaAccounts.deleteAccount(id).then(data => {
+
+    EventLog.logUserEvent(id, 'Deleting user');
 
     // TODO: Set deletedAt timestamp? Or should we do more?
     return MongoDB.collection('users')
@@ -56,6 +68,7 @@ function deleteOne(id) {
  * @return {Object} User object
  */
 function assembleDbUser(data) {
+
   return {
     email: data.profile.email,
     id: data.UID,
@@ -74,4 +87,5 @@ function assembleDbUser(data) {
     lastSynced: new Date(),
     dataScopes: {}
   };
+
 }

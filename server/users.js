@@ -308,13 +308,17 @@ module.exports.register = function (server, options, next) {
             
             if (err) {
               EventLog.logUserEvent(
-                request.params.id, 'Scope Change Failed', {scope: 'admin:*'}
+                request.params.id,
+                'Scope Change Failed',
+                {scope: 'admin:*', byUser: ticket.user}
               );
               return reply(err);
             }
 
             EventLog.logUserEvent(
-              request.params.id, 'Add Scope to User', {scope: 'admin:*'}
+              request.params.id,
+              'Add Scope to User',
+              {scope: 'admin:*', byUser: ticket.user}
             );
             reply();
 
@@ -353,13 +357,17 @@ module.exports.register = function (server, options, next) {
           function(err, result) {
             if (err) {
               EventLog.logUserEvent(
-                request.params.id, 'Scope Change Failed', {scope: 'admin:*'}
+                request.params.id,
+                'Scope Change Failed',
+                {scope: 'admin:*', byUser: ticket.user}
               );
               return reply(err);
             }
 
             EventLog.logUserEvent(
-              request.params.id, 'Remove Scope from User', {scope: 'admin:*'}
+              request.params.id,
+              'Remove Scope from User',
+              {scope: 'admin:*', byUser: ticket.user}
             );
             reply();
           }

@@ -59,6 +59,48 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
+    method: 'POST',
+    path: '/',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: userValidation
+      }
+    },
+    handler: function(request, reply) {
+
+      var user = {
+        email: request.payload.email,
+        provider: 'gigya',
+        id: request.payload.UID
+      };
+
+      MongoDB.collection('users').updateOne(
+        user,
+        {
+          $setOnInsert: {
+            dataScopes: {},
+            LastLogin: null
+          }
+        },
+        {
+          upsert: true
+          //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+          //  collation: <document>
+        },
+        reply
+      );
+    }
+  });
+
+
+  server.route({
     method: 'GET',
     path: '/schema',
     config: {
@@ -183,7 +225,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/',
+    path: '/resetpassword',
     config: {
       auth: {
         access: {
@@ -193,32 +235,33 @@ module.exports.register = function (server, options, next) {
       },
       cors: stdCors,
       validate: {
-        payload: userValidation
+        payload: {
+          email: Joi.string().email().required(),
+          newPassword: Joi.string().required()
+        }
       }
     },
     handler: function(request, reply) {
 
-      var user = {
-        email: request.payload.email,
-        provider: 'gigya',
-        id: request.payload.UID
-      };
+      var newPassword = request.payload.newPassword;
 
-      MongoDB.collection('users').updateOne(
-        user,
-        {
-          $setOnInsert: {
-            dataScopes: {},
-            LastLogin: null
-          }
-        },
-        {
-          upsert: true
-          //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
-          //  collation: <document>
-        },
-        reply
-      );
+      Gigya.callApi('/accounts.resetPassword', {
+        loginID: request.payload.email,
+        sendEmail: false
+      }).then(function (response){
+
+        Gigya.callApi('/accounts.resetPassword', {
+          passwordResetToken: response.body.passwordResetToken,
+          newPassword: newPassword,
+          sendEmail: false
+        }).then(function(response){
+          reply();
+        }).catch(function(err){
+          return reply(err);
+        });
+      }).catch(function(err){
+        return reply(err);
+      });
     }
   });
 
@@ -230,7 +273,7 @@ module.exports.register = function (server, options, next) {
       auth:  {
         access: {
           scope: ['admin'],
-          entity: 'user' // Only superadmin users are allows to demote other superadmins
+          entity: 'any'
         }
       },
       cors: stdCors
@@ -309,7 +352,7 @@ module.exports.register = function (server, options, next) {
       auth:  {
         access: {
           scope: ['+admin:*'],
-          entity: 'any'
+          entity: 'user' // Only superadmin users are allows to demote other superadmins
         }
       },
       cors: stdCors

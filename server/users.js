@@ -44,10 +44,10 @@ module.exports.register = function (server, options, next) {
     method: 'GET',
     path: '/',
     config: {
-      auth:  {
+      auth: {
         access: {
           scope: ['admin'],
-          entity: 'user'
+          entity: 'any'
         }
       },
       cors: stdCors
@@ -62,7 +62,12 @@ module.exports.register = function (server, options, next) {
     method: 'GET',
     path: '/schema',
     config: {
-      auth:  false,
+      auth: {
+        access: {
+          scope: ['admin'],
+          entity: 'any'
+        }
+      },
       cors: stdCors
     },
     handler: function(request, reply) {
@@ -76,7 +81,7 @@ module.exports.register = function (server, options, next) {
 
   /**
    * GET /users/search
-   * 
+   *
    * Query parameter:
    * - query=<Gigya SQL-style query> eg.;
    *   SELECT * FROM accounts WHERE profile.email = "mkoc@berlingskemedia.dk"
@@ -85,7 +90,12 @@ module.exports.register = function (server, options, next) {
     method: 'GET',
     path: '/search',
     config: {
-      auth:  false,
+      auth: {
+        access: {
+          scope: ['admin'],
+          entity: 'any'
+        }
+      },
       cors: stdCors
     },
     handler: (request, reply) => {
@@ -99,7 +109,12 @@ module.exports.register = function (server, options, next) {
     method: 'GET',
     path: '/exists',
     config: {
-      auth:  false,
+      auth: {
+        access: {
+          scope: ['admin'],
+          entity: 'any'
+        }
+      },
       cors: stdCors
     },
     handler: (request, reply) => {
@@ -113,7 +128,12 @@ module.exports.register = function (server, options, next) {
     method: 'DELETE',
     path: '/{id}',
     config: {
-      auth:  false,
+      auth: {
+        access: {
+          scope: ['admin'],
+          entity: 'any'
+        }
+      },
       cors: stdCors
     },
     handler: (request, reply) => {
@@ -165,10 +185,10 @@ module.exports.register = function (server, options, next) {
     method: 'POST',
     path: '/',
     config: {
-      auth:  {
+      auth: {
         access: {
           scope: ['admin'],
-          entity: 'user'
+          entity: 'any'
         }
       },
       cors: stdCors,
@@ -210,7 +230,7 @@ module.exports.register = function (server, options, next) {
       auth:  {
         access: {
           scope: ['admin'],
-          entity: 'user'
+          entity: 'user' // Only superadmin users are allows to demote other superadmins
         }
       },
       cors: stdCors
@@ -254,7 +274,7 @@ module.exports.register = function (server, options, next) {
       auth:  {
         access: {
           scope: ['+admin:*'],
-          entity: 'user'
+          entity: 'user' // Only superadmin users are allows to promote other superadmins
         }
       },
       cors: stdCors
@@ -289,7 +309,7 @@ module.exports.register = function (server, options, next) {
       auth:  {
         access: {
           scope: ['+admin:*'],
-          entity: 'user'
+          entity: 'any'
         }
       },
       cors: stdCors

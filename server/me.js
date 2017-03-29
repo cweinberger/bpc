@@ -57,6 +57,11 @@ module.exports.register = function (server, options, next) {
     method: 'POST',
     path: '/changepassword',
     config: {
+      auth: {
+        access: {
+          entity: 'user'
+        }
+      },
       cors: {
         credentials: true,
         origin: ['*'],
@@ -71,14 +76,16 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         payload: {
-          email: Joi.string().email(),
-          newPassword: Joi.string()
+          email: Joi.string().email().required(),
+          newPassword: Joi.string().required(),
+          password: Joi.string().required()
         }
       }
     },
     handler: function(request, reply) {
 
       var newPassword = request.payload.newPassword;
+      var password = request.payload.password;
 
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
 
@@ -90,26 +97,38 @@ module.exports.register = function (server, options, next) {
           }
 
           var parameters = {
-            loginID: user.email,
-            sendEmail: false
+            newPassword: newPassword,
+            password: password
           };
 
-          Gigya.callApi('/accounts.resetPassword', parameters).then(function (response){
-
-            var parameters_two = {
-              passwordResetToken: response.body.passwordResetToken,
-              newPassword: newPassword,
-              sendEmail: false
-            };
-
-            Gigya.callApi('/accounts.resetPassword', parameters_two).then(function(response){
-              reply();
-            }).catch(function(err){
-              return reply(err);
-            });
+          Gigya.callApi('/accounts.setAccountInfo', parameters).then(function (response){
+            reply();
           }).catch(function(err){
             return reply(err);
           });
+
+          // var parameters = {
+          //   loginID: user.email,
+          //   sendEmail: false
+          // };
+          //
+          // Gigya.callApi('/accounts.resetPassword', parameters).then(function (response){
+          //
+          //   var parameters_two = {
+          //     passwordResetToken: response.body.passwordResetToken,
+          //     newPassword: newPassword,
+          //     sendEmail: false
+          //   };
+          //
+          //   Gigya.callApi('/accounts.resetPassword', parameters_two).then(function(response){
+          //     reply();
+          //   }).catch(function(err){
+          //     return reply(err);
+          //   });
+          // }).catch(function(err){
+          //   return reply(err);
+          // });
+
         // });
       });
 

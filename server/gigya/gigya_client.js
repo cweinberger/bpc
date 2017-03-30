@@ -15,7 +15,8 @@ const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY;
 const qs = require('qs');
 const request = require('request');
 const GigyaUtils = require('./gigya_utils');
-
+const GigyaError = require('./gigya_error');
+const EventLog = require('./../audit/eventlog');
 
 module.exports = {
   callApi
@@ -59,6 +60,12 @@ function callApi(path, payload = null, api = 'accounts') {
       let _body = {};
 
       if (err) {
+        // Log errors in the auditing system before returning an error.
+        EventLog.logSystemEvent(
+          'Gigya Request Failed',
+          `Request failed: HTTP/${options.method} ${options.url} Response: ${err.message}`,
+          options.form
+        );
         return reject(err);
       }
 
@@ -77,7 +84,9 @@ function callApi(path, payload = null, api = 'accounts') {
           );
           console.log(`  Validation errors:${errors}`);
         }
-        return reject(GigyaUtils.toError(_body, _body.validationErrors));
+        return reject(new GigyaError(
+          _body.errorMessage, _body.errorCode, _body.validationErrors
+        ));
       }
 
       return resolve({response, body: _body});

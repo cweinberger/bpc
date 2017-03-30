@@ -11,6 +11,7 @@ const MongoDB = require('./mongo/mongodb_client');
 const Accounts = require('./accounts/accounts');
 const GigyaAccounts = require('./gigya/gigya_accounts');
 const GigyaUtils = require('./gigya/gigya_utils');
+const EventLog = require('./audit/eventlog');
 
 
 // Note: this is almost the same as in rsvp.js/rsvpValidation
@@ -53,7 +54,8 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      MongoDB.collection('users').find().toArray(reply);
+      MongoDB.collection('users').find({deletedAt: {$exists: false}})
+        .toArray(reply);
     }
   });
 
@@ -91,10 +93,17 @@ module.exports.register = function (server, options, next) {
         },
         {
           upsert: true
-          //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+          // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+          //  writeConcern: <document>,
           //  collation: <document>
-        },
-        reply
+        }, (err, res) => {
+          if (err) {
+            EventLog.logUserEvent(null, 'User Creation Failed', err.message, user);
+          } else {
+            EventLog.logUserEvent(user.id, 'New User Creation', user);
+          }
+          return reply(err, res);
+        }
       );
     }
   });
@@ -115,7 +124,7 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
       GigyaAccounts.getAccountSchema().then(
         res => reply(res.body),
-        err => reply(GigyaUtils.toError(err))
+        err => reply(GigyaUtils.errorToResponse(err))
       );
     }
   });
@@ -124,7 +133,7 @@ module.exports.register = function (server, options, next) {
   /**
    * GET /users/search
    *
-   * Query parameter:
+   * Query parameters:
    * - query=<Gigya SQL-style query> eg.;
    *   SELECT * FROM accounts WHERE profile.email = "mkoc@berlingskemedia.dk"
    */
@@ -142,11 +151,17 @@ module.exports.register = function (server, options, next) {
     },
     handler: (request, reply) => {
       return GigyaAccounts.searchAccount(request.query.query)
-        .then(res => reply(res.body), err => reply(GigyaUtils.toError(err)));
+        .then(res => reply(res.body), err => reply(GigyaUtils.errorToResponse(err)));
     }
   });
 
 
+  /**
+   * GET /users/exists
+   *
+   * Query parameters:
+   * - email=email to check
+   */
   server.route({
     method: 'GET',
     path: '/exists',
@@ -161,7 +176,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: (request, reply) => {
       return GigyaAccounts.isEmailAvailable(request.query.email)
-        .then(res => reply(res.body), err => reply(GigyaUtils.toError(err)));
+        .then(res => reply(res.body), err => reply(GigyaUtils.errorToResponse(err)));
     }
   });
 
@@ -179,9 +194,17 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: (request, reply) => {
-      return GigyaAccounts.deleteAccount(request.params.id) .then(
-        res => reply(GigyaUtils.isError(res) ? GigyaUtils.toError(res) : res),
-        err => reply(GigyaUtils.toError(err))
+      return Accounts.deleteOne(request.params.id).then(
+        res => reply(GigyaUtils.isError(res) ? GigyaUtils.errorToResponse(res) : res),
+        err => {
+          if (err.code === 403005) {
+            // Unknown id, so reply 404 Not Found.
+            return reply(Boom.notFound(`[${err.code}] ${err.message}`));
+          } else {
+            // Everything else is Internal Server Error.
+            return reply(GigyaUtils.errorToResponse(err));
+          }
+        }
       );
     }
   });
@@ -191,7 +214,12 @@ module.exports.register = function (server, options, next) {
     method: 'POST',
     path: '/register',
     config: {
-      auth: false,
+      auth:  {
+        access: {
+          scope: ['admin'],
+          entity: 'user'
+        }
+      },
       cors: stdCors,
       validate: {
         payload: registrationValidation
@@ -201,21 +229,18 @@ module.exports.register = function (server, options, next) {
 
       const user = request.payload;
       Accounts.register(user).then(
-        data => {
-          if (GigyaUtils.isError(data.body)) {
-            if (data.body.errorCode === 400003) {
-              // Email exists.
-              return reply({message: data.body.errorMessage}).status(409);
-            } else {
-              return reply(GigyaUtils.toError(data.body));
-            }
-          } else {
-            return reply(data.body ? data.body : data);
-          }
-        },
+        data => reply(data.body ? data.body : data),
         err => {
-          console.log(err);
-          return reply(GigyaUtils.toError(err, err.validationErrors));
+          if (err.code === 400009 && Array.isArray(err.details) &&
+              err.details.length && err.details[0].errorCode === 400003) {
+            // Reply with a conflict if the email address exists.
+            return reply(Boom.conflict(
+              `[${err.details[0].errorCode}] ${err.details[0].message}`
+            ));
+          } else {
+            // Reply with the usual Internal Server Error otherwise.
+            return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+          }
         }
       );
 
@@ -280,30 +305,23 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
       MongoDB.collection('users').aggregate(
-        [
-          {
-            $match:
-            {
-              id: request.params.id
-            }
-          },
-          {
-            $lookup:
-            {
-              from: 'grants',
-              localField: 'id',
-              foreignField: 'user',
-              as: 'grants'
-            }
+        [{
+          $match: {
+            id: request.params.id
           }
-        ],
-        function(err, result){
-          if(err){
+        }, {
+          $lookup: {
+            from: 'grants',
+            localField: 'id',
+            foreignField: 'user',
+            as: 'grants'
+          }
+        }], (err, result) => {
+          if (err) {
             return reply(err);
-          } else if (result === null || result.length !== 1){
+          } else if (result === null || result.length !== 1) {
             return reply(Boom.notFound());
           }
-
           reply(result[0]);
       });
     }
@@ -323,23 +341,33 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization,
+          function(err, ticket) {
         MongoDB.collection('grants').update(
           {
             app: ticket.app,
             user: request.params.id
-          },
-          {
+          }, {
             $addToSet: { scope: 'admin:*' }
-          },
-          function(err, result){
-            if(err){
+          }, function (err, result) {
+
+            if (err) {
+              EventLog.logUserEvent(
+                request.params.id,
+                'Scope Change Failed',
+                {scope: 'admin:*', byUser: ticket.user}
+              );
               return reply(err);
             }
 
+            EventLog.logUserEvent(
+              request.params.id,
+              'Add Scope to User',
+              {scope: 'admin:*', byUser: ticket.user}
+            );
             reply();
-          }
-        );
+
+          });
       });
     }
   });
@@ -368,15 +396,24 @@ module.exports.register = function (server, options, next) {
           {
             app: ticket.app,
             user: request.params.id
-          },
-          {
+          }, {
             $pull: { scope: 'admin:*' }
           },
-          function(err, result){
-            if(err){
+          function(err, result) {
+            if (err) {
+              EventLog.logUserEvent(
+                request.params.id,
+                'Scope Change Failed',
+                {scope: 'admin:*', byUser: ticket.user}
+              );
               return reply(err);
             }
 
+            EventLog.logUserEvent(
+              request.params.id,
+              'Remove Scope from User',
+              {scope: 'admin:*', byUser: ticket.user}
+            );
             reply();
           }
         );

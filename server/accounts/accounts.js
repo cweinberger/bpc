@@ -5,9 +5,12 @@
 const GigyaAccounts = require('./../gigya/gigya_accounts');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const MongoDB = require('./../mongo/mongodb_client');
+const EventLog = require('./../audit/eventlog');
+
 
 module.exports = {
-  register
+  register,
+  deleteOne
 };
 
 
@@ -23,38 +26,37 @@ function register(user) {
 
     const _user = assembleDbUser(data.body);
     // Create user and provide the user object to the resolved promise.
-    return MongoDB.collection('users').insert(_user).then(res => res.ops[0]);
+    return MongoDB.collection('users').insert(_user)
+      .then(res => res.ops[0])
+      .then(res => {
+        EventLog.logUserEvent(res.id, 'User registered');
+        return res;
+      });
 
   }, err => {
-
-    if (err.output.payload && err.output.payload[0].errorCode === 400003) {
-      // Email exists. Check if account exists in Gigya.
-      return GigyaAccounts.searchAccount(
-        `SELECT * FROM accounts WHERE profile.email = "${user.email}"`
-      ).then(res => {
-
-        if (res.objectsCount > 1) {
-          // TODO: Perhaps do account linking here if there is more than one?
-          return Promise.reject(new Error(
-            `Gigya already has ${res.objectsCount} accounts with that email address`
-          ));
-        }
-
-        const _user = assembleDbUser(res.body.results[0]);
-
-        return MongoDB.collection('users')
-          .findOneAndUpdate({id: _user.id}, {$set: _user}, {
-            upsert: true,
-            returnOriginal: false
-          })
-          .then(res => res.value);
-
-      });
-    } else {
-      return Promise.reject(err);
-    }
-
+    EventLog.logUserEvent(null, 'User registration failed', {email: user.email});
+    return Promise.reject(err);
   });
+
+}
+
+
+/**
+ * Deletes a single account from Gigya, and marks the local one as deleted
+ * 
+ * @param {String} Gigya user id 
+ */
+function deleteOne(id) {
+
+  return GigyaAccounts.deleteAccount(id).then(data => {
+
+    EventLog.logUserEvent(id, 'Deleting user');
+
+    // TODO: Set deletedAt timestamp? Or should we do more?
+    return MongoDB.collection('users')
+      .findOneAndUpdate({id: id}, {$set: {deletedAt: new Date()}});
+
+  }, err => Promise.reject(err));
 
 }
 
@@ -66,6 +68,7 @@ function register(user) {
  * @return {Object} User object
  */
 function assembleDbUser(data) {
+
   return {
     email: data.profile.email,
     id: data.UID,
@@ -84,4 +87,5 @@ function assembleDbUser(data) {
     lastSynced: new Date(),
     dataScopes: {}
   };
+
 }

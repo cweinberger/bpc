@@ -23,6 +23,9 @@ part of the endpoint in question.
 * [`GET /users/schema`](#get-user-schema)
 * [`GET /users/exists`](#user-exists)
 * [`GET /users/{id}`](#get-user)
+* [`GET /permissions/{name}`](#get-permissions-name)
+* [`GET /permissions/{user}/{name}`](#get-permissions-user-name)
+* [`POST /permissions/{user}/{name}`](#post-permissions-user-name)
 
 <a name="get-healthcheck" />
 
@@ -220,10 +223,44 @@ Looks up the user with the given id (UID).
 
 
 <a name="create-user" />
-
 ## [POST /users] **Deprecated**
 
 Query parameters: _None_
 
 Creates a new (local) user without creating anything in Gigya. This endpoint
 might be useful for certain situations.
+
+
+<a name="get-permissions-name" />
+## [GET /permissions/{name}]
+
+Query parameters: _None_
+
+Required ticket type: _user_
+Required scope: ['{params.name}']
+
+Gets the user permissions. The user is the ticket, with which the request has been signed.
+
+
+
+<a name="get-permissions-user-name" />
+## [GET /permissions/{user}/{name}]
+
+Query parameters: _None_
+
+Required ticket type: _app_
+Required scope: ['{params.name}', 'admin']
+
+
+Gets the user permissions. The users ID is in the request parameters.
+
+
+<a name="post-permissions-user-name" />
+## [POST /permissions/{user}/{name}]
+
+Query parameters: _None_
+
+Required ticket type: _app_
+Required scope: ['{params.name}', 'admin']
+
+Sets the user permissions. The users ID is in the request parameters.

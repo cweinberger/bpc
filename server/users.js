@@ -1,21 +1,34 @@
 /*jshint node: true */
 'use strict';
 
+
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
 const OzLoadFuncs = require('./oz_loadfuncs');
 const crypto = require('crypto');
-const MongoDB = require('./mongodb_client');
+const MongoDB = require('./mongo/mongodb_client');
+const Accounts = require('./accounts/accounts');
+const GigyaAccounts = require('./gigya/gigya_accounts');
+const GigyaUtils = require('./gigya/gigya_utils');
+const EventLog = require('./audit/eventlog');
 
-// Note: this is almost the same as in rsvp.js/rsvpValiudation
+
+// Note: this is almost the same as in rsvp.js/rsvpValidation
 // This could be programmed better.
 const userValidation = Joi.object().keys({
-  provider: Joi.string().valid('gigya', 'google').required(),
-  UID: Joi.string().when('provider', { is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden() }),
-  ID: Joi.string().when('provider', { is: 'google', then: Joi.required(), otherwise: Joi.forbidden() }),
+  UID: Joi.string().required(),
+  ID: Joi.string().required(),
   email: Joi.string().email().required()
 });
+
+
+const registrationValidation = Joi.object().keys({
+  email: Joi.string().email().required(),
+  password: Joi.string().required(),
+  profile: Joi.object().optional()
+});
+
 
 module.exports.register = function (server, options, next) {
 
@@ -32,16 +45,17 @@ module.exports.register = function (server, options, next) {
     method: 'GET',
     path: '/',
     config: {
-      auth:  {
+      auth: {
         access: {
-          scope: ['admin'],
-          entity: 'user'
+          scope: ['admin', 'users'],
+          entity: 'any'
         }
       },
       cors: stdCors
     },
     handler: function(request, reply) {
-      MongoDB.collection('users').find().toArray(reply);
+      MongoDB.collection('users').find({deletedAt: {$exists: false}})
+        .toArray(reply);
     }
   });
 
@@ -50,10 +64,10 @@ module.exports.register = function (server, options, next) {
     method: 'POST',
     path: '/',
     config: {
-      auth:  {
+      auth: {
         access: {
-          scope: ['admin'],
-          entity: 'user'
+          scope: ['admin', 'users'],
+          entity: 'any'
         }
       },
       cors: stdCors,
@@ -65,25 +79,214 @@ module.exports.register = function (server, options, next) {
 
       var user = {
         email: request.payload.email,
-        provider: request.payload.provider,
-        id: request.payload.provider === 'gigya' ? request.payload.UID : request.payload.ID
+        provider: 'gigya',
+        id: request.payload.UID
       };
 
       MongoDB.collection('users').updateOne(
         user,
         {
           $setOnInsert: {
-            'Permissions': {},
-            'LastLogin': null
+            dataScopes: {},
+            LastLogin: null
           }
         },
         {
           upsert: true
-          //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+          // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+          //  writeConcern: <document>,
           //  collation: <document>
-        },
-        reply
+        }, (err, res) => {
+          if (err) {
+            EventLog.logUserEvent(null, 'User Creation Failed', err.message, user);
+          } else {
+            EventLog.logUserEvent(user.id, 'New User Creation', user);
+          }
+          return reply(err, res);
+        }
       );
+    }
+  });
+
+
+  server.route({
+    method: 'GET',
+    path: '/schema',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors
+    },
+    handler: function(request, reply) {
+      GigyaAccounts.getAccountSchema().then(
+        res => reply(res.body),
+        err => reply(GigyaUtils.errorToResponse(err))
+      );
+    }
+  });
+
+
+  /**
+   * GET /users/search
+   *
+   * Query parameters:
+   * - query=<Gigya SQL-style query> eg.;
+   *   SELECT * FROM accounts WHERE profile.email = "mkoc@berlingskemedia.dk"
+   */
+  server.route({
+    method: 'GET',
+    path: '/search',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors
+    },
+    handler: (request, reply) => {
+      return GigyaAccounts.searchAccount(request.query.query)
+        .then(res => reply(res.body), err => reply(GigyaUtils.errorToResponse(err)));
+    }
+  });
+
+
+  /**
+   * GET /users/exists
+   *
+   * Query parameters:
+   * - email=email to check
+   */
+  server.route({
+    method: 'GET',
+    path: '/exists',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors
+    },
+    handler: (request, reply) => {
+      return GigyaAccounts.isEmailAvailable(request.query.email)
+        .then(res => reply(res.body), err => reply(GigyaUtils.errorToResponse(err)));
+    }
+  });
+
+
+  server.route({
+    method: 'DELETE',
+    path: '/{id}',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors
+    },
+    handler: (request, reply) => {
+      return Accounts.deleteOne(request.params.id).then(
+        res => reply(GigyaUtils.isError(res) ? GigyaUtils.errorToResponse(res) : res),
+        err => {
+          if (err.code === 403005) {
+            // Unknown id, so reply 404 Not Found.
+            return reply(Boom.notFound(`[${err.code}] ${err.message}`));
+          } else {
+            // Everything else is Internal Server Error.
+            return reply(GigyaUtils.errorToResponse(err));
+          }
+        }
+      );
+    }
+  });
+
+
+  server.route({
+    method: 'POST',
+    path: '/register',
+    config: {
+      auth:  {
+        access: {
+          scope: ['admin'],
+          entity: 'user'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: registrationValidation
+      }
+    },
+    handler: (request, reply) => {
+
+      const user = request.payload;
+      Accounts.register(user).then(
+        data => reply(data.body ? data.body : data),
+        err => {
+          if (err.code === 400009 && Array.isArray(err.details) &&
+              err.details.length && err.details[0].errorCode === 400003) {
+            // Reply with a conflict if the email address exists.
+            return reply(Boom.conflict(
+              `[${err.details[0].errorCode}] ${err.details[0].message}`
+            ));
+          } else {
+            // Reply with the usual Internal Server Error otherwise.
+            return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+          }
+        }
+      );
+
+    }
+  });
+
+
+  server.route({
+    method: 'POST',
+    path: '/resetpassword',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: {
+          email: Joi.string().email().required(),
+          newPassword: Joi.string().required()
+        }
+      }
+    },
+    handler: function(request, reply) {
+
+      var newPassword = request.payload.newPassword;
+
+      Gigya.callApi('/accounts.resetPassword', {
+        loginID: request.payload.email,
+        sendEmail: false
+      }).then(function (response){
+
+        Gigya.callApi('/accounts.resetPassword', {
+          passwordResetToken: response.body.passwordResetToken,
+          newPassword: newPassword,
+          sendEmail: false
+        }).then(function(response){
+          reply();
+        }).catch(function(err){
+          return reply(err);
+        });
+      }).catch(function(err){
+        return reply(err);
+      });
     }
   });
 
@@ -94,38 +297,31 @@ module.exports.register = function (server, options, next) {
     config: {
       auth:  {
         access: {
-          scope: ['admin'],
-          entity: 'user'
+          scope: ['admin', 'users'],
+          entity: 'any'
         }
       },
       cors: stdCors
     },
     handler: function(request, reply) {
       MongoDB.collection('users').aggregate(
-        [
-          {
-            $match:
-            {
-              id: request.params.id
-            }
-          },
-          {
-            $lookup:
-            {
-              from: 'grants',
-              localField: 'id',
-              foreignField: 'user',
-              as: 'grants'
-            }
+        [{
+          $match: {
+            id: request.params.id
           }
-        ],
-        function(err, result){
-          if(err){
+        }, {
+          $lookup: {
+            from: 'grants',
+            localField: 'id',
+            foreignField: 'user',
+            as: 'grants'
+          }
+        }], (err, result) => {
+          if (err) {
             return reply(err);
-          } else if (result === null || result.length !== 1){
+          } else if (result === null || result.length !== 1) {
             return reply(Boom.notFound());
           }
-
           reply(result[0]);
       });
     }
@@ -139,29 +335,39 @@ module.exports.register = function (server, options, next) {
       auth:  {
         access: {
           scope: ['+admin:*'],
-          entity: 'user'
+          entity: 'user' // Only superadmin users are allows to promote other superadmins
         }
       },
       cors: stdCors
     },
     handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization,
+          function(err, ticket) {
         MongoDB.collection('grants').update(
           {
             app: ticket.app,
             user: request.params.id
-          },
-          {
+          }, {
             $addToSet: { scope: 'admin:*' }
-          },
-          function(err, result){
-            if(err){
+          }, function (err, result) {
+
+            if (err) {
+              EventLog.logUserEvent(
+                request.params.id,
+                'Scope Change Failed',
+                {scope: 'admin:*', byUser: ticket.user}
+              );
               return reply(err);
             }
 
+            EventLog.logUserEvent(
+              request.params.id,
+              'Add Scope to User',
+              {scope: 'admin:*', byUser: ticket.user}
+            );
             reply();
-          }
-        );
+
+          });
       });
     }
   });
@@ -174,7 +380,7 @@ module.exports.register = function (server, options, next) {
       auth:  {
         access: {
           scope: ['+admin:*'],
-          entity: 'user'
+          entity: 'user' // Only superadmin users are allows to demote other superadmins
         }
       },
       cors: stdCors
@@ -190,15 +396,24 @@ module.exports.register = function (server, options, next) {
           {
             app: ticket.app,
             user: request.params.id
-          },
-          {
+          }, {
             $pull: { scope: 'admin:*' }
           },
-          function(err, result){
-            if(err){
+          function(err, result) {
+            if (err) {
+              EventLog.logUserEvent(
+                request.params.id,
+                'Scope Change Failed',
+                {scope: 'admin:*', byUser: ticket.user}
+              );
               return reply(err);
             }
 
+            EventLog.logUserEvent(
+              request.params.id,
+              'Remove Scope from User',
+              {scope: 'admin:*', byUser: ticket.user}
+            );
             reply();
           }
         );

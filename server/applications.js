@@ -6,9 +6,19 @@ const Joi = require('joi');
 const Oz = require('oz');
 const OzLoadFuncs = require('./oz_loadfuncs');
 const crypto = require('crypto');
-const MongoDB = require('./mongodb_client');
+const MongoDB = require('./mongo/mongodb_client');
 
-const scopeValidation = Joi.array().items(Joi.string().regex(/^(?!admin).*$/, { name: 'admin', invert: true }));
+const reserved_scopes = [
+  'admin',
+  'users'
+];
+
+const scopeValidation = Joi.array().items(
+  Joi.string()
+    .regex(/^(?!admin).*$/, { name: 'admin', invert: true }) // Scopes starting with 'admin' e.g. admin:app are not allowed because they are reserved
+    .invalid(reserved_scopes)
+);
+
 
 module.exports.register = function (server, options, next) {
 

@@ -6,6 +6,11 @@ the previous BOND-based SSO solution.
 ![poc gigya 1](https://cloud.githubusercontent.com/assets/6349363/23746906/027f6946-04be-11e7-8f6c-419e95cb5bbc.png)
 
 
+## Related Resources
+
+  * [API Documentation](doc/API.md)
+
+
 ## Description
 
 Single Sign-On (SSO) is implemented using Gigya RaaS and Site Groups. Websites
@@ -42,14 +47,14 @@ consent screen.
 
 Oz is used a bit differently in BPC:
 
-* The server = BPC
-* The application = website or app
-* The user = customer
-* The resources = customer account permissions
-  (An account permission could be eg. "Paying subscriber to b.dk")
-* The user does not "own" the resources
-* The user does not review the grant
-* The grant is created automatically without any consent screen
+  * The server = BPC
+  * The application = website or app
+  * The user = customer
+  * The resources = customer account permissions
+    (An account permission could be eg. "Paying subscriber to b.dk")
+  * The user does not "own" the resources
+  * The user does not review the grant
+  * The grant is created automatically without any consent screen
 
 After the user has signed in with Gigya on the website, the website request user
 permission securely from BPC. The secure exchange of permissions is done by
@@ -57,19 +62,19 @@ encrypted tickets.
 
 The workflow goes like this:
 
-0. The website is registered with BPC and is issued a client ID and secret.
-   This is done once per website or app.
-1. The website gets an app ticket from BPC used it's client ID and secret.
-2. The user visits the website. The user is unauthenticated.
-3. The user signs in with Gigya on the website.
-4. The applications sends the user to BPC with the client ID and Gigya ID.
-5. BPC validates the user with Gigya, grant is automatically created and stored
-   and a RSVP is issued.
-6. The user is sent back to the website with the RSVP.
-7. The website uses it's app ticket and the RSVP to get an user ticket from BPC.
-8. The application stores the user ticket in e.g. a browser cookie.
-9. For each user action on the website can be validated for sufficient
-   permissions using the user ticket with BPC.
+  0. The website is registered with BPC and is issued a client ID and secret.
+     This is done once per website or app.
+  1. The website gets an app ticket from BPC used it's client ID and secret.
+  2. The user visits the website. The user is unauthenticated.
+  3. The user signs in with Gigya on the website.
+  4. The applications sends the user to BPC with the client ID and Gigya ID.
+  5. BPC validates the user with Gigya, grant is automatically created and stored
+     and a RSVP is issued.
+  6. The user is sent back to the website with the RSVP.
+  7. The website uses it's app ticket and the RSVP to get an user ticket from BPC.
+  8. The application stores the user ticket in e.g. a browser cookie.
+  9. For each user action on the website can be validated for sufficient
+     permissions using the user ticket with BPC.
 
 
 ## Application

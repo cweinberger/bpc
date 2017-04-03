@@ -1,15 +1,18 @@
 /*jshint node: true */
 'use strict';
 
-const Boom = require('boom');
-const Oz = require('oz');
-const MongoDB = require('./mongodb_client');
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
+
+const Boom = require('boom');
+const Oz = require('oz');
+const MongoDB = require('./mongo/mongodb_client');
+
+
 // Here we are creating the app ticket
 function loadAppFunc(id, callback) {
-  console.log('loadAppFunc', id);
+  // console.log('loadAppFunc', id);
   MongoDB.collection('applications').findOne({id:id}, {fields: {_id: 0}}, function(err, app) {
     if (err) {
       return callback(err);
@@ -21,9 +24,10 @@ function loadAppFunc(id, callback) {
   });
 };
 
+
 // Here we are creating the user ticket
 function loadGrantFunc(id, next) {
-  console.log('loadGrantFunc', id);
+  // console.log('loadGrantFunc', id);
   MongoDB.collection('grants').findOne({id: id}, {fields: {_id: 0}}, function(err, grant) {
     if (err) {
       return next(err);
@@ -54,7 +58,7 @@ function loadGrantFunc(id, next) {
         grant.scope = grant.scope.concat(missingScopes);
 
         // // Finding private details to encrypt in the ticket for later usage.
-        MongoDB.collection('users').findOne({id: grant.user}, {fields: {_id: 0, email: 1, id: 1, Permissions: 1}}, function(err, user){
+        MongoDB.collection('users').findOne({id: grant.user}, {fields: {_id: 0, email: 1, id: 1, dataScopes: 1}}, function(err, user){
           if (err) {
             return next(err);
           } else if (user === null) {

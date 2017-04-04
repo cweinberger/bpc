@@ -17,7 +17,8 @@ module.exports = {
   register,
   deleteAccount,
   getAccountSchema,
-  registerUser
+  registerUser,
+  resetPassword
 };
 
 
@@ -168,6 +169,11 @@ function register(body, regToken) {
 
   return gigyaClient.callApi('/accounts.register', _body);
 
+}
+
+
+function resetPassword(payload) {
+  return gigyaClient.callApi('/accounts.resetPassword', payload);
 }
 
 

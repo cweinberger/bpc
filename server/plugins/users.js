@@ -270,21 +270,23 @@ module.exports.register = function (server, options, next) {
 
       var newPassword = request.payload.newPassword;
 
-      Gigya.callApi('/accounts.resetPassword', {
+      GigyaAccounts.resetPassword({
         loginID: request.payload.email,
         sendEmail: false
       }).then(function (response){
 
-        Gigya.callApi('/accounts.resetPassword', {
+        GigyaAccounts.resetPassword({
           passwordResetToken: response.body.passwordResetToken,
           newPassword: newPassword,
           sendEmail: false
         }).then(function(response){
           reply();
         }).catch(function(err){
+          console.error(err);
           return reply(err);
         });
       }).catch(function(err){
+        console.error(err);
         return reply(err);
       });
     }

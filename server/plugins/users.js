@@ -5,13 +5,13 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
-const OzLoadFuncs = require('./oz_loadfuncs');
+const OzLoadFuncs = require('./../oz_loadfuncs');
 const crypto = require('crypto');
-const MongoDB = require('./mongo/mongodb_client');
-const Accounts = require('./accounts/accounts');
-const GigyaAccounts = require('./gigya/gigya_accounts');
-const GigyaUtils = require('./gigya/gigya_utils');
-const EventLog = require('./audit/eventlog');
+const MongoDB = require('./../mongo/mongodb_client');
+const Accounts = require('./../accounts/accounts');
+const GigyaAccounts = require('./../gigya/gigya_accounts');
+const GigyaUtils = require('./../gigya/gigya_utils');
+const EventLog = require('./../audit/eventlog');
 
 
 // Note: this is almost the same as in rsvp.js/rsvpValidation
@@ -270,21 +270,23 @@ module.exports.register = function (server, options, next) {
 
       var newPassword = request.payload.newPassword;
 
-      Gigya.callApi('/accounts.resetPassword', {
+      GigyaAccounts.resetPassword({
         loginID: request.payload.email,
         sendEmail: false
       }).then(function (response){
 
-        Gigya.callApi('/accounts.resetPassword', {
+        GigyaAccounts.resetPassword({
           passwordResetToken: response.body.passwordResetToken,
           newPassword: newPassword,
           sendEmail: false
         }).then(function(response){
           reply();
         }).catch(function(err){
+          console.error(err);
           return reply(err);
         });
       }).catch(function(err){
+        console.error(err);
         return reply(err);
       });
     }
@@ -400,6 +402,7 @@ module.exports.register = function (server, options, next) {
             $pull: { scope: 'admin:*' }
           },
           function(err, result) {
+
             if (err) {
               EventLog.logUserEvent(
                 request.params.id,
@@ -415,6 +418,7 @@ module.exports.register = function (server, options, next) {
               {scope: 'admin:*', byUser: ticket.user}
             );
             reply();
+            
           }
         );
       });

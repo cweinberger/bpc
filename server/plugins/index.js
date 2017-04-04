@@ -1,5 +1,5 @@
 const Health = require('./health');
-const Rsvp = require('./rsvp');
+const Rsvp = require('./rsvpRoutes');
 const Applications = require('./applications');
 const Users = require('./users');
 const Permissions = require('./permissions');

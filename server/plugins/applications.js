@@ -8,15 +8,12 @@ const OzLoadFuncs = require('./../oz_loadfuncs');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 
-const reserved_scopes = [
-  'admin',
-  'users'
-];
+const invalid_scopes = [];
 
 const scopeValidation = Joi.array().items(
   Joi.string()
     .regex(/^(?!admin).*$/, { name: 'admin', invert: true }) // Scopes starting with 'admin' e.g. admin:app are not allowed because they are reserved
-    .invalid(reserved_scopes)
+    .invalid(invalid_scopes)
 );
 
 

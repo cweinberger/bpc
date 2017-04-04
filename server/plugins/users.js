@@ -5,13 +5,13 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
-const OzLoadFuncs = require('./oz_loadfuncs');
+const OzLoadFuncs = require('./../oz_loadfuncs');
 const crypto = require('crypto');
-const MongoDB = require('./mongo/mongodb_client');
-const Accounts = require('./accounts/accounts');
-const GigyaAccounts = require('./gigya/gigya_accounts');
-const GigyaUtils = require('./gigya/gigya_utils');
-const EventLog = require('./audit/eventlog');
+const MongoDB = require('./../mongo/mongodb_client');
+const Accounts = require('./../accounts/accounts');
+const GigyaAccounts = require('./../gigya/gigya_accounts');
+const GigyaUtils = require('./../gigya/gigya_utils');
+const EventLog = require('./../audit/eventlog');
 
 
 // Note: this is almost the same as in rsvp.js/rsvpValidation

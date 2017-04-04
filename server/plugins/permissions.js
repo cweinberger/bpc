@@ -4,8 +4,8 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
-const OzLoadFuncs = require('./oz_loadfuncs');
-const MongoDB = require('./mongo/mongodb_client');
+const OzLoadFuncs = require('./../oz_loadfuncs');
+const MongoDB = require('./../mongo/mongodb_client');
 
 module.exports.register = function (server, options, next) {
 

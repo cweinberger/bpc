@@ -2,7 +2,7 @@
 'use strict';
 
 const Boom = require('boom');
-const app = require('./../package.json');
+const app = require('./../../package.json');
 
 const corsRules = {
   credentials: true,

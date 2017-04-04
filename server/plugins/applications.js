@@ -4,9 +4,9 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
-const OzLoadFuncs = require('./oz_loadfuncs');
+const OzLoadFuncs = require('./../oz_loadfuncs');
 const crypto = require('crypto');
-const MongoDB = require('./mongo/mongodb_client');
+const MongoDB = require('./../mongo/mongodb_client');
 
 const reserved_scopes = [
   'admin',

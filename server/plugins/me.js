@@ -4,10 +4,10 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
-const OzLoadFuncs = require('./oz_loadfuncs');
-const MongoDB = require('./mongo/mongodb_client');
-const Gigya = require('./gigya/gigya_client');
-const EventLog = require('./audit/eventlog');
+const OzLoadFuncs = require('./../oz_loadfuncs');
+const MongoDB = require('./../mongo/mongodb_client');
+const Gigya = require('./../gigya/gigya_client');
+const EventLog = require('./../audit/eventlog');
 
 // We're getting the policies to make sure the security check is not set
 Gigya.callApi('/accounts.getPolicies').then(function(response){

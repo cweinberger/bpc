@@ -192,6 +192,25 @@ db.grants.insert({
   scope: ['admin:*']})
 ```
 
+
+# Testing
+
+BPC comes prepackaged with unit tests. Prerequisites for testing is a running
+MongoDB database, the correctly configured environment variables (except
+`MONGODB_DATABASE`, which will always be `sso-test`), and you'll also need to
+ensure that you have dev-dependencies installed (by running `npm install`
+without the `--production` flag).
+
+Once these prerequisites are in place, simply run this command from the command
+line, while in the BPC root directory;
+
+```
+npm run test
+```
+
+If you run tests often, don't forget to clean the database once in a while.
+
+
 # Environment Variable Reference
 
 BPC supports the following environment variables:

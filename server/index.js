@@ -32,13 +32,6 @@ server.register(Scarecrow, function(err) {
   server.auth.strategy('oz', 'oz', true, OzLoadFuncs.strategyOptions);
 
   server.register(Plugins, cb);
-  // server.register(Health, cb);
-  // server.register(Rsvp, { routes: { prefix: '/rsvp' } }, cb);
-  // server.register(Applications, { routes: { prefix: '/applications' } }, cb);
-  // server.register(Users, { routes: { prefix: '/users' } }, cb);
-  // server.register(Permissions, { routes: { prefix: '/permissions' } }, cb);
-  // server.register(Me, { routes: { prefix: '/me' } }, cb);
-  // server.register(Settings, { routes: { prefix: '/settings' } }, cb);
 });
 
 server.start((err) => {

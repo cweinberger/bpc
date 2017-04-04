@@ -23,11 +23,13 @@
   "devDependencies": {
     "code": "^4.0.0",
     "gulp": "^3.9.1",
-    "lab": "^12.1.0"
+    "lab": "^12.1.0",
+    "rewire": "^2.5.2",
+    "sinon": "^2.1.0"
   },
   "scripts": {
     "start": "node $npm_package_main",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "MONGODB_DATABASE=sso-test && node node_modules/lab/bin/lab --bail -r console"
   },
   "repository": {
     "type": "git",

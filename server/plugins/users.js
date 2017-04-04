@@ -402,6 +402,7 @@ module.exports.register = function (server, options, next) {
             $pull: { scope: 'admin:*' }
           },
           function(err, result) {
+
             if (err) {
               EventLog.logUserEvent(
                 request.params.id,
@@ -417,6 +418,7 @@ module.exports.register = function (server, options, next) {
               {scope: 'admin:*', byUser: ticket.user}
             );
             reply();
+            
           }
         );
       });

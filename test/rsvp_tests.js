@@ -18,7 +18,7 @@ const before = lab.before;
 const after = lab.after;
 
 // Rewire rsvp.js in order to test internal functions.
-const Rsvp = rewire('./../server/auth/rsvp');
+const Rsvp = rewire('./../server/plugins/rsvp');
 const grantIsExpired = Rsvp.__get__('grantIsExpired');
 const createNewCleanGrant = Rsvp.__get__('createNewCleanGrant');
 const createUserRsvp = Rsvp.__get__('createUserRsvp');

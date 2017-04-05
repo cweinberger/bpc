@@ -99,23 +99,26 @@ function findGrant(input, callback) {
     // If the old grant is expired, the user should be denied access.
     MongoDB.collection('grants').findOne({ user: input.user, app: input.app },
         { fields: { _id: 0 } }, (err, grant) => {
-      
+
       if (err) {
 
         console.error(err);
         return callback(Boom.unauthorized(err.message));
 
+        // The setting disallowAutoCreationGrants makes sure that no grants
+        // are created automatically.
+      } else if (grant === null && app.disallowAutoCreationGrants) {
+
+        return callback(Boom.forbidden());
+
       } else if (grantIsExpired(grant)) {
 
         return callback(Boom.forbidden());
 
-        // The setting disallowAutoCreationGrants makes sure that no grants
-        // are created automatically.
-      } else if (!app.disallowAutoCreationGrants && grant === null) {
+      } else {
 
         // Creating new clean grant
         grant = createNewCleanGrant(input.app, input.user);
-
       }
 
       // This exp is only the expiration of the rsvp - not the expiration of
@@ -166,8 +169,12 @@ function updateUserInDB(query, callback) {
 
 
 function grantIsExpired(grant){
-  return grant !== undefined && grant !== null && grant.exp !== undefined &&
-    grant.exp !== null && grant.exp < Oz.hawk.utils.now();
+  return
+    grant !== undefined &&
+    grant !== null &&
+    grant.exp !== undefined &&
+    grant.exp !== null &&
+    grant.exp < Oz.hawk.utils.now();
 }
 
 

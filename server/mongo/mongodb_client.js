@@ -28,7 +28,7 @@ MongoClient.connect('mongodb://' + connectionString, (err, database) => {
     throw err;
   }
   db = database;
-  console.log(`Connecting to MongoDB on "${connectionString}"`);
+  console.log('Connecting to MongoDB on "${connectionString}"');
 });
 
 module.exports.close = function(callback) {

@@ -1,6 +1,7 @@
 /* jshint node: true */
 'use strict';
 
+
 const Hapi = require('hapi');
 const Joi = require('joi');
 const crypto = require('crypto');
@@ -9,6 +10,7 @@ const OzLoadFuncs = require('./oz_loadfuncs');
 const Scarecrow = require('scarecrow');
 const Good = require('good');
 const GoodConsole = require('good-console');
+
 
 const goodOpts = {
   reporters: {
@@ -22,17 +24,18 @@ const goodOpts = {
   }
 };
 
+
 const server = new Hapi.Server();
+
 server.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
 
 server.register({register: Good, options: goodOpts}, cb);
 
 server.register(Scarecrow, function(err) {
-
   server.auth.strategy('oz', 'oz', true, OzLoadFuncs.strategyOptions);
-
   server.register(Plugins, cb);
 });
+
 
 server.start((err) => {
   if (err) {
@@ -40,6 +43,7 @@ server.start((err) => {
   }
   console.log(`Server running at: ${server.info.uri}`);
 });
+
 
 function cb(err) {
   if (err) {

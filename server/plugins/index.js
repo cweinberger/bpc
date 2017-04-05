@@ -1,10 +1,19 @@
+/* jshint node: true */
+'use strict';
+
+// Refactored.
+const Rsvp = require('./../rsvp');
+
+// No refactoring required.
 const Health = require('./health');
-const Rsvp = require('./routes');
+
+// Not yet refactored.
 const Applications = require('./applications');
 const Users = require('./users');
 const Permissions = require('./permissions');
 const Me = require('./me');
 const Settings = require('./settings');
+
 
 module.exports.register = function (server, options, next) {
   server.register(Health, cb);
@@ -16,6 +25,7 @@ module.exports.register = function (server, options, next) {
   server.register(Settings, { routes: { prefix: '/settings' } }, cb);
   next();
 };
+
 
 module.exports.register.attributes = {
   name: 'plugins',

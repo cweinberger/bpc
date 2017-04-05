@@ -10,11 +10,13 @@ const Google = require('./../google/google_client');
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
+
 module.exports = {
   createUserRsvp
 };
 
-// Here we are creating the user->app rsvp
+
+// Here we are creating the user->app rsvp.
 function createUserRsvp(data, callback) {
 
   if (data.provider === 'gigya') {

@@ -50,7 +50,7 @@ function createGigyaRsvp(data, callback) {
 
     updateUserInDB(query);
 
-    findGrant({ user: data.UID, app: data.app }, callback);
+    findGrant({ user: data.UID, app: data.app, provider: data.provider }, callback);
   }, err => callback(err));
 
 }
@@ -74,7 +74,7 @@ function createGoogleRsvp(data, callback) {
 
       updateUserInDB(query);
 
-      findGrant({ user: data.ID, app: data.app }, callback);
+      findGrant({ user: data.ID, app: data.app, provider: data.provider }, callback);
 
     }
   });
@@ -91,6 +91,8 @@ function findGrant(input, callback) {
       return callback(Boom.unauthorized(err.message));
     } else if (app === null){
       return callback(Boom.unauthorized('Unknown application'));
+    } else if (app.settings && app.settings.provider !== input.provider){
+      return callback(Boom.unauthorized('Invalid provider'));
     }
 
     // We only looking for grants that have not expired
@@ -107,7 +109,7 @@ function findGrant(input, callback) {
 
         // The setting disallowAutoCreationGrants makes sure that no grants
         // are created automatically.
-      } else if (grant === null && app.disallowAutoCreationGrants) {
+      } else if (grant === null && (app.disallowAutoCreationGrants || app.settings.disallowAutoCreationGrants)) {
 
         return callback(Boom.forbidden());
 
@@ -115,7 +117,7 @@ function findGrant(input, callback) {
 
         return callback(Boom.forbidden());
 
-      } else {
+      } else if (grant === null ) {
 
         // Creating new clean grant
         grant = createNewCleanGrant(input.app, input.user);

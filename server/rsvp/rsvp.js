@@ -52,7 +52,7 @@ function createGigyaRsvp(data, callback) {
 
     updateUserInDB(query);
 
-    findGrant({ user: data.UID, app: data.app }, callback);
+    findGrant({ user: data.UID, app: data.app, provider: data.provider }, callback);
   }, err => callback(err));
 
 }
@@ -76,7 +76,7 @@ function createGoogleRsvp(data, callback) {
 
       updateUserInDB(query);
 
-      findGrant({ user: data.ID, app: data.app }, callback);
+      findGrant({ user: data.ID, app: data.app, provider: data.provider }, callback);
 
     }
   });
@@ -93,6 +93,8 @@ function findGrant(input, callback) {
       return callback(Boom.unauthorized(err.message));
     } else if (app === null){
       return callback(Boom.unauthorized('Unknown application'));
+    } else if (app.settings && app.settings.provider !== input.provider){
+      return callback(Boom.unauthorized('Invalid provider'));
     }
 
     // We only looking for grants that have not expired
@@ -101,23 +103,26 @@ function findGrant(input, callback) {
     // If the old grant is expired, the user should be denied access.
     MongoDB.collection('grants').findOne({ user: input.user, app: input.app },
         { fields: { _id: 0 } }, (err, grant) => {
-      
+
       if (err) {
 
         console.error(err);
         return callback(Boom.unauthorized(err.message));
 
+        // The setting disallowAutoCreationGrants makes sure that no grants
+        // are created automatically.
+      } else if (grant === null && (app.disallowAutoCreationGrants || app.settings.disallowAutoCreationGrants)) {
+
+        return callback(Boom.forbidden());
+
       } else if (grantIsExpired(grant)) {
 
         return callback(Boom.forbidden());
 
-        // The setting disallowAutoCreationGrants makes sure that no grants
-        // are created automatically.
-      } else if (!app.disallowAutoCreationGrants && grant === null) {
+      } else if (grant === null ) {
 
         // Creating new clean grant
         grant = createNewCleanGrant(input.app, input.user);
-
       }
 
       // This exp is only the expiration of the rsvp - not the expiration of
@@ -168,8 +173,12 @@ function updateUserInDB(query, callback) {
 
 
 function grantIsExpired(grant){
-  return grant !== undefined && grant !== null && grant.exp !== undefined &&
-    grant.exp !== null && grant.exp < Oz.hawk.utils.now();
+  return
+    grant !== undefined &&
+    grant !== null &&
+    grant.exp !== undefined &&
+    grant.exp !== null &&
+    grant.exp < Oz.hawk.utils.now();
 }
 
 

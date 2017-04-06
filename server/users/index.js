@@ -14,15 +14,6 @@ const GigyaUtils = require('./../gigya/gigya_utils');
 const EventLog = require('./../audit/eventlog');
 
 
-// Note: this is almost the same as in rsvp.js/rsvpValidation
-// This could be programmed better.
-const userValidation = Joi.object().keys({
-  UID: Joi.string().required(),
-  ID: Joi.string().required(),
-  email: Joi.string().email().required()
-});
-
-
 const registrationValidation = Joi.object().keys({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
@@ -56,55 +47,6 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
       MongoDB.collection('users').find({deletedAt: {$exists: false}})
         .toArray(reply);
-    }
-  });
-
-
-  server.route({
-    method: 'POST',
-    path: '/',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin', 'users'],
-          entity: 'any'
-        }
-      },
-      cors: stdCors,
-      validate: {
-        payload: userValidation
-      }
-    },
-    handler: function(request, reply) {
-
-      var user = {
-        email: request.payload.email,
-        provider: 'gigya',
-        id: request.payload.UID
-      };
-
-      MongoDB.collection('users').updateOne(
-        user,
-        {
-          $setOnInsert: {
-            dataScopes: {},
-            LastLogin: null
-          }
-        },
-        {
-          upsert: true
-          // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
-          //  writeConcern: <document>,
-          //  collation: <document>
-        }, (err, res) => {
-          if (err) {
-            EventLog.logUserEvent(null, 'User Creation Failed', err.message, user);
-          } else {
-            EventLog.logUserEvent(user.id, 'New User Creation', user);
-          }
-          return reply(err, res);
-        }
-      );
     }
   });
 
@@ -418,7 +360,7 @@ module.exports.register = function (server, options, next) {
               {scope: 'admin:*', byUser: ticket.user}
             );
             reply();
-            
+
           }
         );
       });

@@ -88,7 +88,7 @@ module.exports.register = function (server, options, next) {
         const app = Object.assign(request.payload, {
           scope: makeArrayUnique(request.payload.scope),
           delegate: request.payload.delegate ? request.payload.delegate : false,
-          key: crypto.randomBytes(40).toString('hex'),
+          key: crypto.randomBytes(25).toString('hex'),
           algorithm: 'sha256',
           settings: request.payload.settings || {}
         });
@@ -231,7 +231,7 @@ module.exports.register = function (server, options, next) {
         app: request.params.id
       });
       grant.scope = filterArrayForDuplicates(grant.scope);
-      
+
       Applications.createAppGrant(request.params.id, grant)
         .then(grant => reply(grant ? grant : Boom.notFound()))
         .catch(err => reply(Boom.wrap(err)));
@@ -289,7 +289,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function (request, reply) {
-      
+
       MongoDB.collection('grants').remove({
         id: request.params.grantId, app: request.params.id
       }, reply);
@@ -305,10 +305,10 @@ module.exports.register = function (server, options, next) {
 
 /**
  * Removes duplicate values from the given array
- * 
+ *
  * Notice that non-array values simply returns an empty array.
- * 
- * @param {Array} input 
+ *
+ * @param {Array} input
  * @return {Array} Array with unique values only
  */
 function makeArrayUnique(input) {

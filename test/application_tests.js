@@ -169,4 +169,39 @@ describe('applications', () => {
 
   });
 
+  describe('updateApp()', () => {
+
+    it('updates the correct app', done => {
+
+      MongoDB.collection('applications').findOne({id: 'valid-app'}).then(app => {
+
+        expect(app).to.be.an.object();
+        expect(app.id).to.equal('valid-app');
+        expect(app.delegate).to.equal(false);
+
+        // Change the app.
+        app.delegate = true;
+
+        Applications.updateApp('valid-app', app).then(res => {
+
+          expect(res).to.be.an.object();
+          expect(res.id).to.equal('valid-app');
+
+          MongoDB.collection('applications').findOne({id: 'valid-app'}).then(_app => {
+
+            expect(_app).to.be.an.object();
+            expect(_app.id).to.equal('valid-app');
+            expect(_app.delegate).to.equal(true);
+            done();
+
+          });
+
+        });
+
+      });
+
+    });
+
+  });
+
 });

@@ -66,20 +66,12 @@ function createApp(app) {
  *
  * @param {String} App id
  * @param {Object} App object
+ * @return {Promise} Promise providing the updated app
  */
 function updateApp(id, app) {
 
-  return findAppById(id).then(app => {
-
-    if (!app) {
-      return;
-    }
-
-    return MongoDB.collection('applications').update(
-      {id: request.params.id}, {$set: request.payload}
-    );
-
-  });
+  return MongoDB.collection('applications')
+    .findOneAndUpdate({id}, {$set: app}, {new: true}).then(res => res.value);
 
 }
 

@@ -44,15 +44,10 @@ function createGigyaRsvp(data, callback) {
       return callback(Boom.badRequest());
     }
 
-    var query = {
-      provider: data.provider,
-      id: result.body.UID,
-      email: result.body.profile.email
-    };
-
-    updateUserInDB(query);
+    updateUserInDB({ id: data.UID, email: result.body.profile.email, provider: data.provider });
 
     findGrant({ user: data.UID, app: data.app, provider: data.provider }, callback);
+
   }, err => callback(err));
 
 }
@@ -68,13 +63,7 @@ function createGoogleRsvp(data, callback) {
       return callback(Boom.badRequest());
     } else {
 
-      const query = {
-        provider: data.provider,
-        id: result.user_id,
-        email: result.email
-      };
-
-      updateUserInDB(query);
+      updateUserInDB({ id: data.ID, email: result.email, provider: data.provider });
 
       findGrant({ user: data.ID, app: data.app, provider: data.provider }, callback);
 
@@ -86,23 +75,27 @@ function createGoogleRsvp(data, callback) {
 
 function findGrant(input, callback) {
 
-  MongoDB.collection('applications').findOne({ id: input.app },
-      { fields: { _id: 0 } }, (err, app) => {
-    if (err) {
-      console.error(err);
-      return callback(Boom.unauthorized(err.message));
-    } else if (app === null){
-      return callback(Boom.unauthorized('Unknown application'));
-    } else if (app.settings && app.settings.provider !== input.provider){
-      return callback(Boom.unauthorized('Invalid provider'));
-    }
+  MongoDB.collection('applications').findOne(
+    { id: input.app },
+    { fields: { _id: 0 } },
+    (err, app) => {
+      if (err) {
+        console.error(err);
+        return callback(Boom.unauthorized(err.message));
+      } else if (app === null){
+        return callback(Boom.unauthorized('Unknown application'));
+      } else if (app.settings && app.settings.provider !== input.provider){
+        return callback(Boom.unauthorized('Invalid provider'));
+      }
 
     // We only looking for grants that have not expired
     // TODO: Actually, I think we drop the exp_conditions. Instead find any
     // grant and only insert a new one, the the old is not expired.
     // If the old grant is expired, the user should be denied access.
-    MongoDB.collection('grants').findOne({ user: input.user, app: input.app },
-        { fields: { _id: 0 } }, (err, grant) => {
+    MongoDB.collection('grants').findOne(
+      { user: input.user, app: input.app },
+      { fields: { _id: 0 } },
+      (err, grant) => {
 
       if (err) {
 
@@ -131,6 +124,7 @@ function findGrant(input, callback) {
         grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
       }
 
+      // Generating the RSVP based on the grant
       Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
         if (err) {
           console.error(err);
@@ -141,7 +135,6 @@ function findGrant(input, callback) {
       });
     });
   });
-
 }
 
 
@@ -152,16 +145,30 @@ function errorLogger(err, result) {
 };
 
 
-function updateUserInDB(query, callback) {
+function updateUserInDB(data, callback) {
 
   if (callback === undefined) {
     callback = errorLogger;
   }
 
+  const query = {
+    $or: [
+      {
+        id: data.id
+      },
+      {
+        provider: data.provider
+        email: data.email,
+      }
+    ]
+  };
+
   MongoDB.collection('users').updateOne(query, {
     $setOnInsert: {
       dataScopes: {}
     },
+     // We want to update id, email and provider in case we're missing one of the parameters
+    $set: data,
     $currentDate: {
       'LastLogin': { $type: "date" }
     }

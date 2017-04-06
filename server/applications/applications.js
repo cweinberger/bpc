@@ -18,7 +18,7 @@ module.exports = {
 
 /**
  * Returns all applications, sorted by id
- * 
+ *
  * @return {Promise}
  */
 function findAll() {
@@ -28,7 +28,7 @@ function findAll() {
 
 /**
  * Returns a single application, located by its id
- * 
+ *
  * @param {String} Id
  * @return {Promise} Promise providing the application, if found
  */
@@ -42,7 +42,7 @@ function findAppById(id) {
  *
  * Since the creating user should probably have admin rights over his new
  * application, this function might be combined with assignAdminScope().
- *  
+ *
  * @param {Object} Application object to create
  * @return {Promise} Promise providing the created app
  */
@@ -63,14 +63,14 @@ function createApp(app) {
 
 /**
  * Updates a single application by overwriting its fields with the provided ones
- * 
+ *
  * @param {String} App id
  * @param {Object} App object
  */
 function updateApp(id, app) {
 
   return findAppById(id).then(app => {
-    
+
     if (!app) {
       return;
     }
@@ -86,11 +86,11 @@ function updateApp(id, app) {
 
 /**
  * Deletes an application and updates (ie. removes) scopes and grants
- * 
+ *
  * This operation requires the user ticket.
- * 
- * @param {String} App id 
- * @param {Object} User ticket 
+ *
+ * @param {String} App id
+ * @param {Object} User ticket
  * @return void
  */
 function deleteAppById(id, userTicket) {
@@ -110,15 +110,16 @@ function deleteAppById(id, userTicket) {
 
 /**
  * Assigns admin scope to an existing app
- * 
+ *
  * @param {Object} Existing app to assign admin scope for
  * @param {Object} Ticket of user who is creating the application
  * @return void
  */
-function assignAdminScope(app, userTicket) {
+function assignAdminScope(app, ticket) {
+
+  const consoleScope = 'admin:'.concat(app.id);
 
   // Adding the 'admin:' scope to console app, so that users can be admins.
-  const consoleScope = 'admin:'.concat(app.id);
   MongoDB.collection('applications').updateOne(
     { id: ticket.app }, { $addToSet: { scope: consoleScope } }
   );
@@ -132,7 +133,7 @@ function assignAdminScope(app, userTicket) {
 
 /**
  * Creates an application grant
- * 
+ *
  * @param {String} App id
  * @param {Object} Grant to create
  * @return {Promise} Promise providing the created grant
@@ -152,7 +153,7 @@ function createAppGrant(id, grant) {
 
       // Keep only the scopes allowed in the app scope.
       grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
-      
+
       // TODO: Make sure the user does not already have a grant to that app.
       return MongoDB.collection('grants').insert(grant);
 
@@ -165,8 +166,8 @@ function createAppGrant(id, grant) {
 
 /**
  * Updates an app's grant
- * 
- * @param {String} App id 
+ *
+ * @param {String} App id
  * @param {Object} Grant
  * @return {Promise} Promise providing the updated grant
  */
@@ -187,8 +188,8 @@ function updateAppGrant(id, grant) {
  * Given an application id, this function simply returns the same id if that id
  * is already unique. If not, a unique id is created based on the original id
  * and returned.
- * 
- * @param {String} id 
+ *
+ * @param {String} id
  * @return {Promise} Promise providing a unique id
  */
 function convertToUniqueid(id) {

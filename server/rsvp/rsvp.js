@@ -157,8 +157,8 @@ function updateUserInDB(data, callback) {
         id: data.id
       },
       {
-        provider: data.provider
-        email: data.email,
+        provider: data.provider,
+        email: data.email
       }
     ]
   };

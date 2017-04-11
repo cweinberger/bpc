@@ -164,8 +164,6 @@ function register(body, regToken) {
     format: 'json',
     regToken: body.regToken || regToken
   });
-  _body.profile = gigyaUtils.stringify(_body.profile);
-  _body.data = gigyaUtils.stringify(_body.data); // Untested - might not be necessary.
 
   return gigyaClient.callApi('/accounts.register', _body);
 

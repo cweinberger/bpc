@@ -158,8 +158,8 @@ module.exports.register = function (server, options, next) {
     config: {
       auth:  {
         access: {
-          scope: ['admin'],
-          entity: 'user'
+          scope: ['admin', 'users'],
+          entity: 'any'
         }
       },
       cors: stdCors,

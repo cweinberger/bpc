@@ -15,6 +15,7 @@ const EventLog = require('./../audit/eventlog');
 
 
 const registrationValidation = Joi.object().keys({
+  data: Joi.object().optional(),
   email: Joi.string().email().required(),
   password: Joi.string().required(),
   profile: Joi.object().optional()

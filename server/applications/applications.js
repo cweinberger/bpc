@@ -64,10 +64,12 @@ function createApp(app) {
 /**
  * Updates a single application by overwriting its fields with the provided ones
  *
- * @param {String} App id
- * @param {Object} App object
+ * @param {String} id
+ *   Application id.
+ * @param {Object} payload
+ *   Request payload.
  */
-function updateApp(id, app) {
+function updateApp(id, payload) {
 
   return findAppById(id).then(app => {
 
@@ -76,7 +78,7 @@ function updateApp(id, app) {
     }
 
     return MongoDB.collection('applications').update(
-      {id: request.params.id}, {$set: request.payload}
+      {id: id}, {$set: payload}
     );
 
   });

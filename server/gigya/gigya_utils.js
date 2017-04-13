@@ -8,7 +8,7 @@ const GigyaError = require('./gigya_error');
 module.exports = {
   isError,
   errorToResponse,
-  processPayload
+  payloadToForm
 }
 
 
@@ -59,12 +59,17 @@ function errorToResponse(data, extra) {
  * @param {object} payload
  *   Data to check if elements need to be stringified.
  */
-function processPayload(payload) {
-  for(var param in payload) {
+function payloadToForm(payload) {
+  const form = {};
+  for(let param in payload) {
     if (payload.hasOwnProperty(param)) {
       if (typeof(payload[param]) == 'object') {
-        payload[param] = JSON.stringify(payload[param]);
+        form[param] = JSON.stringify(payload[param]);
+      }
+      else {
+        form[param] = payload[param];
       }
     }
   }
+  return form;
 }

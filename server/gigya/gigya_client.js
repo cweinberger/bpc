@@ -34,8 +34,9 @@ module.exports = {
  */
 function callApi(path, payload = null, api = 'accounts') {
 
+  let form = null;
   if (payload) {
-    GigyaUtils.processPayload(payload);
+    form = GigyaUtils.payloadToForm(payload);
   }
 
   const options = {
@@ -50,7 +51,7 @@ function callApi(path, payload = null, api = 'accounts') {
       'Cache-Control': 'no-cache',
       'Content-Type': 'application/x-www-form-urlencoded'
     },
-    form: payload
+    form: form
   };
 
   // Request logging is for auditing purposes.

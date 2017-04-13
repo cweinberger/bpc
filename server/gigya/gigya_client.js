@@ -26,13 +26,17 @@ module.exports = {
 /**
  * Performs a (POST) request against the Gigya REST API and returns the parsed
  * response as JSON
- * 
+ *
  * @param {String} Relative path of HTTP URL
  * @param {Object} Payload for POST request, if any
  * @param {String} API accounts|audit|comments|ds|fidm|gm|ids|reports|socialize
  * @return {Promise} Promise which is resolved when a response is received
  */
 function callApi(path, payload = null, api = 'accounts') {
+
+  if (payload) {
+    GigyaUtils.processPayload(payload);
+  }
 
   const options = {
     url: `${GIGYA_PROTOCOL}${api}.${GIGYA_DC}.${GIGYA_HOSTNAME}${path}`,
@@ -77,12 +81,13 @@ function callApi(path, payload = null, api = 'accounts') {
       }
 
       if (GigyaUtils.isError(_body)) {
-        console.error(`  Gigya Error: ${_body.errorCode} ${_body.errorMessage}`);
+        // Check if there are details present in a response.
+        console.error(`  Gigya Error: ${_body.errorCode} ${_body.errorMessage}\n  Details: ${_body.errorDetails}`);
         if (_body.validationErrors) {
           const errors = _body.validationErrors.map(
-            error => ` -> ${error.errorCode} ${error.message}`
+            error => `${error.fieldName} -> ${error.errorCode} ${error.message}; `
           );
-          console.log(`  Validation errors:${errors}`);
+          console.log(`  Validation errors: ${errors}`);
         }
         return reject(new GigyaError(
           _body.errorMessage, _body.errorCode, _body.validationErrors

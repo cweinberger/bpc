@@ -17,6 +17,7 @@ module.exports = {
   register,
   deleteAccount,
   getAccountSchema,
+  setAccountSchema,
   registerUser,
   resetPassword
 };
@@ -200,6 +201,18 @@ function getAccountSchema() {
 
 }
 
+/**
+ * Sets the accounts schema
+ * @see http://developers.gigya.com/display/GD/accounts.setSchema+REST
+ * @return {Promise}
+ */
+function setAccountSchema(accountSchema) {
+  const _body = Object.assign({}, accountSchema, {
+    format: 'json'
+  });
+  // Just redirect the call to Gigya.
+  return gigyaClient.callApi('/accounts.setSchema', _body);
+}
 
 /**
  * Registers a new user in Gigya, with specified login credentials

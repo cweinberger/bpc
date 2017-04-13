@@ -73,6 +73,27 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  server.route({
+    method: 'PATCH',
+    path: '/schema',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors
+    },
+    handler: function(request, reply) {
+      GigyaAccounts.setAccountSchema(request.payload).then(
+        res => reply(res.body),
+        err => reply(GigyaUtils.errorToResponse(err))
+      );
+    }
+  });
+
+
   /**
    * GET /users/search
    *

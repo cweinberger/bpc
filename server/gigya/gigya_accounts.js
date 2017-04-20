@@ -162,6 +162,7 @@ function register(body, regToken) {
   // to the account in a separate call to "setAccountInfo", so we omit them.
   const _body = Object.assign({}, body, {
     finalizeRegistration: true,
+    include: 'profile,data',
     format: 'json',
     regToken: body.regToken || regToken
   });

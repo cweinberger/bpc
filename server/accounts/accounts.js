@@ -10,7 +10,8 @@ const EventLog = require('./../audit/eventlog');
 
 module.exports = {
   register,
-  deleteOne
+  deleteOne,
+  update
 };
 
 
@@ -40,6 +41,31 @@ function register(user) {
 
 }
 
+/**
+ * Updates account with Gigya and updates the user in MongoDB
+ *
+ * @param {Object} user
+ * @return {Promise} Receives the created user is the operation went well
+ */
+function update(user) {
+
+  return GigyaAccounts.setAccountInfo(user).then(data => {
+
+    const _user = assembleDbUser(data.body);
+    // Update user.
+    return MongoDB.collection('users').update(_user)
+      .then(res => res.ops[0])
+      .then(res => {
+        EventLog.logUserEvent(res.id, 'User Updated');
+        return res;
+      });
+
+  }, err => {
+    EventLog.logUserEvent(null, 'User update failed', {email: user.email});
+    return Promise.reject(err);
+  });
+
+}
 
 /**
  * Deletes a single account from Gigya, and marks the local one as deleted

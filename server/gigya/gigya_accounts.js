@@ -55,7 +55,7 @@ function getAccountInfo(payload) {
  */
 function setAccountInfo(payload) {
 
-  return gigyaClient.callApi('/ids.setAccountInfo', payload);
+  return gigyaClient.callApi('/accounts.setAccountInfo', payload);
 
 }
 

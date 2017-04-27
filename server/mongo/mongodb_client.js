@@ -7,7 +7,7 @@ const MongoClient = require('mongodb').MongoClient;
 // Configure database connection.
 const mongoHost = process.env.MONGODB_HOST || 'localhost';
 const mongoPort = process.env.MONGODB_PORT || '27017';
-const mongoDB = process.env.MONGODB_DATABASE || 'sso';
+const mongoDB = process.env.MONGODB_DB || 'sso';
 const connectionString = mongoHost + ':' + mongoPort + '/' + mongoDB;
 let db, user = '', opts = {};
 

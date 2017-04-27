@@ -155,7 +155,7 @@ docker run \
   --env=PORT=80 \
   --env=MONGODB_HOST=<value> \
   --env=MONGODB_PORT=<value> \
-  --env=MONGODB_DATABASE=<value> \
+  --env=MONGODB_DB=<value> \
   --env=GIGYA_APP_KEY=<value> \
   --env=GIGYA_USER_KEY=<value> \
   --env=GIGYA_SECRET_KEY=<value> \
@@ -202,7 +202,7 @@ db.grants.insert({
 
 BPC comes prepackaged with unit tests. Prerequisites for testing is a running
 MongoDB database, the correctly configured environment variables (except
-`MONGODB_DATABASE`, which will always be `sso-test`), and you'll also need to
+`MONGODB_DB`, which will always be `sso-test`), and you'll also need to
 ensure that you have dev-dependencies installed (by running `npm install`
 without the `--production` flag).
 
@@ -225,7 +225,7 @@ BPC supports the following environment variables:
     replica sets are used, this would be a comma-separated list of hostnames for
     each server in the set.
   * `MONGODB_PORT` - port number to connect to MongoDB on.
-  * `MONGODB_DATABASE` - name of database to use on MongoDB.
+  * `MONGODB_DB` - name of database to use on MongoDB.
   * `MONGODB_REPLSET` - name of MongoDB replica set (optional).
   * `MONGODB_READPREFERENCE` - type of MongoDB read preference if using replica
     sets (optional). Refer to the MongoDB documentation for choices. The default

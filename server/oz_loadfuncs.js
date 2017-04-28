@@ -9,6 +9,18 @@ const Boom = require('boom');
 const Oz = require('oz');
 const MongoDB = require('./mongo/mongodb_client');
 
+function timecallback(err, time) {
+  if (err) {
+    console.log('Failed: ' + err.message);
+    process.exit(1);
+  }
+
+  console.log('Local clock is off by: ' + time.t + ' milliseconds');
+}
+
+Oz.hawk.sntp.time({}, timecallback);
+Oz.hawk.sntp.start(() => {});
+Oz.hawk.sntp.time({}, timecallback);
 
 // Here we are creating the app ticket
 function loadAppFunc(id, callback) {

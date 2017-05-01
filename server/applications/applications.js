@@ -71,7 +71,8 @@ function createApp(app) {
 function updateApp(id, payload) {
 
   return MongoDB.collection('applications')
-    .findOneAndUpdate({id}, {$set: app}, {new: true}).then(res => res.value);
+    .findOneAndUpdate({id}, {$set: payload}, {returnNewDocument: true})
+      .then(res => res.value);
 
 }
 

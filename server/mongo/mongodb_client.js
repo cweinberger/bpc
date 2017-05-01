@@ -6,17 +6,11 @@ const MongoClient = require('mongodb').MongoClient;
 
 // Configure database connection.
 const mongoDbConnection = process.env.MONGODB_CONNECTION || 'mongodb://localhost:27017/bpc';
-let db, user = '', opts = {};
+let db, user = '';
 
 // Handle user+password combination if provided.
 if (process.env.MONGODB_USER && process.env.MONGODB_PASS) {
   user = `${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@`;
-}
-
-// Set up as replica set if provided.
-if (process.env.MONGODB_REPLSET) {
-  opts.replSet = process.env.MONGODB_REPLSET;
-  opts.readPreference = process.env.MONGODB_READPREFERENCE || 'primaryPreferred';
 }
 
 // Establish connection and perform error handling.

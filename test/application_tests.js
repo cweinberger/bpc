@@ -34,39 +34,41 @@ describe('applications', () => {
 
   });
 
-  // TODO: Promisify this so we don't risk a race condition.
   before(done => {
 
-    // Give the test cases an app to use.
-    MongoDB.collection('applications').insert({
-      id: 'valid-app',
-      scope: [
-        'admin',
-        'admin:*',
-        'admin:gdfgfd',
-        'admin:uyutyutu'
-      ],
-      delegate: false,
-      key: 'something_long_and_random',
-      algorithm: 'sha256'
-    });
-    // Give the test cases a grant to use.
-    MongoDB.collection('grants').insert({
-      id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
-      app: 'valid-app',
-      user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
-      scope: []
-    });
-    // Give the test cases a user to use.
-    MongoDB.collection('users').insert({
-      email: 'mkoc@berlingskemedia.dk',
-      id: '117880216634946654515',
-      provider: 'gigya',
-      LastLogin: new Date(),
-      dataScopes: {},
-      providerData: {}
-    });
-    done();
+    Promise.all([
+      // Give the test cases an app to use.
+      MongoDB.collection('applications').insert({
+        id: 'valid-app',
+        scope: [
+          'admin',
+          'admin:*',
+          'admin:gdfgfd',
+          'admin:uyutyutu'
+        ],
+        delegate: false,
+        key: 'something_long_and_random',
+        algorithm: 'sha256'
+      }),
+      // Give the test cases a grant to use.
+      MongoDB.collection('grants').insert({
+        id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
+        app: 'valid-app',
+        user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
+        scope: []
+      }),
+      // Give the test cases a user to use.
+      MongoDB.collection('users').insert({
+        email: 'mkoc@berlingskemedia.dk',
+        id: '117880216634946654515',
+        provider: 'gigya',
+        LastLogin: new Date(),
+        dataScopes: {},
+        providerData: {}
+      })
+    ]).then(res => {
+      done();
+    })
 
   });
 

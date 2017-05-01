@@ -179,7 +179,7 @@ with an admin scope and corresponding admin user who can manage permissions etc.
 ```
 db.applications.insert({
   id: 'console',
-  scope: ['admin', 'admin:*'],
+  scope: ['admin', 'admin:*', 'admin:console'],
   delegate: false,
   key: 'something_long_and_random',
   algorithm: 'sha256',

@@ -3,6 +3,8 @@
 
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
+const BPC_PUB_HOST = process.env.BPC_PUB_HOST;
+const BPC_PUB_PORT = process.env.BPC_PUB_PORT;
 
 
 const Boom = require('boom');
@@ -79,6 +81,12 @@ module.exports.strategyOptions = {
     encryptionPassword: ENCRYPTIONPASSWORD,
     loadAppFunc: loadAppFunc,
     loadGrantFunc: loadGrantFunc,
+    hawk: {
+      // Optional:
+      // Used to override the host and port for validating request in case the host or port is changed by a proxy eg. behind an ELB.
+      host: BPC_PUB_HOST,
+      port: BPC_PUB_PORT
+    }
   },
   urls: {
     app: '/ticket/app',

@@ -64,11 +64,11 @@ function deleteOne(id) {
 /**
  * Picks the data from a Gigya account that we have chosen to store in MongoDB
  * 
- * @param {Object} Gigya data 
+ * @param {Object} Gigya data
+ * @param {Object} Initial user data received to register
  * @return {Object} User object
  */
 function assembleDbUser(data) {
-
   return {
     email: data.profile.email,
     id: data.UID,
@@ -79,6 +79,7 @@ function assembleDbUser(data) {
       isLockedOut: data.isLockedOut,
       isVerified: data.isVerified,
       profile: data.profile,
+      data: data.data ? data.data : {},
       lastLogin: new Date(data.lastLoginTimestamp),
       lastUpdated: new Date(data.lastUpdatedTimestamp),
       registered: new Date(data.registedTimestamp),

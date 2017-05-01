@@ -14,16 +14,8 @@ const GigyaUtils = require('./../gigya/gigya_utils');
 const EventLog = require('./../audit/eventlog');
 
 
-// Note: this is almost the same as in rsvp.js/rsvpValidation
-// This could be programmed better.
-const userValidation = Joi.object().keys({
-  UID: Joi.string().required(),
-  ID: Joi.string().required(),
-  email: Joi.string().email().required()
-});
-
-
 const registrationValidation = Joi.object().keys({
+  data: Joi.object().optional(),
   email: Joi.string().email().required(),
   password: Joi.string().required(),
   profile: Joi.object().optional()
@@ -61,55 +53,6 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
-    method: 'POST',
-    path: '/',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin', 'users'],
-          entity: 'any'
-        }
-      },
-      cors: stdCors,
-      validate: {
-        payload: userValidation
-      }
-    },
-    handler: function(request, reply) {
-
-      var user = {
-        email: request.payload.email,
-        provider: 'gigya',
-        id: request.payload.UID
-      };
-
-      MongoDB.collection('users').updateOne(
-        user,
-        {
-          $setOnInsert: {
-            dataScopes: {},
-            LastLogin: null
-          }
-        },
-        {
-          upsert: true
-          // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
-          //  writeConcern: <document>,
-          //  collation: <document>
-        }, (err, res) => {
-          if (err) {
-            EventLog.logUserEvent(null, 'User Creation Failed', err.message, user);
-          } else {
-            EventLog.logUserEvent(user.id, 'New User Creation', user);
-          }
-          return reply(err, res);
-        }
-      );
-    }
-  });
-
-
-  server.route({
     method: 'GET',
     path: '/schema',
     config: {
@@ -123,6 +66,27 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
       GigyaAccounts.getAccountSchema().then(
+        res => reply(res.body),
+        err => reply(GigyaUtils.errorToResponse(err))
+      );
+    }
+  });
+
+
+  server.route({
+    method: 'PATCH',
+    path: '/schema',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors
+    },
+    handler: function(request, reply) {
+      GigyaAccounts.setAccountSchema(request.payload).then(
         res => reply(res.body),
         err => reply(GigyaUtils.errorToResponse(err))
       );
@@ -216,8 +180,8 @@ module.exports.register = function (server, options, next) {
     config: {
       auth:  {
         access: {
-          scope: ['admin'],
-          entity: 'user'
+          scope: ['admin', 'users'],
+          entity: 'any'
         }
       },
       cors: stdCors,
@@ -418,7 +382,7 @@ module.exports.register = function (server, options, next) {
               {scope: 'admin:*', byUser: ticket.user}
             );
             reply();
-            
+
           }
         );
       });

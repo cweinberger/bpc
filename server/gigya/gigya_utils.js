@@ -8,14 +8,14 @@ const GigyaError = require('./gigya_error');
 module.exports = {
   isError,
   errorToResponse,
-  stringify
+  payloadToForm
 }
 
 
 /**
  * Checks if the given Gigya response payload contains error information
- * 
- * @param {Mixed} data 
+ *
+ * @param {Mixed} data
  */
 function isError(data) {
 
@@ -27,7 +27,7 @@ function isError(data) {
 /**
  * Wraps existing errors or response data with the expected error fields into
  * an error object wrapped by Boom.js
- * 
+ *
  * @param {Mixed} GigyaError|Error|Gigya response
  * @param {Object} extra (optional)
  * @return {Object} Boom-wrapped error object
@@ -55,10 +55,21 @@ function errorToResponse(data, extra) {
 /**
  * Certain data fields needs to be in string format when sent to Gigya - this
  * function does just that
- * 
- * @param {Mixed} Data to stringify
- * @return {String} Stringified data
+ *
+ * @param {object} payload
+ *   Data to check if elements need to be stringified.
  */
-function stringify(data) {
-  return data && typeof data !== 'string' ? JSON.stringify(data) : data;
+function payloadToForm(payload) {
+  const form = {};
+  for(let param in payload) {
+    if (payload.hasOwnProperty(param)) {
+      if (typeof(payload[param]) == 'object') {
+        form[param] = JSON.stringify(payload[param]);
+      }
+      else {
+        form[param] = payload[param];
+      }
+    }
+  }
+  return form;
 }

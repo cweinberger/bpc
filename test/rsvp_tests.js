@@ -2,6 +2,7 @@
 'use strict';
 
 
+// Bootstrap the testing harness.
 const Code = require('code');   // assertion library
 const Lab = require('lab');
 const lab = exports.lab = Lab.script();
@@ -18,7 +19,7 @@ const before = lab.before;
 const after = lab.after;
 
 // Rewire rsvp.js in order to test internal functions.
-const Rsvp = rewire('./../server/auth/rsvp');
+const Rsvp = rewire('./../server/rsvp/rsvp');
 const grantIsExpired = Rsvp.__get__('grantIsExpired');
 const createNewCleanGrant = Rsvp.__get__('createNewCleanGrant');
 const createUserRsvp = Rsvp.__get__('createUserRsvp');
@@ -30,56 +31,50 @@ describe('rsvp', () => {
 
     it('is not expired when grant is undefined', done => {
       
-      var result = grantIsExpired();
-      
+      var result = grantIsExpired();      
       expect(result).to.be.false();
-      
       done();
+
     });
 
     it('is not expired when grant is null', done => {
       
       var result = grantIsExpired(null);
-      
       expect(result).to.be.false();
-      
       done();
+
     });
 
     it('is not expired when grant.exp is undefined', done => {
       
       var result = grantIsExpired({});
-      
       expect(result).to.be.false();
-      
       done();
+
     });
 
     it('is not expired when grant.exp is null', done => {
       
       var result = grantIsExpired({ exp: null });
-      
       expect(result).to.be.false();
-      
       done();
+
     });
 
     it('is not expired when grant.exp is now() + 20000', done => {
       
       var result = grantIsExpired({ exp: Oz.hawk.utils.now() + 20000 });
-      
       expect(result).to.be.false();
-      
       done();
+
     });
 
     it('expired when grant.exp is now() - 20000', done => {
       
       var result = grantIsExpired({ exp: Oz.hawk.utils.now() - 20000 });
-      
       expect(result).to.be.true();
-      
       done();
+
     });
 
   });

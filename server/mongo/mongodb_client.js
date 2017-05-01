@@ -5,10 +5,7 @@
 const MongoClient = require('mongodb').MongoClient;
 
 // Configure database connection.
-const mongoHost = process.env.MONGODB_HOST || 'localhost';
-const mongoPort = process.env.MONGODB_PORT || '27017';
-const mongoDB = process.env.MONGODB_DATABASE || 'sso';
-const connectionString = mongoHost + ':' + mongoPort + '/' + mongoDB;
+const mongoDbConnection = process.env.MONGODB_CONNECTION || 'mongodb://localhost:27017/bpc';
 let db, user = '', opts = {};
 
 // Handle user+password combination if provided.
@@ -23,12 +20,12 @@ if (process.env.MONGODB_REPLSET) {
 }
 
 // Establish connection and perform error handling.
-MongoClient.connect('mongodb://' + connectionString, (err, database) => {
+MongoClient.connect(mongoDbConnection, (err, database) => {
   if (err) {
     throw err;
   }
   db = database;
-  console.log(`Connecting to MongoDB on "${connectionString}"`);
+  console.log('Connecting to MongoDB on ' + `${mongoDbConnection}`);
 });
 
 module.exports.close = function(callback) {

@@ -320,3 +320,16 @@ module.exports.register.attributes = {
   name: 'applications',
   version: '1.0.0'
 };
+
+
+function filterArrayForDuplicates(input){
+  if (input instanceof Array){
+    var hash = {};
+    for (var i = 0; i < input.length; i++) {
+      hash[input[i]] = true;
+    }
+    return Object.keys(hash);
+  } else {
+    return [];
+  }
+}

@@ -230,7 +230,7 @@ module.exports.register = function (server, options, next) {
         id: crypto.randomBytes(20).toString('hex'),
         app: request.params.id
       });
-      grant.scope = filterArrayForDuplicates(grant.scope);
+      grant.scope = makeArrayUnique(grant.scope);
 
       Applications.createAppGrant(request.params.id, grant)
         .then(grant => reply(grant ? grant : Boom.notFound()))
@@ -266,7 +266,7 @@ module.exports.register = function (server, options, next) {
 
       const grant = request.payload;
       grant.id = grant.id || request.params.grantId;
-      grant.scope = filterArrayForDuplicates(grant.scope);
+      grant.scope = makeArrayUnique(grant.scope);
 
       Applications.updateAppGrant(request.params.id, grant)
         .then(grant => reply(grant ? grant : Boom.notFound()))
@@ -320,16 +320,3 @@ module.exports.register.attributes = {
   name: 'applications',
   version: '1.0.0'
 };
-
-
-function filterArrayForDuplicates(input){
-  if (input instanceof Array){
-    var hash = {};
-    for (var i = 0; i < input.length; i++) {
-      hash[input[i]] = true;
-    }
-    return Object.keys(hash);
-  } else {
-    return [];
-  }
-}

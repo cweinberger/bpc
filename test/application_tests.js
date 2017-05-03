@@ -9,6 +9,7 @@ const rewire = require('rewire');
 const sinon = require('sinon');
 const MongoDB = require('./../server/mongo/mongodb_client');
 const Applications = require('./../server/applications/applications');
+const crypto = require('crypto');
 
 // Test shortcuts.
 const describe = lab.describe;
@@ -43,6 +44,18 @@ describe('applications', () => {
         scope: [
           'admin',
           'admin:*',
+          'business:all',
+          'bt:all'
+        ],
+        delegate: false,
+        key: 'something_long_and_random',
+        algorithm: 'sha256'
+      }),
+      MongoDB.collection('applications').insert({
+        id: 'delete-me-app',
+        scope: [
+          'admin',
+          'admin:*',
           'admin:gdfgfd',
           'admin:uyutyutu'
         ],
@@ -54,6 +67,13 @@ describe('applications', () => {
       MongoDB.collection('grants').insert({
         id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
         app: 'valid-app',
+        user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
+        scope: []
+      }),
+      // Give the test cases a grant to use.
+      MongoDB.collection('grants').insert({
+        id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
+        app: 'delete-me-app',
         user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
         scope: []
       }),
@@ -205,5 +225,216 @@ describe('applications', () => {
     });
 
   });
+
+  describe('deleteAppById()', () => {
+
+    it('fails for nonexisting app id', done => {
+
+      Applications.deleteAppById('nonexisting-app', {app: 'nonexisting-app'})
+          .then(isRemoved => {
+
+        expect(isRemoved).to.be.a.boolean();
+        expect(isRemoved).to.be.false();
+        done();
+
+      });
+
+    });
+
+    it('removes all traces of the app', done => {
+
+      Applications.deleteAppById('delete-me-app', {app: 'delete-me-app'})
+          .then(isRemoved => {
+
+        Promise.all([
+          MongoDB.collection('applications').findOne({id: 'delete-me-app'}),
+          MongoDB.collection('grants').findOne({app: 'delete-me-app'})
+        ]).then(res => {
+
+          expect(isRemoved).to.be.a.boolean();
+          expect(isRemoved).to.be.true();
+          expect(res).to.be.an.array();
+          expect(res).to.have.length(2);
+          expect(res[0]).to.be.null();
+          expect(res[1]).to.be.null();
+          done();
+
+        }).catch(err => {
+
+          console.error(err);
+          Code.fail(err.message);
+
+        });
+
+      });
+
+    });
+
+  });
+
+  describe('assignAdminScope()', () => {
+
+    it('fails for nonexisting app id', done => {
+
+      const ticket = {
+        app: 'invalid-app',
+        grant: crypto.randomBytes(20).toString('hex')
+      }
+
+      Applications.assignAdminScope('invalid-app', ticket).then(isUpdated => {
+
+        expect(isUpdated).to.be.a.boolean();
+        expect(isUpdated).to.be.false();
+        done();
+
+      }).catch(err => {
+
+        Code.fail(err.message);
+
+      });
+
+    });
+
+    it('succeeds for existing app id', done => {
+
+      const ticket = {
+        app: 'valid-app',
+        grant: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre'
+      }
+
+      Applications.assignAdminScope('valid-app', ticket).then(isUpdated => {
+
+        expect(isUpdated).to.be.a.boolean();
+        expect(isUpdated).to.be.true();
+        done();
+
+      }).catch(err => {
+
+        Code.fail(err.message);
+
+      });
+
+    });
+
+  });
+
+  describe('createAppGrant()', () => {
+
+    it('fails for nonexisting app id', done => {
+
+      const grant = {
+        user: '117880216634946654515',
+        scope: [
+          'admin',
+          'admin:*',
+          'business:all',
+          'bt:all'
+        ]
+      };
+
+      Applications.createAppGrant('invalid-app', grant).then(grant => {
+
+        expect(grant).to.be.undefined();
+        done();
+
+      }).catch(err => {
+
+        Code.fail(err.message);
+
+      });
+
+    });
+
+    it('only keeps the app scopes', done => {
+
+      const grant = {
+        user: '117880216634946654515',
+        scope: [
+          'admin',
+          'admin:*',
+          'business:all',
+          'bt:all',
+          'aok:all' // This one is not in the app, hence should not be in grant.
+        ]
+      };
+
+      Applications.createAppGrant('valid-app', grant).then(grant => {
+
+        expect(grant).to.be.an.object();
+        expect(grant.scope).to.be.an.array();
+        expect(grant.scope).to.have.length(4);
+        expect(grant.scope).not.to.contain('aok:all');
+        done();
+
+      }).catch(err => {
+
+        Code.fail(err.message);
+
+      });
+
+    });
+
+  });
+
+  describe('updateAppGrant()', () => {
+
+    it('fails for nonexisting app id', done => {
+
+      const grant = {
+        user: '117880216634946654515',
+        scope: [
+          'admin',
+          'admin:*',
+          'business:all',
+          'bt:all'
+        ]
+      };
+
+      Applications.updateAppGrant('invalid-app', grant).then(grant => {
+
+        expect(grant).to.be.undefined();
+        done();
+
+      }).catch(err => {
+
+        Code.fail(err.message);
+
+      });
+
+    });
+
+    it('only keeps the app scopes', done => {
+
+      const grant = {
+        user: '117880216634946654515',
+        scope: [
+          'admin',
+          'admin:*',
+          'business:all',
+          'bt:all',
+          'b:all', // This one is not in the app, hence should not be in grant.
+          'aok:all' // This one is not in the app, hence should not be in grant.
+        ]
+      };
+
+      Applications.updateAppGrant('valid-app', grant).then(grant => {
+
+        expect(grant).to.be.an.object();
+        expect(grant.scope).to.be.an.array();
+        expect(grant.scope).to.have.length(4);
+        expect(grant.scope).not.to.contain('b:all');
+        expect(grant.scope).not.to.contain('aok:all');
+        done();
+
+      }).catch(err => {
+
+        Code.fail(err.message);
+
+      });
+
+    });
+
+  });
+
 
 });

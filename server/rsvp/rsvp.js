@@ -104,7 +104,9 @@ function findGrant(input, callback) {
 
         // The setting disallowAutoCreationGrants makes sure that no grants
         // are created automatically.
-      } else if (grant === null && (app.disallowAutoCreationGrants || app.settings.disallowAutoCreationGrants)) {
+      } else if (grant === null &&
+          (app.disallowAutoCreationGrants ||
+          (app.settings && app.settings.disallowAutoCreationGrants))) {
 
         return callback(Boom.forbidden());
 
@@ -179,13 +181,14 @@ function updateUserInDB(data, callback) {
 }
 
 
-function grantIsExpired(grant){
-  return
+function grantIsExpired(grant) {
+  return (
     grant !== undefined &&
     grant !== null &&
     grant.exp !== undefined &&
     grant.exp !== null &&
-    grant.exp < Oz.hawk.utils.now();
+    grant.exp < Oz.hawk.utils.now()
+  );
 }
 
 

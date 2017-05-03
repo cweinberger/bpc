@@ -35,6 +35,9 @@ module.exports.register = function (server, options, next) {
           ext = ''.concat(request.payload.app || '', ':', request.payload.user || '');
         }
 
+        // It would be a cool feature to only allow bewits to apps that have been allow to specific URL's
+        // Eg. MDBAPI has the URL to search by email: http://mdbapi.bemit.dk/users?email=dako@berlingskmedia.dk
+        // And MDBAPI would only allow bewits to be generated if the app in the ticket here has been whitelisted to use URL pattern http://mdbapi.bemit.dk/users?email=[email].
 
         const duration = 60 * 5;      // 5 Minutes
         const bewit = Hawk.uri.getBewit(request.payload.url, { credentials: ticket, ttlSec: duration, ext: ext });

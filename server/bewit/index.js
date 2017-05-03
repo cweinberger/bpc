@@ -5,7 +5,7 @@ const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
 const Hawk = require('hawk');
-const url = require('url');
+const Url = require('url');
 const OzLoadFuncs = require('./../oz_loadfuncs');
 const MongoDB = require('./../mongo/mongodb_client');
 
@@ -62,7 +62,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      var url_to_validate = url.parse(request.payload.url);
+      var url_to_validate = Url.parse(request.payload.url);
       var uri_to_authenticate = {
         method: 'GET',
         url: url_to_validate.path,

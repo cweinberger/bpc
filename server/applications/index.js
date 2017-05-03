@@ -233,7 +233,9 @@ module.exports.register = function (server, options, next) {
       grant.scope = makeArrayUnique(grant.scope);
 
       Applications.createAppGrant(request.params.id, grant)
-        .then(grant => reply(grant ? grant : Boom.notFound()))
+        .then(grant => {
+          reply(grant ? grant : Boom.notFound());
+        })
         .catch(err => reply(Boom.wrap(err)));
 
     }

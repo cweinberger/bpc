@@ -64,24 +64,15 @@ function createApp(app) {
 /**
  * Updates a single application by overwriting its fields with the provided ones
  *
- * @param {String} id
- *   Application id.
- * @param {Object} payload
- *   Request payload.
+ * @param {String} App id
+ * @param {Object} App object
+ * @return {Promise} Promise providing the updated app
  */
 function updateApp(id, payload) {
 
-  return findAppById(id).then(app => {
-
-    if (!app) {
-      return;
-    }
-
-    return MongoDB.collection('applications').update(
-      {id: id}, {$set: payload}
-    );
-
-  });
+  return MongoDB.collection('applications')
+    .findOneAndUpdate({id}, {$set: payload}, {returnNewDocument: true})
+      .then(res => res.value);
 
 }
 
@@ -93,42 +84,62 @@ function updateApp(id, payload) {
  *
  * @param {String} App id
  * @param {Object} User ticket
- * @return void
+ * @return {Promise} Provides a bool True if app was deleted, False otherwise
  */
 function deleteAppById(id, userTicket) {
 
-  MongoDB.collection('applications').remove({ id: id });
-  MongoDB.collection('grants').remove({ app: id } );
-
   const consoleScope = 'admin:'.concat(id);
-  MongoDB.collection('applications').updateOne(
-    { id: userTicket.app }, { $pull: { scope: consoleScope } }
-  );
-  MongoDB.collection('grants').update(
-    { app: userTicket.app }, { $pull: { scope: consoleScope } }, { multi: true }
-  );
+  const ops = [
+    MongoDB.collection('applications').remove({ id: id }),
+    MongoDB.collection('grants').remove({ app: id } ),
+    MongoDB.collection('applications').updateOne(
+      { id: userTicket.app }, { $pull: { scope: consoleScope } }
+    ),
+    MongoDB.collection('grants').update(
+      { app: userTicket.app }, { $pull: { scope: consoleScope } }, { multi: true }
+    )
+  ];
+
+  return Promise.all(ops)
+    .then(res => Promise.resolve(res[0].result.ok === 1 && res[0].result.n > 0))
+    .catch(err => {
+      console.error(err);
+      return Promise.reject(err);
+    });
 
 }
+
 
 /**
  * Assigns admin scope to an existing app
  *
  * @param {Object} Existing app to assign admin scope for
  * @param {Object} Ticket of user who is creating the application
- * @return void
+ * @return {Promise} Provides a Boolean True if the operation succeeded,
+ *   False otherwise
  */
 function assignAdminScope(app, ticket) {
 
   const consoleScope = 'admin:'.concat(app.id);
+  const ops = [
+    // Adding the 'admin:' scope to console app, so that users can be admins.
+    MongoDB.collection('applications').updateOne(
+      { id: ticket.app }, { $addToSet: { scope: consoleScope } }
+    ),
+    // Adding scope 'admin:' to the grant of user that created the application.
+    MongoDB.collection('grants').update(
+      { id: ticket.grant }, { $addToSet: { scope: consoleScope } }
+    )
+  ];
 
-  // Adding the 'admin:' scope to console app, so that users can be admins.
-  MongoDB.collection('applications').updateOne(
-    { id: ticket.app }, { $addToSet: { scope: consoleScope } }
-  );
-  // Adding scope 'admin:' to the grant of user that created the application.
-  MongoDB.collection('grants').update(
-    { id: ticket.grant }, { $addToSet: { scope: consoleScope } }
-  );
+  return Promise.all(ops).then(res => {
+    return Promise.resolve(
+      res[0].result.ok === 1 && res[0].result.nModified === 1
+    );
+  }).catch(err => {
+    console.error(err);
+    return Promise.reject(err);
+  });
 
 }
 
@@ -144,6 +155,10 @@ function createAppGrant(id, grant) {
 
   return findAppById(id).then(app => {
 
+    if (!app) {
+      return;
+    }
+
     // TODO: This could be moved to a "users" module. Then we'll have two lookup
     // functions (for app and user) that could neatly be done in parallel.
     return MongoDB.collection('users').findOne({id: grant.user})
@@ -157,7 +172,7 @@ function createAppGrant(id, grant) {
       grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
 
       // TODO: Make sure the user does not already have a grant to that app.
-      return MongoDB.collection('grants').insert(grant);
+      return MongoDB.collection('grants').insert(grant).then(res => grant);
 
     });
 
@@ -177,10 +192,16 @@ function updateAppGrant(id, grant) {
 
   return findAppById(id).then(app => {
 
+    if (!app) {
+      return;
+    }
+
     // Keep only the scopes allowed in the app scope.
     grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
 
-    return MongoDB.collection('grants').update({id: grant.id}, {$set: grant});
+    return MongoDB.collection('grants')
+      .update({id: grant.id}, {$set: grant})
+      .then(res => grant);
 
   });
 

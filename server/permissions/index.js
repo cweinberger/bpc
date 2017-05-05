@@ -275,7 +275,12 @@ function queryPermissionsScope(selector, scope, callback) {
         return callback(err);
       }
 
-      callback(null, result.dataScopes[scope]);
+      if (!result) {
+        callback(Boom.notFound());
+      }
+      else {
+        callback(null, result.dataScopes[scope]);
+      }
     }
   );
 }
@@ -304,11 +309,11 @@ function setPermissionsScope(selector, scope, payload, callback) {
     },
     function(err, result){
       if (err){
-        callback(err)
+        callback(Boom.internal('Database error', err));
       } else if (result === null) {
         callback(Boom.notFound());
       } else {
-        callback();
+        callback({'status': 'ok'});
       }
     }
   );

@@ -24,13 +24,13 @@
     "code": "^4.0.0",
     "gulp": "^3.9.1",
     "lab": "^12.1.0",
+    "mongo-mock": "^2.4.0",
     "rewire": "^2.5.2",
     "sinon": "^2.1.0"
   },
   "scripts": {
     "start": "node $npm_package_main",
-    "testlocal": "MONGODB_CONNECTION=mongodb://$(docker inspect -f \"{{ .NetworkSettings.IPAddress }}\" mongodb):27017/bpc-test && node node_modules/lab/bin/lab --bail -r console",
-    "test": "node node_modules/lab/bin/lab --bail -r console"
+    "test": "node node_modules/lab/bin/lab --bail --leaks -r console"
   },
   "repository": {
     "type": "git",

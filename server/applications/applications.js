@@ -92,7 +92,7 @@ function deleteAppById(id, userTicket) {
   const ops = [
     MongoDB.collection('applications').remove({ id: id }),
     MongoDB.collection('grants').remove({ app: id } ),
-    MongoDB.collection('applications').updateOne(
+    MongoDB.collection('applications').update(
       { id: userTicket.app }, { $pull: { scope: consoleScope } }
     ),
     MongoDB.collection('grants').update(
@@ -101,7 +101,7 @@ function deleteAppById(id, userTicket) {
   ];
 
   return Promise.all(ops)
-    .then(res => Promise.resolve(res[0].result.ok === 1 && res[0].result.n > 0))
+    .then(res => Promise.resolve(res[0].result.n > 0))
     .catch(err => {
       console.error(err);
       return Promise.reject(err);
@@ -123,7 +123,7 @@ function assignAdminScope(app, ticket) {
   const consoleScope = 'admin:'.concat(app.id);
   const ops = [
     // Adding the 'admin:' scope to console app, so that users can be admins.
-    MongoDB.collection('applications').updateOne(
+    MongoDB.collection('applications').update(
       { id: ticket.app }, { $addToSet: { scope: consoleScope } }
     ),
     // Adding scope 'admin:' to the grant of user that created the application.
@@ -132,11 +132,8 @@ function assignAdminScope(app, ticket) {
     )
   ];
 
-  return Promise.all(ops).then(res => {
-    return Promise.resolve(
-      res[0].result.ok === 1 && res[0].result.nModified === 1
-    );
-  }).catch(err => {
+  return Promise.all(ops).then(res => Promise.resolve(res[0].n === 1))
+      .catch(err => {
     console.error(err);
     return Promise.reject(err);
   });

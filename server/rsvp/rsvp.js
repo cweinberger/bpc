@@ -165,7 +165,7 @@ function updateUserInDB(data, callback) {
     ]
   };
 
-  MongoDB.collection('users').updateOne(query, {
+  MongoDB.collection('users').update(query, {
     $setOnInsert: {
       dataScopes: {}
     },

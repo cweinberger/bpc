@@ -11,6 +11,7 @@ const rewire = require('rewire');
 const sinon = require('sinon');
 const MongoDB = require('./../server/mongo/mongodb_client');
 
+
 // Test shortcuts.
 const describe = lab.describe;
 const it = lab.it;
@@ -18,11 +19,13 @@ const expect = Code.expect;
 const before = lab.before;
 const after = lab.after;
 
+
 // Rewire rsvp.js in order to test internal functions.
 const Rsvp = rewire('./../server/rsvp/rsvp');
 const grantIsExpired = Rsvp.__get__('grantIsExpired');
 const createNewCleanGrant = Rsvp.__get__('createNewCleanGrant');
 const createUserRsvp = Rsvp.__get__('createUserRsvp');
+
 
 // TODO: I know these tests do NOT test the actual code. These are just examples.
 describe('rsvp', () => {

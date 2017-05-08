@@ -1,28 +1,17 @@
 /* jshint node: true */
 'use strict';
 
-// Import dependencies.
-const MongoClient = require('mongodb').MongoClient;
+let MongoDB;
 
-// Configure database connection.
-const mongoDbConnection = process.env.MONGODB_CONNECTION || 'mongodb://localhost:27017/bpc';
-let db;
 
-// Establish connection and perform error handling.
-console.log('Connecting to MongoDB on ' + `${mongoDbConnection}`);
-MongoClient.connect(mongoDbConnection, (err, database) => {
-  if (err) {
-    throw err;
-  } else if (!database) {
-    throw new Error('Unable to connect to database!');
-  }
-  db = database;
-});
+if (process.env.MONGODB_MOCK) {
+  MongoDB = require('./mongodb_mocked');
+} else {
+  MongoDB = require('./mongodb_db');
+}
 
-module.exports.close = function(callback) {
-  return db.close(callback);
-};
-
-module.exports.collection = function(collectionName) {
-  return db.collection(collectionName);
+// Expose functions from the module.
+module.exports = {
+  collection: MongoDB.collection,
+  close: MongoDB.close
 };

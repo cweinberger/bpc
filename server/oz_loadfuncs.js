@@ -3,6 +3,8 @@
 
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
+const BPC_PUB_HOST = process.env.BPC_PUB_HOST;
+const BPC_PUB_PORT = process.env.BPC_PUB_PORT;
 
 
 const Boom = require('boom');
@@ -12,7 +14,6 @@ const MongoDB = require('./mongo/mongodb_client');
 
 // Here we are creating the app ticket
 function loadAppFunc(id, callback) {
-  // console.log('loadAppFunc', id);
   MongoDB.collection('applications').findOne({id:id}, {fields: {_id: 0}}, function(err, app) {
     if (err) {
       return callback(err);
@@ -27,7 +28,6 @@ function loadAppFunc(id, callback) {
 
 // Here we are creating the user ticket
 function loadGrantFunc(id, next) {
-  // console.log('loadGrantFunc', id);
   MongoDB.collection('grants').findOne({id: id}, {fields: {_id: 0}}, function(err, grant) {
     if (err) {
       return next(err);
@@ -79,6 +79,12 @@ module.exports.strategyOptions = {
     encryptionPassword: ENCRYPTIONPASSWORD,
     loadAppFunc: loadAppFunc,
     loadGrantFunc: loadGrantFunc,
+    hawk: {
+      // Optional:
+      // Used to override the host and port for validating request in case the host or port is changed by a proxy eg. behind an ELB.
+      host: BPC_PUB_HOST,
+      port: BPC_PUB_PORT
+    }
   },
   urls: {
     app: '/ticket/app',

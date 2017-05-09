@@ -11,6 +11,7 @@ const rewire = require('rewire');
 const sinon = require('sinon');
 const MongoDB = require('./../server/mongo/mongodb_client');
 
+
 // Test shortcuts.
 const describe = lab.describe;
 const it = lab.it;
@@ -18,11 +19,13 @@ const expect = Code.expect;
 const before = lab.before;
 const after = lab.after;
 
+
 // Rewire rsvp.js in order to test internal functions.
 const Rsvp = rewire('./../server/rsvp/rsvp');
 const grantIsExpired = Rsvp.__get__('grantIsExpired');
 const createNewCleanGrant = Rsvp.__get__('createNewCleanGrant');
 const createUserRsvp = Rsvp.__get__('createUserRsvp');
+
 
 // TODO: I know these tests do NOT test the actual code. These are just examples.
 describe('rsvp', () => {
@@ -30,48 +33,48 @@ describe('rsvp', () => {
   describe('grant', () => {
 
     it('is not expired when grant is undefined', done => {
-      
-      var result = grantIsExpired();      
+
+      const result = grantIsExpired();
       expect(result).to.be.false();
       done();
 
     });
 
     it('is not expired when grant is null', done => {
-      
-      var result = grantIsExpired(null);
+
+      const result = grantIsExpired(null);
       expect(result).to.be.false();
       done();
 
     });
 
     it('is not expired when grant.exp is undefined', done => {
-      
-      var result = grantIsExpired({});
+
+      const result = grantIsExpired({});
       expect(result).to.be.false();
       done();
 
     });
 
     it('is not expired when grant.exp is null', done => {
-      
-      var result = grantIsExpired({ exp: null });
+
+      const result = grantIsExpired({ exp: null });
       expect(result).to.be.false();
       done();
 
     });
 
     it('is not expired when grant.exp is now() + 20000', done => {
-      
-      var result = grantIsExpired({ exp: Oz.hawk.utils.now() + 20000 });
+
+      const result = grantIsExpired({ exp: Oz.hawk.utils.now() + 20000 });
       expect(result).to.be.false();
       done();
 
     });
 
     it('expired when grant.exp is now() - 20000', done => {
-      
-      var result = grantIsExpired({ exp: Oz.hawk.utils.now() - 20000 });
+
+      const result = grantIsExpired({ exp: Oz.hawk.utils.now() - 20000 });
       expect(result).to.be.true();
       done();
 
@@ -82,13 +85,13 @@ describe('rsvp', () => {
   describe('createNewCleanGrant()', () => {
 
     it('contains a 40-char id', done => {
-      
+
       const result = createNewCleanGrant();
-      
+
       expect(result).to.be.an.object();
       expect(result).to.contain('id');
       expect(result.id).to.have.length(40);
-      
+
       done();
     });
 
@@ -130,16 +133,16 @@ describe('rsvp', () => {
     });
 
     it('throws an error for unsupported provider', done => {
-      
+
       createUserRsvp({provider: 'Illegal'}, (err, res) => {
         expect(err).to.be.an.error();
         done();
       });
-      
+
     });
 
     it('throws an error for mismatched emails (Gigya)', done => {
-      
+
       // Stub out getAccountInfo() so we don't interact with Gigya.
       const getAccountInfoStub = sinon.stub();
       getAccountInfoStub.returns(
@@ -157,7 +160,7 @@ describe('rsvp', () => {
         done();
 
       });
-      
+
     });
 
     it('throws an error for mismatched emails (Google)', done => {
@@ -218,7 +221,7 @@ describe('rsvp', () => {
         email: 'some@email.com',
         app: 'valid-app'
       }, (err, res) => {
-        
+
         expect(err).to.be.null();
         expect(res).to.be.a.string();
         expect(res).to.have.length(334);

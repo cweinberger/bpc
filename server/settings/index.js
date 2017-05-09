@@ -106,7 +106,7 @@ module.exports.register = function (server, options, next) {
         delete request.payload.key; // Making sure key is not $set
       }
 
-      MongoDB.collection('settings').updateOne(
+      MongoDB.collection('settings').update(
         {
           name: request.params.name,
           key: request.params.key

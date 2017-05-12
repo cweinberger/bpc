@@ -244,7 +244,7 @@ module.exports.register = function (server, options, next) {
           newPassword: newPassword,
           sendEmail: false
         }).then(function(response){
-          reply();
+          reply({'status': 'ok'});
         }).catch(function(err){
           console.error(err);
           return reply(err);
@@ -331,7 +331,7 @@ module.exports.register = function (server, options, next) {
               'Add Scope to User',
               {scope: 'admin:*', byUser: ticket.user}
             );
-            reply();
+            reply({'status': 'ok'});
 
           });
       });

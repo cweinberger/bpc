@@ -105,7 +105,7 @@ module.exports.register = function (server, options, next) {
 
             Gigya.callApi('/accounts.resetPassword', parameters_two).then(function (response) {
               EventLog.logUserEvent(null, 'Password Change', {email: user.email});
-              reply();
+              reply({'status': 'ok'});
             }).catch(function (err){
               EventLog.logUserEvent(null, 'Password Change Failure', {email: user.email});
               return reply(err);

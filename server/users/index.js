@@ -21,6 +21,12 @@ const registrationValidation = Joi.object().keys({
   profile: Joi.object().optional()
 });
 
+const updateValidation = Joi.object().keys({
+  data: Joi.object().optional(),
+  email: Joi.string().email().required(),
+  profile: Joi.object().optional()
+});
+
 
 module.exports.register = function (server, options, next) {
 
@@ -401,20 +407,36 @@ module.exports.register = function (server, options, next) {
       },
       cors: stdCors,
       validate: {
-        payload: registrationValidation
+        payload: updateValidation
       }
     },
     handler: (request, reply) => {
 
       const user = request.payload;
-      Accounts.update(user).then(
-        data => reply(data.body ? data.body : data),
-        err => {
-          // Reply with the usual Internal Server Error otherwise.
-          return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+      const userQuery = {email: user.email};
+      MongoDB.collection('users').findOne(userQuery, function(err, result) {
+        if (err) {
+          reply(Boom.internal(err.message, userQuery, err.code));
         }
-      );
+        else {
+          if (!result) {
+            reply(Boom.notFound('User not found', userQuery))
+          }
+          else {
+            // Replace email with the uid.
+            user.uid = result.id;
+            delete user.email;
 
+            Accounts.update(user).then(
+              data => reply(data.body ? data.body : data),
+              err => {
+                // Reply with the usual Internal Server Error otherwise.
+                return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+              }
+            );
+          }
+        }
+      });
     }
   });
 

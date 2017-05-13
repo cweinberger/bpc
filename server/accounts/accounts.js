@@ -51,14 +51,15 @@ function update(user) {
 
   return GigyaAccounts.setAccountInfo(user).then(data => {
 
-    const _user = assembleDbUser(data.body);
-    // Update user.
-    return MongoDB.collection('users').update(_user)
-      .then(res => res.ops[0])
-      .then(res => {
-        EventLog.logUserEvent(res.id, 'User Updated');
-        return res;
-      });
+    // const _user = assembleDbUser(data.body);
+    // // Update user.
+    // return MongoDB.collection('users').update(_user)
+    //   .then(res => res.ops[0])
+    //   .then(res => {
+    //     EventLog.logUserEvent(res.id, 'User Updated');
+    //     return res;
+    //   });
+    return {status: 'ok'};
 
   }, err => {
     EventLog.logUserEvent(null, 'User update failed', {email: user.email});

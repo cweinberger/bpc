@@ -388,7 +388,35 @@ module.exports.register = function (server, options, next) {
       });
     }
   });
+  
+  server.route({
+    method: 'POST',
+    path: '/update',
+    config: {
+      auth:  {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: registrationValidation
+      }
+    },
+    handler: (request, reply) => {
 
+      const user = request.payload;
+      Accounts.update(user).then(
+        data => reply(data.body ? data.body : data),
+        err => {
+          // Reply with the usual Internal Server Error otherwise.
+          return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+        }
+      );
+
+    }
+  });
 
   next();
 

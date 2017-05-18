@@ -1,6 +1,7 @@
 /*jshint node: true */
 'use strict';
 
+const Boom = require('boom');
 const MongoDB = require('./../mongo/mongodb_client');
 
 
@@ -156,6 +157,9 @@ function createAppGrant(id, grant) {
       return;
     }
 
+    // Keep only the scopes allowed in the app scope.
+    grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
+
     // TODO: This could be moved to a "users" module. Then we'll have two lookup
     // functions (for app and user) that could neatly be done in parallel.
     return MongoDB.collection('users').findOne({id: grant.user})
@@ -165,11 +169,17 @@ function createAppGrant(id, grant) {
         return; // Resolved, but empty promise.
       }
 
-      // Keep only the scopes allowed in the app scope.
-      grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
+      // Making sure the user does not already have a grant (expired or not) to that app.
+      return MongoDB.collection('grants').find({user: grant.user, app: id}).toArray()
+        .then(result => {
 
-      // TODO: Make sure the user does not already have a grant to that app.
-      return MongoDB.collection('grants').insert(grant).then(res => grant);
+          if(result.length === 0){
+            return MongoDB.collection('grants').insert(grant).then(res => grant);
+          } else {
+            return Promise.reject(Boom.conflict());
+          }
+
+        });
 
     });
 

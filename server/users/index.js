@@ -49,10 +49,20 @@ module.exports.register = function (server, options, next) {
           entity: 'any'
         }
       },
-      cors: stdCors
+      cors: stdCors,
+      validate: {
+        query: Joi.object().keys({
+          email: Joi.string(),
+          provider: Joi.string().valid('gigya', 'google').default('gigya')
+        }).unknown(false)
+      }
     },
     handler: function(request, reply) {
-      MongoDB.collection('users').find({deletedAt: {$exists: false}})
+      var query = Object.assign(
+        {deletedAt: {$exists: false}},
+        request.query
+      );
+      MongoDB.collection('users').find(query)
         .toArray(reply);
     }
   });
@@ -394,7 +404,7 @@ module.exports.register = function (server, options, next) {
       });
     }
   });
-  
+
   server.route({
     method: 'POST',
     path: '/update',

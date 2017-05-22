@@ -92,7 +92,7 @@ describe('applications', () => {
         email: 'mkoc@berlingskemedia.dk',
         id: '117880216634946654515',
         provider: 'gigya',
-        LastLogin: new Date(),
+        lastLogin: new Date(),
         dataScopes: {},
         providerData: {}
       })

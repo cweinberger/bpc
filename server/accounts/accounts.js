@@ -112,6 +112,7 @@ function assembleDbUser(data) {
       registered: new Date(data.registedTimestamp),
     },
     lastUpdated: new Date(),
+    lastLogin: new Date(),
     lastSynced: new Date(),
     dataScopes: {}
   };

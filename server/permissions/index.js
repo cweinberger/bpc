@@ -295,7 +295,7 @@ function setPermissionsScope(selector, scope, payload, callback) {
   MongoDB.collection('users').update(
     selector,
     {
-      $currentDate: { 'Updated': { $type: "timestamp" } },
+      $currentDate: { 'lastUpdated': { $type: "date" } },
       $set: set
     },
     {

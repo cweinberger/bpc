@@ -172,7 +172,7 @@ function updateUserInDB(data, callback) {
      // We want to update id, email and provider in case we're missing one of the parameters
     $set: data,
     $currentDate: {
-      'LastLogin': { $type: "date" }
+      'lastLogin': { $type: "date" }
     }
   }, {
     upsert: true

@@ -195,14 +195,24 @@ module.exports.register = function (server, options, next) {
       state: {
         parse: true,
         failAction: 'log'
+      },
+      validate: {
+        params: {
+          provider: Joi.string().valid('gigya', 'google'),
+          email: Joi.string().email(),
+          name: Joi.string()
+        }
       }
     },
     handler: function(request, reply) {
+
+      var selector = {
+        provider: request.params.provider,
+        email: new RegExp(`^${request.params.email}`, 'i') // Making the email case-insensitive
+      };
+
       queryPermissionsScope(
-        {
-          provider: request.params.provider,
-          email: request.params.email
-        },
+        selector,
         request.params.name,
         reply
       );
@@ -233,16 +243,23 @@ module.exports.register = function (server, options, next) {
         failAction: 'log'
       },
       validate: {
+        params: {
+          provider: Joi.string().valid('gigya', 'google'),
+          email: Joi.string().email(),
+          name: Joi.string()
+        },
         payload: Joi.object()
       }
     },
     handler: function(request, reply) {
 
+      var selector = {
+        provider: request.params.provider,
+        email: new RegExp(`^${request.params.email}`, 'i') // Making the email case-insensitive
+      };
+
       setPermissionsScope(
-        {
-          provider: request.params.provider,
-          email: request.params.email
-        },
+        selector,
         request.params.name,
         request.payload,
         reply

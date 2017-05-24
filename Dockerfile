@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y wget
 
 # Using latest LTS release.
 # Latest LTS v6.10.0 is not supported by our jenkins
-ENV NODE_VERSION v6.9.1
+ENV NODE_VERSION v6.10.3
 
 # Downloading and installing Node.
 RUN wget -O - https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.gz \

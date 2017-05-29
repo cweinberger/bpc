@@ -10,9 +10,9 @@ const Gigya = require('./../gigya/gigya_client');
 const EventLog = require('./../audit/eventlog');
 
 // We're getting the policies to make sure the security check is not set
-Gigya.callApi('/accounts.getPolicies').then(function(response){
+Gigya.callApi('/accounts.getPolicies').then(function(response) {
 
-  if(response.body.passwordReset.requireSecurityCheck){
+  if (response.body.passwordReset.requireSecurityCheck) {
     console.warn('Gigya site requires security check');
   }
 });

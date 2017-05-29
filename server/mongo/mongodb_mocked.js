@@ -6,7 +6,7 @@ const MockedDB = require('mongo-mock');
 const MongoClient = MockedDB.MongoClient;
 
 
-const mongoDbConnection = process.env.MONGODB_CONNECTION || 'mongodb://localhost:27017/bpc';
+const mongoDbConnection = 'mongodb://mockingbird:27017/hasflown';
 let db;
 
 

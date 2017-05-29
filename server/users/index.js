@@ -12,7 +12,7 @@ const Accounts = require('./../accounts/accounts');
 const GigyaAccounts = require('./../gigya/gigya_accounts');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const EventLog = require('./../audit/eventlog');
-
+const exposeError = GigyaUtils.exposeError;
 
 const registrationValidation = Joi.object().keys({
   data: Joi.object().optional(),
@@ -83,7 +83,7 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
       GigyaAccounts.getAccountSchema().then(
         res => reply(res.body),
-        err => reply(GigyaUtils.errorToResponse(err))
+        err => exposeError(reply, err)
       );
     }
   });
@@ -104,7 +104,7 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
       GigyaAccounts.setAccountSchema(request.payload).then(
         res => reply(res.body),
-        err => reply(GigyaUtils.errorToResponse(err))
+        err => exposeError(reply, err)
       );
     }
   });
@@ -131,7 +131,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: (request, reply) => {
       return GigyaAccounts.searchAccount(request.query.query)
-        .then(res => reply(res.body), err => reply(GigyaUtils.errorToResponse(err)));
+        .then(res => reply(res.body), err => exposeError(reply, err));
     }
   });
 
@@ -156,7 +156,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: (request, reply) => {
       return GigyaAccounts.isEmailAvailable(request.query.email)
-        .then(res => reply(res.body), err => reply(GigyaUtils.errorToResponse(err)));
+        .then(res => reply(res.body), err => exposeError(reply, err));
     }
   });
 
@@ -182,7 +182,7 @@ module.exports.register = function (server, options, next) {
             return reply(Boom.notFound(`[${err.code}] ${err.message}`));
           } else {
             // Everything else is Internal Server Error.
-            return reply(GigyaUtils.errorToResponse(err));
+            return exposeError(reply, err);
           }
         }
       );
@@ -219,7 +219,7 @@ module.exports.register = function (server, options, next) {
             ));
           } else {
             // Reply with the usual Internal Server Error otherwise.
-            return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+            return exposeError(reply, err);
           }
         }
       );
@@ -253,21 +253,24 @@ module.exports.register = function (server, options, next) {
       GigyaAccounts.resetPassword({
         loginID: request.payload.email,
         sendEmail: false
-      }).then(function (response){
+      }).then(function (response) {
 
         GigyaAccounts.resetPassword({
           passwordResetToken: response.body.passwordResetToken,
           newPassword: newPassword,
           sendEmail: false
-        }).then(function(response){
+        }).then(function(response) {
           reply({'status': 'ok'});
         }).catch(function(err){
           console.error(err);
-          return reply(err);
+          return exposeError(reply, err);
         });
-      }).catch(function(err){
+
+      }).catch(function(err) {
+
         console.error(err);
-        return reply(err);
+        return exposeError(reply, err);
+
       });
     }
   });
@@ -368,7 +371,12 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+
+        if (err) {
+          console.error(err);
+          return reply(GigyaUtils.errorToResponse(err));
+        }
 
         if (ticket.user === request.params.id){
           return reply(Boom.badRequest('You cannot demote yourself'));

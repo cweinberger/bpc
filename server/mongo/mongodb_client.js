@@ -3,8 +3,7 @@
 
 let MongoDB;
 
-
-if (process.env.MONGODB_MOCK) {
+if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
   MongoDB = require('./mongodb_mocked');
 } else {
   MongoDB = require('./mongodb_db');

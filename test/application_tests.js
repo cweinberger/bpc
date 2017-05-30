@@ -82,7 +82,7 @@ describe('applications', () => {
       }),
       // Give the test cases a grant to use.
       MongoDB.collection('grants').insert({
-        id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
+        id: 'jhfgs294723ijsdhfsdfhskjh329423798animal',
         app: 'delete-me-app',
         user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
         scope: []

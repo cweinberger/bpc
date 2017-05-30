@@ -205,11 +205,8 @@ dev-dependencies installed (by running `npm install` without the `--production`
 flag).
 
 The test suite will run without a MongoDB database, and use a memory-based
-mockup database instead, if you have this environment variable set;
-
-```
-MONGODB_MOCK=true
-```
+mockup database instead if a lab test script is exported by the modules parent.
+(This is a standard usage of `lab`. See [lab usage](https://github.com/hapijs/lab)).
 
 Once these minor prerequisites are in place, simply run this command from the
 command line, while in the BPC root directory;

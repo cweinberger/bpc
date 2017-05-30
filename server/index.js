@@ -51,12 +51,16 @@ server.register(Scarecrow, function(err) {
 });
 
 
-server.start((err) => {
-  if (err) {
-    throw err;
-  }
-  console.log(`Server running at: ${server.info.uri}`);
-});
+if ((module.parent && module.parent.exports.lab !== undefined) || process.env.NODE_ENV === 'test') {
+  // Do nothing
+} else {
+  server.start((err) => {
+    if (err) {
+      throw err;
+    }
+    console.log(`Server running at: ${server.info.uri}`);
+  });
+}
 
 
 function cb(err) {

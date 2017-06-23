@@ -23,18 +23,18 @@ const after = lab.after;
 // Here we go...
 describe('permissions - functional tests', () => {
   const apps = {
-      social: {
-          id: 'social',
-          scope: ['a', 'b', 'c'],
-          key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
-          algorithm: 'sha256'
-      },
-      network: {
-          id: 'network',
-          scope: ['b', 'x'],
-          key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
-          algorithm: 'sha256'
-      }
+    social: {
+      id: 'social',
+      scope: ['test'],
+      key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
+      algorithm: 'sha256'
+    },
+    network: {
+      id: 'network',
+      scope: ['b', 'x'],
+      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
+      algorithm: 'sha256'
+    }
   };
 
   const users = {
@@ -94,41 +94,25 @@ describe('permissions - functional tests', () => {
 
   describe('getting user permissions with an app ticket', () => {
 
-    var ticket;
+    var appTicket;
 
     // Getting the appTicket
     before((done) => {
-      const req = {
-        method: 'POST',
-        url: '/ticket/app',
-        headers: {
-          host: 'test.com',
-          authorization: Hawk.client.header('http://test.com/ticket/app', 'POST', apps.social).field
-        }
-      };
 
-      bpc.inject(req, (response) => {
-        console.log('ticket response', response.result);
+      bpc_request({ method: 'POST', url: '/ticket/app' }, {credentials: apps.social}, (response) => {
         expect(response.statusCode).to.equal(200);
-        ticket = 'TODO';
+        appTicket = {credentials: JSON.parse(response.payload), app: apps.social.id};
         done();
       });
     });
 
 
     it('getting first user test permissions', (done) => {
-      const req = {
-          method: 'POST',
-          url: '/permissions/' + users.first.id + '/test',
-          headers: {
-            host: 'example.com',
-            authorization: Hawk.client.header('http://example.com/ticket/app', 'POST', apps.social).field
-          }
-      };
 
-      bpc.inject(req, (response) => {
-        // console.log('response', response);
-        expect(response.payload.test_paywall).to.true();
+      bpc_request({ method: 'GET', url: '/permissions/' + users.first.id + '/test'}, appTicket, (response) => {
+        expect(response.statusCode).to.equal(200);
+        var payload = JSON.parse(response.payload);
+        expect(payload.test_paywall).to.true();
         done();
       });
     });
@@ -154,3 +138,24 @@ describe('permissions - functional tests', () => {
   // });
 
 });
+
+
+
+function bpc_request (options, ticket, callback) {
+
+  const hawkHeader = Hawk.client.header('http://test.com'.concat(options.url), options.method, ticket);
+  if (!hawkHeader.field){
+    callback(hawkHeader);
+  }
+
+  const req = {
+    method: options.method,
+    url: options.url,
+    headers: {
+      host: 'test.com',
+      authorization: hawkHeader.field
+    }
+  };
+
+  bpc.inject(req, callback);
+}

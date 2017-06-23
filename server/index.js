@@ -52,8 +52,6 @@ server.register(Scarecrow, function(err) {
 if ((module.parent && module.parent.exports.lab !== undefined) || process.env.NODE_ENV === 'test') {
   // Do not start the server.
   // We are running tests.
-  TODO ENCRYPTIONPASSWORD needs to be set
-  OzLoadFuncs.strategyOptions TODO
 } else {
 
   // We don't need the logging output while running tests

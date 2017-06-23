@@ -30,7 +30,7 @@
   },
   "scripts": {
     "start": "node $npm_package_main",
-    "test": "node node_modules/lab/bin/lab --bail --leaks -r console"
+    "test": "node node_modules/lab/bin/lab --bail --leaks --timeout 0 -r console"
   },
   "repository": {
     "type": "git",

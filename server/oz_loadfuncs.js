@@ -1,7 +1,5 @@
 /*jshint node: true */
 'use strict';
-
-
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 const BPC_PUB_HOST = process.env.BPC_PUB_HOST;
 const BPC_PUB_PORT = process.env.BPC_PUB_PORT;

@@ -7,11 +7,10 @@ const Lab = require('lab');
 const lab = exports.lab = Lab.script();
 const rewire = require('rewire');
 const sinon = require('sinon');
-const Oz = require('oz');
-const MongoDB = require('./../server/mongo/mongodb_client');
+const Hawk = require('hawk');
+const MongoDB = require('./../server/mongo/mongodb_mocked');
 const bpc = require('./../server');
 // const Permissions = require('./../server/permissions');
-const crypto = require('crypto');
 
 // Test shortcuts.
 const describe = lab.describe;
@@ -22,8 +21,7 @@ const after = lab.after;
 
 
 // Here we go...
-describe('permissions', () => {
-
+describe('permissions - functional tests', () => {
   const apps = {
       social: {
           id: 'social',
@@ -39,20 +37,38 @@ describe('permissions', () => {
       }
   };
 
-  const encryptionPassword = 'a_password_that_is_not_too_short_and_also_not_very_random_but_is_good_enough';
+  const users = {
+    first: {
+      email: 'UserWithCapitalLetters@berlingskemedia.dk',
+      id: '3218736128736123215732',
+      provider: 'gigya',
+      lastLogin: new Date(),
+      dataScopes: {
+        'test': {
+          test_paywall: true
+        }
+      },
+      providerData: {}
+    }
+  }
 
   let appTicket = null;
 
+
   before(done => {
-
-    // Need to wait a sec for the database/mongo-mock to start up...
-    setTimeout(done, 1000);
-
+    bpc.start(function(){
+      done();
+    });
   });
 
 
   before(done => {
+    // Need to wait a sec for the database/mongo-mock to start up...
+    setTimeout(done, 1000);
+  });
 
+
+  before(done => {
     // Clear the database.
     Promise.all([
       MongoDB.collection('applications').remove({}),
@@ -65,55 +81,57 @@ describe('permissions', () => {
   });
 
   before(done => {
-
     Promise.all([
       // Give the test cases a user to use.
-      MongoDB.collection('users').insert({
-        email: 'UserWithCapitalLetters@berlingskemedia.dk',
-        id: '3218736128736123215732',
-        provider: 'gigya',
-        lastLogin: new Date(),
-        dataScopes: {
-          'test': {
-            test_paywall: true
-          }
-        },
-        providerData: {}
-      })
+      MongoDB.collection('applications').insert(apps.social),
+      MongoDB.collection('applications').insert(apps.network),
+      MongoDB.collection('users').insert(users.first)
     ]).then(res => {
       done();
     })
   });
 
 
-  // Getting the appTicket
-  before((done) => {
+  describe('getting user permissions with an app ticket', () => {
 
-    const req = {
+    var ticket;
+
+    // Getting the appTicket
+    before((done) => {
+      const req = {
         method: 'POST',
         url: '/ticket/app',
         headers: {
+          host: 'test.com',
+          authorization: Hawk.client.header('http://test.com/ticket/app', 'POST', apps.social).field
+        }
+      };
+
+      bpc.inject(req, (response) => {
+        console.log('ticket response', response.result);
+        expect(response.statusCode).to.equal(200);
+        ticket = 'TODO';
+        done();
+      });
+    });
+
+
+    it('getting first user test permissions', (done) => {
+      const req = {
+          method: 'POST',
+          url: '/permissions/' + users.first.id + '/test',
+          headers: {
             host: 'example.com',
-            authorization: Oz.client.header('http://example.com/ticket/app', 'POST', apps.social).field
-        }
-    };
+            authorization: Hawk.client.header('http://example.com/ticket/app', 'POST', apps.social).field
+          }
+      };
 
-    const options = {
-        encryptionPassword,
-        loadAppFunc: function (id, callback) {
-          callback(null, apps[id]);
-        }
-    };
-
-    console.log('bpc', bpc);
-    done();
-    // TODO: Use bpc to get an appTicket. Below is an example from an Oz-test
-    // Oz.endpoints.app(req, null, options, (err, ticket) => {
-    //   console.log('TICKET', ticket);
-    //     expect(err).to.not.exist();
-    //     appTicket = ticket;
-    //     done();
-    // });
+      bpc.inject(req, (response) => {
+        // console.log('response', response);
+        expect(response.payload.test_paywall).to.true();
+        done();
+      });
+    });
   });
 
   //
@@ -126,21 +144,13 @@ describe('permissions', () => {
   //         url: '/permissions/gigya/userwithcapitalletters@berlingskemedia.dk/test',
   //         headers: {
   //             host: 'example.com',
-  //             authorization: Oz.client.header('http://example.com/oz/reissue', 'POST', appTicket).field
+  //             authorization: Hawk.client.header('http://example.com/oz/reissue', 'POST', appTicket).field
   //         }
   //     };
   //
-  //     Permissions.findAll().then(apps => {
-  //
-  //       expect(apps).to.be.an.array();
-  //       expect(apps).not.to.be.empty();
-  //       done();
-  //
-  //     });
   //
   //   });
   //
   // });
-
 
 });

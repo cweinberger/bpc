@@ -176,11 +176,11 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/{provider}/{email}/{name}',
+    path: '/{provider}/{email}/{scope}',
     config: {
       auth: {
         access: {
-          scope: ['{params.name}', 'admin'],
+          scope: ['{params.scope}', 'admin'],
           entity: 'app'
         }
       },
@@ -200,7 +200,7 @@ module.exports.register = function (server, options, next) {
         params: {
           provider: Joi.string().valid('gigya', 'google'),
           email: Joi.string().email(),
-          name: Joi.string()
+          scope: Joi.string()
         }
       }
     },
@@ -208,12 +208,12 @@ module.exports.register = function (server, options, next) {
 
       var selector = {
         provider: request.params.provider,
-        email: new RegExp(`^${request.params.email}`, 'i') // Making the email case-insensitive
+        email: request.params.email.toLowerCase()
       };
 
       queryPermissionsScope(
         selector,
-        request.params.name,
+        request.params.scope,
         reply
       );
     }
@@ -222,11 +222,11 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/{provider}/{email}/{name}',
+    path: '/{provider}/{email}/{scope}',
     config: {
       auth: {
         access: {
-          scope: ['{params.name}', 'admin'],
+          scope: ['{params.scope}', 'admin'],
           entity: 'app' // <-- Important. Users must not be allowed to set permissions
         }
       },
@@ -246,7 +246,7 @@ module.exports.register = function (server, options, next) {
         params: {
           provider: Joi.string().valid('gigya', 'google'),
           email: Joi.string().email(),
-          name: Joi.string()
+          scope: Joi.string()
         },
         payload: Joi.object()
       }
@@ -255,12 +255,12 @@ module.exports.register = function (server, options, next) {
 
       var selector = {
         provider: request.params.provider,
-        email: new RegExp(`^${request.params.email}`, 'i') // Making the email case-insensitive
+        email: request.params.email.toLowerCase()
       };
 
       setPermissionsScope(
         selector,
-        request.params.name,
+        request.params.scope,
         request.payload,
         reply
       );

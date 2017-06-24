@@ -209,6 +209,9 @@ module.exports.register = function (server, options, next) {
     handler: (request, reply) => {
 
       const user = request.payload;
+      // Lowercase the email.
+      user.email = user.email.toLowerCase();
+
       Accounts.register(user).then(
         data => reply(data.body ? data.body : data),
         err => {

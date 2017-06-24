@@ -44,7 +44,7 @@ function createGigyaRsvp(data, callback) {
       return callback(Boom.badRequest());
     }
 
-    updateUserInDB({ id: data.UID, email: result.body.profile.email, provider: data.provider });
+    updateUserInDB({ id: data.UID, email: result.body.profile.email.toLowerCase(), provider: data.provider });
 
     findGrant({ user: data.UID, app: data.app, provider: data.provider }, callback);
 

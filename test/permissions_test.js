@@ -39,7 +39,7 @@ describe('permissions - functional tests', () => {
 
   const users = {
     first: {
-      email: 'UserWithCapitalLetters@berlingskemedia.dk',
+      email: 'user@berlingskemedia.dk',
       id: '3218736128736123215732',
       provider: 'gigya',
       lastLogin: new Date(),
@@ -120,8 +120,8 @@ describe('permissions - functional tests', () => {
       });
     });
 
-    it('getting first user bt permissions by provider and lowercase email', (done) => {
-      bpc_request({ method: 'GET', url: '/permissions/gigya/userwithcapitalletters@berlingskemedia.dk/bt'}, appTicket, (response) => {
+    it('getting first user bt permissions by provider and uppercase email', (done) => {
+      bpc_request({ method: 'GET', url: '/permissions/gigya/USER@berlingskemedia.dk/bt'}, appTicket, (response) => {
         expect(response.statusCode).to.equal(200);
         var payload = JSON.parse(response.payload);
         expect(payload.bt_subscription_tier).to.equal('free');

@@ -23,15 +23,15 @@ const after = lab.after;
 // Here we go...
 describe('permissions - functional tests', () => {
   const apps = {
-    social: {
-      id: 'social',
-      scope: ['test'],
+    bt: {
+      id: 'bt',
+      scope: ['bt'],
       key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
       algorithm: 'sha256'
     },
-    network: {
-      id: 'network',
-      scope: ['b', 'x'],
+    berlingske: {
+      id: 'berlingske',
+      scope: ['berlingske'],
       key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
       algorithm: 'sha256'
     }
@@ -44,8 +44,13 @@ describe('permissions - functional tests', () => {
       provider: 'gigya',
       lastLogin: new Date(),
       dataScopes: {
-        'test': {
-          test_paywall: true
+        'bt': {
+          bt_paywall: true,
+          bt_subscription_tier: 'free'
+        },
+        'berlingske': {
+          berlingske_paywall: true,
+          berlingske_subscription_tier: 'premium'
         }
       },
       providerData: {}
@@ -83,8 +88,8 @@ describe('permissions - functional tests', () => {
   before(done => {
     Promise.all([
       // Give the test cases a user to use.
-      MongoDB.collection('applications').insert(apps.social),
-      MongoDB.collection('applications').insert(apps.network),
+      MongoDB.collection('applications').insert(apps.bt),
+      MongoDB.collection('applications').insert(apps.berlingske),
       MongoDB.collection('users').insert(users.first)
     ]).then(res => {
       done();
@@ -99,20 +104,35 @@ describe('permissions - functional tests', () => {
     // Getting the appTicket
     before((done) => {
 
-      bpc_request({ method: 'POST', url: '/ticket/app' }, {credentials: apps.social}, (response) => {
+      bpc_request({ method: 'POST', url: '/ticket/app' }, {credentials: apps.bt}, (response) => {
         expect(response.statusCode).to.equal(200);
-        appTicket = {credentials: JSON.parse(response.payload), app: apps.social.id};
+        appTicket = {credentials: JSON.parse(response.payload), app: apps.bt.id};
         done();
       });
     });
 
 
-    it('getting first user test permissions', (done) => {
-
-      bpc_request({ method: 'GET', url: '/permissions/' + users.first.id + '/test'}, appTicket, (response) => {
+    it('getting first user bt permissions', (done) => {
+      bpc_request({ method: 'GET', url: '/permissions/' + users.first.id + '/bt'}, appTicket, (response) => {
         expect(response.statusCode).to.equal(200);
         var payload = JSON.parse(response.payload);
-        expect(payload.test_paywall).to.true();
+        expect(payload.bt_paywall).to.true();
+        done();
+      });
+    });
+
+    it('getting first user bt permissions by provider and lowercase email', (done) => {
+      bpc_request({ method: 'GET', url: '/permissions/gigya/userwithcapitalletters@berlingskemedia.dk/bt'}, appTicket, (response) => {
+        expect(response.statusCode).to.equal(200);
+        var payload = JSON.parse(response.payload);
+        expect(payload.bt_subscription_tier).to.equal('free');
+        done();
+      });
+    });
+
+    it('denied first user berlingske permissions', (done) => {
+      bpc_request({ method: 'GET', url: '/permissions/' + users.first.id + '/berlingske'}, appTicket, (response) => {
+        expect(response.statusCode).to.equal(403);
         done();
       });
     });

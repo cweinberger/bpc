@@ -103,7 +103,6 @@ describe('permissions - functional tests', () => {
 
     // Getting the appTicket
     before((done) => {
-
       bpc_request({ method: 'POST', url: '/ticket/app' }, {credentials: apps.bt}, (response) => {
         expect(response.statusCode).to.equal(200);
         appTicket = {credentials: JSON.parse(response.payload), app: apps.bt.id};
@@ -137,25 +136,6 @@ describe('permissions - functional tests', () => {
       });
     });
   });
-
-  //
-  // describe('searchByEmail()', () => {
-  //
-  //   it('returns at least one app', done => {
-  //
-  //     const req = {
-  //         method: 'POST',
-  //         url: '/permissions/gigya/userwithcapitalletters@berlingskemedia.dk/test',
-  //         headers: {
-  //             host: 'example.com',
-  //             authorization: Hawk.client.header('http://example.com/oz/reissue', 'POST', appTicket).field
-  //         }
-  //     };
-  //
-  //
-  //   });
-  //
-  // });
 
 });
 

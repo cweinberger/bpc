@@ -7,11 +7,10 @@ const Lab = require('lab');
 const lab = exports.lab = Lab.script();
 const rewire = require('rewire');
 const sinon = require('sinon');
-const Oz = require('oz');
-const MongoDB = require('./../server/mongo/mongodb_client');
+const Hawk = require('hawk');
+const MongoDB = require('./../server/mongo/mongodb_mocked');
 const bpc = require('./../server');
 // const Permissions = require('./../server/permissions');
-const crypto = require('crypto');
 
 // Test shortcuts.
 const describe = lab.describe;
@@ -22,37 +21,59 @@ const after = lab.after;
 
 
 // Here we go...
-describe('permissions', () => {
-
+describe('permissions - functional tests', () => {
   const apps = {
-      social: {
-          id: 'social',
-          scope: ['a', 'b', 'c'],
-          key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
-          algorithm: 'sha256'
-      },
-      network: {
-          id: 'network',
-          scope: ['b', 'x'],
-          key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
-          algorithm: 'sha256'
-      }
+    bt: {
+      id: 'bt',
+      scope: ['bt'],
+      key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
+      algorithm: 'sha256'
+    },
+    berlingske: {
+      id: 'berlingske',
+      scope: ['berlingske'],
+      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
+      algorithm: 'sha256'
+    }
   };
 
-  const encryptionPassword = 'a_password_that_is_not_too_short_and_also_not_very_random_but_is_good_enough';
+  const users = {
+    first: {
+      email: 'UserWithCapitalLetters@berlingskemedia.dk',
+      id: '3218736128736123215732',
+      provider: 'gigya',
+      lastLogin: new Date(),
+      dataScopes: {
+        'bt': {
+          bt_paywall: true,
+          bt_subscription_tier: 'free'
+        },
+        'berlingske': {
+          berlingske_paywall: true,
+          berlingske_subscription_tier: 'premium'
+        }
+      },
+      providerData: {}
+    }
+  }
 
   let appTicket = null;
 
+
   before(done => {
-
-    // Need to wait a sec for the database/mongo-mock to start up...
-    setTimeout(done, 1000);
-
+    bpc.start(function(){
+      done();
+    });
   });
 
 
   before(done => {
+    // Need to wait a sec for the database/mongo-mock to start up...
+    setTimeout(done, 1000);
+  });
 
+
+  before(done => {
     // Clear the database.
     Promise.all([
       MongoDB.collection('applications').remove({}),
@@ -65,82 +86,76 @@ describe('permissions', () => {
   });
 
   before(done => {
-
     Promise.all([
       // Give the test cases a user to use.
-      MongoDB.collection('users').insert({
-        email: 'UserWithCapitalLetters@berlingskemedia.dk',
-        id: '3218736128736123215732',
-        provider: 'gigya',
-        lastLogin: new Date(),
-        dataScopes: {
-          'test': {
-            test_paywall: true
-          }
-        },
-        providerData: {}
-      })
+      MongoDB.collection('applications').insert(apps.bt),
+      MongoDB.collection('applications').insert(apps.berlingske),
+      MongoDB.collection('users').insert(users.first)
     ]).then(res => {
       done();
     })
   });
 
 
-  // Getting the appTicket
-  before((done) => {
+  describe('getting user permissions with an app ticket', () => {
 
-    const req = {
-        method: 'POST',
-        url: '/ticket/app',
-        headers: {
-            host: 'example.com',
-            authorization: Oz.client.header('http://example.com/ticket/app', 'POST', apps.social).field
-        }
-    };
+    var appTicket;
 
-    const options = {
-        encryptionPassword,
-        loadAppFunc: function (id, callback) {
-          callback(null, apps[id]);
-        }
-    };
+    // Getting the appTicket
+    before((done) => {
+      bpc_request({ method: 'POST', url: '/ticket/app' }, {credentials: apps.bt}, (response) => {
+        expect(response.statusCode).to.equal(200);
+        appTicket = {credentials: JSON.parse(response.payload), app: apps.bt.id};
+        done();
+      });
+    });
 
-    console.log('bpc', bpc);
-    done();
-    // TODO: Use bpc to get an appTicket. Below is an example from an Oz-test
-    // Oz.endpoints.app(req, null, options, (err, ticket) => {
-    //   console.log('TICKET', ticket);
-    //     expect(err).to.not.exist();
-    //     appTicket = ticket;
-    //     done();
-    // });
+
+    it('getting first user bt permissions', (done) => {
+      bpc_request({ method: 'GET', url: '/permissions/' + users.first.id + '/bt'}, appTicket, (response) => {
+        expect(response.statusCode).to.equal(200);
+        var payload = JSON.parse(response.payload);
+        expect(payload.bt_paywall).to.true();
+        done();
+      });
+    });
+
+    it('getting first user bt permissions by provider and lowercase email', (done) => {
+      bpc_request({ method: 'GET', url: '/permissions/gigya/userwithcapitalletters@berlingskemedia.dk/bt'}, appTicket, (response) => {
+        expect(response.statusCode).to.equal(200);
+        var payload = JSON.parse(response.payload);
+        expect(payload.bt_subscription_tier).to.equal('free');
+        done();
+      });
+    });
+
+    it('denied first user berlingske permissions', (done) => {
+      bpc_request({ method: 'GET', url: '/permissions/' + users.first.id + '/berlingske'}, appTicket, (response) => {
+        expect(response.statusCode).to.equal(403);
+        done();
+      });
+    });
   });
 
-  //
-  // describe('searchByEmail()', () => {
-  //
-  //   it('returns at least one app', done => {
-  //
-  //     const req = {
-  //         method: 'POST',
-  //         url: '/permissions/gigya/userwithcapitalletters@berlingskemedia.dk/test',
-  //         headers: {
-  //             host: 'example.com',
-  //             authorization: Oz.client.header('http://example.com/oz/reissue', 'POST', appTicket).field
-  //         }
-  //     };
-  //
-  //     Permissions.findAll().then(apps => {
-  //
-  //       expect(apps).to.be.an.array();
-  //       expect(apps).not.to.be.empty();
-  //       done();
-  //
-  //     });
-  //
-  //   });
-  //
-  // });
-
-
 });
+
+
+
+function bpc_request (options, ticket, callback) {
+
+  const hawkHeader = Hawk.client.header('http://test.com'.concat(options.url), options.method, ticket);
+  if (!hawkHeader.field){
+    callback(hawkHeader);
+  }
+
+  const req = {
+    method: options.method,
+    url: options.url,
+    headers: {
+      host: 'test.com',
+      authorization: hawkHeader.field
+    }
+  };
+
+  bpc.inject(req, callback);
+}

@@ -2,18 +2,6 @@ const MongoDB = require('./../server/mongo/mongodb_mocked');
 const Hawk = require('hawk');
 const bpc = require('./../server');
 
-module.exports.initate = function (done) {
-  // Need to wait a sec for the database/mongo-mock to start up...
-  setTimeout(function() {
-    clearMongoMock(function(){
-      fillMongoMock(function(){
-        bpc.start(function(){
-          done();
-        });
-      });
-    });
-  }, 1000);
-}
 
 module.exports.request = function (options, ticket, callback) {
 
@@ -32,7 +20,7 @@ module.exports.request = function (options, ticket, callback) {
   };
 
   bpc.inject(req, callback);
-}
+};
 
 
 module.exports.apps = {
@@ -51,7 +39,7 @@ module.exports.apps = {
 };
 
 module.exports.users = {
-  first: {
+  simple_first_user: {
     email: 'user@berlingskemedia.dk',
     id: '3218736128736123215732',
     provider: 'gigya',
@@ -70,6 +58,21 @@ module.exports.users = {
   }
 };
 
+
+module.exports.initate = function (done) {
+  // Need to wait a sec for the database/mongo-mock to start up...
+  setTimeout(function() {
+    clearMongoMock(function(){
+      fillMongoMock(function(){
+        bpc.start(function(){
+          done();
+        });
+      });
+    });
+  }, 1000);
+};
+
+
 function clearMongoMock (done){
   Promise.all([
     MongoDB.collection('applications').remove({}),
@@ -79,6 +82,7 @@ function clearMongoMock (done){
     done();
   });
 }
+
 
 function fillMongoMock (done){
   Promise.all([

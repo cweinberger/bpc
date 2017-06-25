@@ -31,7 +31,7 @@ describe('users - functional tests', () => {
 
     var appTicket;
     var bt = bpc_helper.apps.bt;
-    var first = bpc_helper.users.first;
+    var first = bpc_helper.users.simple_first_user;
 
     // Getting the appTicket
     before((done) => {

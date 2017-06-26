@@ -59,10 +59,12 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      var query = Object.assign(
-        {deletedAt: {$exists: false}},
-        request.query
-      );
+      var query = {
+        deletedAt: {$exists: false},
+        email: request.query.email.toLowerCase(),
+        provider: request.query.provider
+      };
+
       MongoDB.collection('users').find(query)
         .toArray(reply);
     }

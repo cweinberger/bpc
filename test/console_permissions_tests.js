@@ -67,6 +67,12 @@ describe('console - functional tests:', () => {
         done();
       });
     });
+
+
+    it('demote superadmin', (done) => {
+      // TODO
+      done();
+    });
   });
 
 
@@ -96,5 +102,12 @@ describe('console - functional tests:', () => {
         done();
       });
     });
+
+
+    it('promote superadmin', (done) => {
+      // TODO
+      done();
+    });
   });
+
 });

@@ -197,6 +197,13 @@ db.grants.insert({
 })
 ```
 
+### Indexed
+
+The following indexes have been created manually:
+
+```
+db.users.createIndex( { email: 1, provider: 1 })
+```
 
 # Testing
 

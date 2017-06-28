@@ -7,6 +7,7 @@ const Lab = require('lab');
 const lab = exports.lab = Lab.script();
 const rewire = require('rewire');
 const sinon = require('sinon');
+const test_data = require('./test_data');
 const bpc_helper = require('./bpc_helper');
 // const Permissions = require('./../server/permissions');
 
@@ -20,7 +21,7 @@ const after = lab.after;
 
 describe('console - functional tests:', () => {
 
-  var console_app = bpc_helper.apps.console;
+  var console_app = test_data.applications.console;
   var console_app_ticket;
 
   before(done => {
@@ -42,8 +43,8 @@ describe('console - functional tests:', () => {
 
   describe('superadmin', () => {
 
-    var console_superadmin_google_user = bpc_helper.users.console_superadmin_google_user;
-    var console_superadmin_google_user__console_grant = bpc_helper.grants.console_superadmin_google_user__console_grant;
+    var console_superadmin_google_user = test_data.users.console_superadmin_google_user;
+    var console_superadmin_google_user__console_grant = test_data.grants.console_superadmin_google_user__console_grant;
     var console_superadmin_google_user__console_rsvp;
     var console_superadmin_google_user__console_ticket;
 
@@ -71,8 +72,8 @@ describe('console - functional tests:', () => {
 
 
   describe('non superadmin', () => {
-    var console_google_user = bpc_helper.users.console_google_user;
-    var console_google_user__console_grant = bpc_helper.grants.console_google_user__console_grant;
+    var console_google_user = test_data.users.console_google_user;
+    var console_google_user__console_grant = test_data.grants.console_google_user__console_grant;
     var console_google_user_rsvp;
     var console_google_user_ticket;
 

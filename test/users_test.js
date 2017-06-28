@@ -7,6 +7,7 @@ const Lab = require('lab');
 const lab = exports.lab = Lab.script();
 const rewire = require('rewire');
 const sinon = require('sinon');
+const test_data = require('./test_data');
 const bpc_helper = require('./bpc_helper');
 // const Permissions = require('./../server/permissions');
 
@@ -30,8 +31,8 @@ describe('users - functional tests', () => {
   describe('getting user with an app ticket', () => {
 
     var appTicket;
-    var bt = bpc_helper.apps.bt;
-    var first = bpc_helper.users.simple_first_user;
+    var bt = test_data.applications.bt;
+    var first = test_data.users.simple_first_user;
 
     // Getting the appTicket
     before((done) => {

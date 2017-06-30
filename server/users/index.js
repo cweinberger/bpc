@@ -447,17 +447,23 @@ module.exports.register = function (server, options, next) {
             reply(Boom.notFound('User not found', userQuery))
           }
           else {
-            // Replace email with the uid.
-            user.uid = result.id;
-            delete user.email;
 
-            Accounts.update(user).then(
-              data => reply(data.body ? data.body : data),
-              err => {
-                // Reply with the usual Internal Server Error otherwise.
-                return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
-              }
-            );
+            Accounts.updateUserId(result)
+              .catch((err) => {
+                return reply(Boom.notFound("User " + user.email + " not found", err));
+              })
+              .then((id) => {
+                delete user.email;
+                user.uid = id;
+
+                Accounts.update(user).then(
+                  data => reply(data.body ? data.body : data),
+                  err => {
+                    // Reply with the usual Internal Server Error otherwise.
+                    return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+                  }
+                );
+              });
           }
         }
       });

@@ -448,7 +448,7 @@ module.exports.register = function (server, options, next) {
           }
           else {
 
-            Accounts.updateUserId(user)
+            Accounts.updateUserId(result)
               .catch((err) => {
                 return reply(Boom.notFound("User " + user.email + " not found", err));
               })

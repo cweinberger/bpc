@@ -11,7 +11,8 @@ const EventLog = require('./../audit/eventlog');
 module.exports = {
   register,
   deleteOne,
-  update
+  update,
+  updateUserId
 };
 
 
@@ -66,6 +67,26 @@ function update(user) {
     return Promise.reject(err);
   });
 
+}
+
+/**
+ * Updates user Id if it doesn't exist
+ * @param user
+ * @return Promise
+ */
+function updateUserId({id, email}) {
+  if (id !== undefined) {
+    return Promise.resolve(id);
+  }
+
+  return GigyaAccounts.getUID(email)
+    .then((id) => {
+      MongoDB.collection('users').update({email}, {
+        $set: {id}
+      });
+
+      return id;
+    });
 }
 
 /**

@@ -447,21 +447,15 @@ module.exports.register = function (server, options, next) {
             reply(Boom.notFound('User not found', userQuery))
           }
           else {
-            delete user.email;
-            // We may not have the user Gigya UID.
-            if (result.id == undefined) {
-              // Fetch it from Gigya using a search function.
-              GigyaAccounts.getUID(result.email).then(uid => {
-                // Set the UID.
-                user.uid = uid;
-                // Update user with the new UID in local DB.
-                MongoDB.collection('users').update({email: result.email}, {
-                  $set: {
-                    id: uid
-                  }
-                });
 
-                // Update Gigya account.
+            Accounts.updateUserId(user)
+              .catch((err) => {
+                return reply(Boom.notFound("User " + user.email + " not found", err));
+              })
+              .then((id) => {
+                delete user.email;
+                user.uid = id;
+
                 Accounts.update(user).then(
                   data => reply(data.body ? data.body : data),
                   err => {
@@ -469,25 +463,7 @@ module.exports.register = function (server, options, next) {
                     return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
                   }
                 );
-              },
-              err => {
-                // Reply with the usual Internal Server Error otherwise.
-                return reply(Boom.notFound("User " + result.email + " not found", err));
               });
-            }
-            else {
-              // Use existing UID
-              user.uid = result.id;
-
-              // Update Gigya account.
-              Accounts.update(user).then(
-                data => reply(data.body ? data.body : data),
-                err => {
-                  // Reply with the usual Internal Server Error otherwise.
-                  return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
-                }
-              );
-            }
           }
         }
       });

@@ -41,7 +41,7 @@ function getAccountInfo(payload) {
     // signatureTimestamp: payload.signatureTimestamp
   };
 
-  return gigyaClient.callApi('/ids.getAccountInfo', parameters);
+  return gigyaClient.callApi('/accounts.getAccountInfo', parameters);
 
 }
 

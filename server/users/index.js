@@ -53,7 +53,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors,
       validate: {
         query: Joi.object().keys({
-          email: Joi.string(),
+          email: Joi.string().email(),
           provider: Joi.string().valid('gigya', 'google').default('gigya')
         }).unknown(false)
       }
@@ -155,7 +155,12 @@ module.exports.register = function (server, options, next) {
           entity: 'any'
         }
       },
-      cors: stdCors
+      cors: stdCors,
+      validate: {
+        query: Joi.object().keys({
+          email: Joi.string().email()
+        }).unknown(false)
+      }
     },
     handler: (request, reply) => {
       return GigyaAccounts.isEmailAvailable(request.query.email)

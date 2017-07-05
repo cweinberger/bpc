@@ -176,11 +176,11 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/{provider}/{email}/{name}',
+    path: '/{provider}/{email}/{scope}',
     config: {
       auth: {
         access: {
-          scope: ['{params.name}', 'admin'],
+          scope: ['{params.scope}', 'admin'],
           entity: 'app'
         }
       },
@@ -195,15 +195,25 @@ module.exports.register = function (server, options, next) {
       state: {
         parse: true,
         failAction: 'log'
+      },
+      validate: {
+        params: {
+          provider: Joi.string().valid('gigya', 'google'),
+          email: Joi.string().email(),
+          scope: Joi.string()
+        }
       }
     },
     handler: function(request, reply) {
+
+      var selector = {
+        provider: request.params.provider,
+        email: request.params.email.toLowerCase()
+      };
+
       queryPermissionsScope(
-        {
-          provider: request.params.provider,
-          email: request.params.email
-        },
-        request.params.name,
+        selector,
+        request.params.scope,
         reply
       );
     }
@@ -212,11 +222,11 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/{provider}/{email}/{name}',
+    path: '/{provider}/{email}/{scope}',
     config: {
       auth: {
         access: {
-          scope: ['{params.name}', 'admin'],
+          scope: ['{params.scope}', 'admin'],
           entity: 'app' // <-- Important. Users must not be allowed to set permissions
         }
       },
@@ -233,17 +243,24 @@ module.exports.register = function (server, options, next) {
         failAction: 'log'
       },
       validate: {
+        params: {
+          provider: Joi.string().valid('gigya', 'google'),
+          email: Joi.string().email(),
+          scope: Joi.string()
+        },
         payload: Joi.object()
       }
     },
     handler: function(request, reply) {
 
+      var selector = {
+        provider: request.params.provider,
+        email: request.params.email.toLowerCase()
+      };
+
       setPermissionsScope(
-        {
-          provider: request.params.provider,
-          email: request.params.email
-        },
-        request.params.name,
+        selector,
+        request.params.scope,
         request.payload,
         reply
       );
@@ -275,7 +292,12 @@ function queryPermissionsScope(selector, scope, callback) {
         return callback(err);
       }
 
-      callback(null, result.dataScopes[scope]);
+      if (!result) {
+        callback(Boom.notFound());
+      }
+      else {
+        callback(null, result.dataScopes[scope]);
+      }
     }
   );
 }
@@ -290,7 +312,7 @@ function setPermissionsScope(selector, scope, payload, callback) {
   MongoDB.collection('users').update(
     selector,
     {
-      $currentDate: { 'Updated': { $type: "timestamp" } },
+      $currentDate: { 'lastUpdated': { $type: "date" } },
       $set: set
     },
     {
@@ -304,11 +326,11 @@ function setPermissionsScope(selector, scope, payload, callback) {
     },
     function(err, result){
       if (err){
-        callback(err)
+        callback(Boom.internal('Database error', err));
       } else if (result === null) {
         callback(Boom.notFound());
       } else {
-        callback();
+        callback({'status': 'ok'});
       }
     }
   );

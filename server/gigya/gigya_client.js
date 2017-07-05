@@ -82,16 +82,26 @@ function callApi(path, payload = null, api = 'accounts') {
       }
 
       if (GigyaUtils.isError(_body)) {
+        console.error(`  Gigya Error: ${_body.statusCode}, ${_body.errorCode} ${_body.errorMessage}\n  Details: ${_body.errorDetails}`);
         // Check if there are details present in a response.
-        console.error(`  Gigya Error: ${_body.errorCode} ${_body.errorMessage}\n  Details: ${_body.errorDetails}`);
         if (_body.validationErrors) {
           const errors = _body.validationErrors.map(
             error => `${error.fieldName} -> ${error.errorCode} ${error.message}; `
           );
           console.log(`  Validation errors: ${errors}`);
         }
+
+        // Add some error details.
+        let details = {};
+        if (_body.errorDetails) {
+          details.error = _body.errorDetails;
+        }
+        if (_body.validationErrors) {
+          details.validationErrors = _body.validationErrors;
+        }
+
         return reject(new GigyaError(
-          _body.errorMessage, _body.errorCode, _body.validationErrors
+          _body.errorMessage, _body.statusCode, _body.errorCode, details
         ));
       }
 

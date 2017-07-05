@@ -31,12 +31,10 @@ const goodOpts = {
   }
 };
 
-
 const server = new Hapi.Server();
 
 server.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
 
-server.register({register: Good, options: goodOpts}, cb);
 
 server.register(Scarecrow, function(err) {
   server.auth.strategy('oz', 'oz', true, OzLoadFuncs.strategyOptions);
@@ -51,12 +49,21 @@ server.register(Scarecrow, function(err) {
 });
 
 
-server.start((err) => {
-  if (err) {
-    throw err;
-  }
-  console.log(`Server running at: ${server.info.uri}`);
-});
+if ((module.parent && module.parent.exports.lab !== undefined) || process.env.NODE_ENV === 'test') {
+  // Do not start the server.
+  // We are running tests.
+} else {
+
+  // We don't need the logging output while running tests
+  server.register({register: Good, options: goodOpts}, cb);
+
+  server.start((err) => {
+    if (err) {
+      throw err;
+    }
+    console.log(`Server running at: ${server.info.uri}`);
+  });
+}
 
 
 function cb(err) {
@@ -65,3 +72,5 @@ function cb(err) {
     server.stop();
   }
 }
+
+module.exports = server;

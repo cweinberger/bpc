@@ -197,23 +197,33 @@ db.grants.insert({
 })
 ```
 
+### Indexed
+
+The following indexes have been created manually:
+
+```
+db.users.createIndex( { email: 1, provider: 1 })
+```
 
 # Testing
 
-BPC comes prepackaged with unit tests. Prerequisites for testing is a running
-MongoDB database, the correctly configured environment variables (except
-`MONGODB_DB`, which will always be `sso-test`), and you'll also need to
-ensure that you have dev-dependencies installed (by running `npm install`
-without the `--production` flag).
+BPC comes prepackaged with unit tests. You'll also need to ensure that you have
+dev-dependencies installed (by running `npm install` without the `--production`
+flag).
 
-Once these prerequisites are in place, simply run this command from the command
-line, while in the BPC root directory;
+The test suite will run without a MongoDB database, and use a memory-based
+mockup database instead if a lab test script is exported by the modules parent.
+(This is a standard usage of `lab`. See [lab usage](https://github.com/hapijs/lab)).
+
+Once these minor prerequisites are in place, simply run this command from the
+command line, while in the BPC root directory;
 
 ```
 npm run test
 ```
 
-If you run tests often, don't forget to clean the database once in a while.
+_Note: The mock database doesn't currently support features from MongoDB 3.2._
+_Please be aware of this when writing your own tests._
 
 
 # Environment Variable Reference

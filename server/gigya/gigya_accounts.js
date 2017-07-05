@@ -4,11 +4,13 @@
 
 const gigyaClient = require('./gigya_client');
 const gigyaUtils = require('./gigya_utils');
+const EventLog = require('./../audit/eventlog');
 
 
 module.exports = {
   getAccountInfo,
   setAccountInfo,
+  getUID,
   exchangeUIDSignature,
   initRegistration,
   isEmailAvailable,
@@ -41,7 +43,7 @@ function getAccountInfo(payload) {
     // signatureTimestamp: payload.signatureTimestamp
   };
 
-  return gigyaClient.callApi('/ids.getAccountInfo', parameters);
+  return gigyaClient.callApi('/accounts.getAccountInfo', parameters);
 
 }
 
@@ -55,8 +57,32 @@ function getAccountInfo(payload) {
  */
 function setAccountInfo(payload) {
 
-  return gigyaClient.callApi('/ids.setAccountInfo', payload);
+  return gigyaClient.callApi('/accounts.setAccountInfo', payload);
 
+}
+
+/**
+ * Fetches the UID from Gigya by the user email.
+ *
+ * @param {String} email
+ * @returns {Promise}
+ */
+function getUID(email) {
+  const query = 'select UID from accounts where loginIDs.emails = "' + email + '" ';
+  return searchAccount(query).then(data => {
+
+    if (data.body.results != undefined && data.body.results.length > 0) {
+      return data.body.results[0].UID;
+    }
+    else {
+      EventLog.logUserEvent(null, 'User not found', {email: email});
+      return Promise.reject(err);
+    }
+
+  }, err => {
+    EventLog.logUserEvent(null, 'Failed to fetch user UID', {email: email});
+    return Promise.reject(err);
+  });
 }
 
 

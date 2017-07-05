@@ -174,7 +174,7 @@ module.exports.register = function (server, options, next) {
         }
 
         Applications.deleteAppById(request.params.id, ticket);
-        return reply();
+        return reply({'status': 'ok'});
 
       });
     }

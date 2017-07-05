@@ -8,6 +8,7 @@ const GigyaError = require('./gigya_error');
 module.exports = {
   isError,
   errorToResponse,
+  exposeError,
   payloadToForm
 }
 
@@ -48,6 +49,27 @@ function errorToResponse(data, extra) {
   }
 
   return error;
+
+}
+
+
+/**
+ * Given a reply (from Hapi.js) and a GigyaError object, calls reply with the
+ * proper error code and containing a close resemblance of the original error
+ *
+ * @param {function} reply
+ * @param {GigyaError} err
+ * @return {mixed} Whatever reply() returns
+ */
+function exposeError(reply, err, code = 500) {
+
+    if (err instanceof GigyaError) {
+      return reply({
+        message: err.message, details: err.details
+      }).code(err.statusCode || code);
+    } else {
+      return reply({message: err.message}).code(code);
+    }
 
 }
 

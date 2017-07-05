@@ -44,7 +44,7 @@ function createGigyaRsvp(data, callback) {
       return callback(Boom.badRequest());
     }
 
-    updateUserInDB({ id: data.UID, email: result.body.profile.email, provider: data.provider });
+    updateUserInDB({ id: data.UID, email: result.body.profile.email.toLowerCase(), provider: data.provider });
 
     findGrant({ user: data.UID, app: data.app, provider: data.provider }, callback);
 
@@ -165,14 +165,14 @@ function updateUserInDB(data, callback) {
     ]
   };
 
-  MongoDB.collection('users').updateOne(query, {
+  MongoDB.collection('users').update(query, {
     $setOnInsert: {
       dataScopes: {}
     },
      // We want to update id, email and provider in case we're missing one of the parameters
     $set: data,
     $currentDate: {
-      'LastLogin': { $type: "date" }
+      'lastLogin': { $type: "date" }
     }
   }, {
     upsert: true

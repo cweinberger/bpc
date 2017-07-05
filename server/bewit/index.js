@@ -45,7 +45,7 @@ module.exports.register = function (server, options, next) {
         // Calculate the exp so the client can request a new bewit before this one expires.
         const exp = Hawk.utils.now() + (duration * 1000);
 
-        reply({ bewit: bewit, exp: exp })
+        reply({ bewit, exp })
           .header('X-BPC-BEWIT', bewit)
           .header('X-BPC-BEWIT-EXP', exp);
       });

@@ -9,15 +9,18 @@ const MongoDB = require('./../mongo/mongodb_client');
 const Gigya = require('./../gigya/gigya_client');
 const EventLog = require('./../audit/eventlog');
 
-// We're getting the policies to make sure the security check is not set
-Gigya.callApi('/accounts.getPolicies').then(function(response){
-
-  if(response.body.passwordReset.requireSecurityCheck){
-    console.warn('Gigya site requires security check');
-  }
-});
 
 module.exports.register = function (server, options, next) {
+
+  if(process.env.NODE_ENV !== 'test'){
+    // We're getting the policies to make sure the security check is not set
+    Gigya.callApi('/accounts.getPolicies').then(function(response) {
+
+      if (response.body.passwordReset.requireSecurityCheck) {
+        console.warn('Gigya site requires security check');
+      }
+    });
+  }
 
   server.route({
     method: 'GET',
@@ -105,7 +108,7 @@ module.exports.register = function (server, options, next) {
 
             Gigya.callApi('/accounts.resetPassword', parameters_two).then(function (response) {
               EventLog.logUserEvent(null, 'Password Change', {email: user.email});
-              reply();
+              reply({'status': 'ok'});
             }).catch(function (err){
               EventLog.logUserEvent(null, 'Password Change Failure', {email: user.email});
               return reply(err);

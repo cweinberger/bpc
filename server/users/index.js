@@ -12,12 +12,19 @@ const Accounts = require('./../accounts/accounts');
 const GigyaAccounts = require('./../gigya/gigya_accounts');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const EventLog = require('./../audit/eventlog');
-
+const exposeError = GigyaUtils.exposeError;
 
 const registrationValidation = Joi.object().keys({
   data: Joi.object().optional(),
   email: Joi.string().email().required(),
   password: Joi.string().required(),
+  profile: Joi.object().optional(),
+  regSource: Joi.string().optional()
+});
+
+const updateValidation = Joi.object().keys({
+  data: Joi.object().optional(),
+  email: Joi.string().email().required(),
   profile: Joi.object().optional()
 });
 
@@ -43,10 +50,22 @@ module.exports.register = function (server, options, next) {
           entity: 'any'
         }
       },
-      cors: stdCors
+      cors: stdCors,
+      validate: {
+        query: Joi.object().keys({
+          email: Joi.string().email(),
+          provider: Joi.string().valid('gigya', 'google').default('gigya')
+        }).unknown(false)
+      }
     },
     handler: function(request, reply) {
-      MongoDB.collection('users').find({deletedAt: {$exists: false}})
+      var query = {
+        deletedAt: {$exists: false},
+        email: request.query.email.toLowerCase(),
+        provider: request.query.provider
+      };
+
+      MongoDB.collection('users').find(query)
         .toArray(reply);
     }
   });
@@ -67,7 +86,7 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
       GigyaAccounts.getAccountSchema().then(
         res => reply(res.body),
-        err => reply(GigyaUtils.errorToResponse(err))
+        err => exposeError(reply, err)
       );
     }
   });
@@ -88,7 +107,7 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
       GigyaAccounts.setAccountSchema(request.payload).then(
         res => reply(res.body),
-        err => reply(GigyaUtils.errorToResponse(err))
+        err => exposeError(reply, err)
       );
     }
   });
@@ -115,7 +134,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: (request, reply) => {
       return GigyaAccounts.searchAccount(request.query.query)
-        .then(res => reply(res.body), err => reply(GigyaUtils.errorToResponse(err)));
+        .then(res => reply(res.body), err => exposeError(reply, err));
     }
   });
 
@@ -136,11 +155,16 @@ module.exports.register = function (server, options, next) {
           entity: 'any'
         }
       },
-      cors: stdCors
+      cors: stdCors,
+      validate: {
+        query: Joi.object().keys({
+          email: Joi.string().email()
+        }).unknown(false)
+      }
     },
     handler: (request, reply) => {
       return GigyaAccounts.isEmailAvailable(request.query.email)
-        .then(res => reply(res.body), err => reply(GigyaUtils.errorToResponse(err)));
+        .then(res => reply(res.body), err => exposeError(reply, err));
     }
   });
 
@@ -166,7 +190,7 @@ module.exports.register = function (server, options, next) {
             return reply(Boom.notFound(`[${err.code}] ${err.message}`));
           } else {
             // Everything else is Internal Server Error.
-            return reply(GigyaUtils.errorToResponse(err));
+            return exposeError(reply, err);
           }
         }
       );
@@ -192,6 +216,9 @@ module.exports.register = function (server, options, next) {
     handler: (request, reply) => {
 
       const user = request.payload;
+      // Lowercase the email.
+      user.email = user.email.toLowerCase();
+
       Accounts.register(user).then(
         data => reply(data.body ? data.body : data),
         err => {
@@ -203,7 +230,7 @@ module.exports.register = function (server, options, next) {
             ));
           } else {
             // Reply with the usual Internal Server Error otherwise.
-            return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+            return exposeError(reply, err);
           }
         }
       );
@@ -237,21 +264,24 @@ module.exports.register = function (server, options, next) {
       GigyaAccounts.resetPassword({
         loginID: request.payload.email,
         sendEmail: false
-      }).then(function (response){
+      }).then(function (response) {
 
         GigyaAccounts.resetPassword({
           passwordResetToken: response.body.passwordResetToken,
           newPassword: newPassword,
           sendEmail: false
-        }).then(function(response){
-          reply();
+        }).then(function(response) {
+          reply({'status': 'ok'});
         }).catch(function(err){
           console.error(err);
-          return reply(err);
+          return exposeError(reply, err);
         });
-      }).catch(function(err){
+
+      }).catch(function(err) {
+
         console.error(err);
-        return reply(err);
+        return exposeError(reply, err);
+
       });
     }
   });
@@ -331,7 +361,7 @@ module.exports.register = function (server, options, next) {
               'Add Scope to User',
               {scope: 'admin:*', byUser: ticket.user}
             );
-            reply();
+            reply({'status': 'ok'});
 
           });
       });
@@ -352,7 +382,12 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+
+        if (err) {
+          console.error(err);
+          return reply(GigyaUtils.errorToResponse(err));
+        }
 
         if (ticket.user === request.params.id){
           return reply(Boom.badRequest('You cannot demote yourself'));
@@ -389,6 +424,56 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+  server.route({
+    method: 'POST',
+    path: '/update',
+    config: {
+      auth:  {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: updateValidation
+      }
+    },
+    handler: (request, reply) => {
+
+      const user = request.payload;
+      const userQuery = {email: user.email};
+      MongoDB.collection('users').findOne(userQuery, function(err, result) {
+        if (err) {
+          reply(Boom.internal(err.message, userQuery, err.code));
+        }
+        else {
+          if (!result) {
+            reply(Boom.notFound('User not found', userQuery))
+          }
+          else {
+
+            Accounts.updateUserId(result)
+              .catch((err) => {
+                return reply(Boom.notFound("User " + user.email + " not found", err));
+              })
+              .then((id) => {
+                delete user.email;
+                user.uid = id;
+
+                Accounts.update(user).then(
+                  data => reply(data.body ? data.body : data),
+                  err => {
+                    // Reply with the usual Internal Server Error otherwise.
+                    return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+                  }
+                );
+              });
+          }
+        }
+      });
+    }
+  });
 
   next();
 

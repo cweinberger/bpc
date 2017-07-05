@@ -10,7 +10,9 @@ const EventLog = require('./../audit/eventlog');
 
 module.exports = {
   register,
-  deleteOne
+  deleteOne,
+  update,
+  updateUserId
 };
 
 
@@ -40,6 +42,52 @@ function register(user) {
 
 }
 
+/**
+ * Updates account with Gigya and updates the user in MongoDB
+ *
+ * @param {Object} user
+ * @return {Promise} Receives the created user is the operation went well
+ */
+function update(user) {
+
+  return GigyaAccounts.setAccountInfo(user).then(data => {
+
+    // const _user = assembleDbUser(data.body);
+    // // Update user.
+    // return MongoDB.collection('users').update(_user)
+    //   .then(res => res.ops[0])
+    //   .then(res => {
+    //     EventLog.logUserEvent(res.id, 'User Updated');
+    //     return res;
+    //   });
+    return {status: 'ok'};
+
+  }, err => {
+    EventLog.logUserEvent(null, 'User update failed', {email: user.email});
+    return Promise.reject(err);
+  });
+
+}
+
+/**
+ * Updates user Id if it doesn't exist
+ * @param user
+ * @return Promise
+ */
+function updateUserId({id, email}) {
+  if (id !== undefined) {
+    return Promise.resolve(id);
+  }
+
+  return GigyaAccounts.getUID(email)
+    .then((id) => {
+      MongoDB.collection('users').update({email}, {
+        $set: {id}
+      });
+
+      return id;
+    });
+}
 
 /**
  * Deletes a single account from Gigya, and marks the local one as deleted
@@ -85,6 +133,7 @@ function assembleDbUser(data) {
       registered: new Date(data.registedTimestamp),
     },
     lastUpdated: new Date(),
+    lastLogin: new Date(),
     lastSynced: new Date(),
     dataScopes: {}
   };

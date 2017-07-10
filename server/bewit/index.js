@@ -59,23 +59,30 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          entity: 'any'
+          entity: 'app'
         }
+      },
+      validate: {
+        // payload : {
+        //  // TODO
+        // }
       }
     },
     handler: function(request, reply) {
 
-      var url_to_validate = Url.parse(request.payload.url);
-      var uri_to_authenticate = {
-        method: 'GET',
-        url: url_to_validate.path,
-        headers: {
-          host: url_to_validate.host,
-          authorization: null
-        }
-      };
+      console.log('uri_to_authenticate', request.payload);
 
-      Hawk.uri.authenticate(uri_to_authenticate, credentialsFunc, {}, (err, credentials, attributes) => {
+      var options = OzLoadFuncs.strategyOptions.oz;
+      // Oz.server.authenticate
+      Oz.endpoints.app(request.payload, null, options, function(err, result) {
+        console.log('Oz app endpoint result', err, result);
+        reply(err);
+      });
+
+      return;
+
+
+      Hawk.uri.authenticate(request.payload, credentialsFunc, {}, (err, credentials, attributes) => {
         if (err) {
 
           reply().statusCode = 401;

@@ -9,7 +9,7 @@ gulp.task('start_server', function (){
   if (server) {
     server.kill();
   }
-  server = spawn('node', ['./server/index.js'], {stdio: 'inherit'});
+  server = spawn('node', ['--debug', './server/index.js'], {stdio: 'inherit'});
 });
 
 gulp.task('watch', function(){

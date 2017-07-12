@@ -80,7 +80,7 @@ module.exports.register = function (server, options, next) {
 
         }
 
-        reply();
+        reply({'status': 'ok'});
       });
     }
   });

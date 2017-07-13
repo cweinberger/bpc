@@ -18,8 +18,8 @@ module.exports = {
 
 /**
  * Registers a new account with Gigya and stores the user in MongoDB
- * 
- * @param {Object} user 
+ *
+ * @param {Object} user
  * @return {Promise} Receives the created user is the operation went well
  */
 function register(user) {
@@ -39,6 +39,33 @@ function register(user) {
     EventLog.logUserEvent(null, 'User registration failed', {email: user.email});
     return Promise.reject(err);
   });
+
+  /**
+   * Picks the data from a Gigya account that we have chosen to store in MongoDB
+   */
+  function assembleDbUser(data) {
+    return {
+      email: data.profile.email,
+      id: data.UID,
+      provider: 'gigya',
+      providerData: {
+        loginProvider: data.loginProvider,
+        isActive: data.isActive,
+        isLockedOut: data.isLockedOut,
+        isVerified: data.isVerified,
+        profile: data.profile,
+        data: data.data ? data.data : {},
+        lastLogin: new Date(data.lastLoginTimestamp),
+        lastUpdated: new Date(data.lastUpdatedTimestamp),
+        registered: new Date(data.registedTimestamp),
+      },
+      lastUpdated: new Date(),
+      lastLogin: new Date(),
+      lastSynced: new Date(),
+      dataScopes: {}
+    };
+
+  }
 
 }
 
@@ -91,8 +118,8 @@ function updateUserId({id, email}) {
 
 /**
  * Deletes a single account from Gigya, and marks the local one as deleted
- * 
- * @param {String} Gigya user id 
+ *
+ * @param {String} Gigya user id
  */
 function deleteOne(id) {
 
@@ -105,37 +132,5 @@ function deleteOne(id) {
       .findOneAndUpdate({id: id}, {$set: {deletedAt: new Date()}});
 
   }, err => Promise.reject(err));
-
-}
-
-
-/**
- * Picks the data from a Gigya account that we have chosen to store in MongoDB
- * 
- * @param {Object} Gigya data
- * @param {Object} Initial user data received to register
- * @return {Object} User object
- */
-function assembleDbUser(data) {
-  return {
-    email: data.profile.email,
-    id: data.UID,
-    provider: 'gigya',
-    providerData: {
-      loginProvider: data.loginProvider,
-      isActive: data.isActive,
-      isLockedOut: data.isLockedOut,
-      isVerified: data.isVerified,
-      profile: data.profile,
-      data: data.data ? data.data : {},
-      lastLogin: new Date(data.lastLoginTimestamp),
-      lastUpdated: new Date(data.lastUpdatedTimestamp),
-      registered: new Date(data.registedTimestamp),
-    },
-    lastUpdated: new Date(),
-    lastLogin: new Date(),
-    lastSynced: new Date(),
-    dataScopes: {}
-  };
 
 }

@@ -9,24 +9,25 @@ const MongoDB = require('./../mongo/mongodb_client');
 
 module.exports.register = function (server, options, next) {
 
+  const stdCors = {
+    credentials: true,
+    origin: ['*'],
+    headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
+    exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+    maxAge: 86400
+  };
+
   server.route({
     method: 'GET',
-    path: '/{name}',
+    path: '/{scope}',
     config: {
       auth: {
         access: {
-          scope: ['{params.name}', 'admin'],
+          scope: ['{params.scope}'],
           entity: 'user'
         }
       },
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
+      cors: stdCors,
       state: {
         parse: true,
         failAction: 'log'
@@ -42,16 +43,16 @@ module.exports.register = function (server, options, next) {
         // Should we query the database or look in the private part of the ticket?
         if (true) {
 
-          queryPermissionsScope({ id: ticket.user }, request.params.name, reply);
+          queryPermissionsScope({ id: ticket.user }, request.params.scope, reply);
 
         } else {
 
-          if (ticket.ext.private.Permissions === undefined || ticket.ext.private.Permissions[request.params.name] === undefined){
+          if (ticket.ext.private.Permissions === undefined || ticket.ext.private.Permissions[request.params.scope] === undefined){
             reply(Boom.forbidden());
           }
 
           // We only want to reply the permissions within the requested scope
-          var Permissions = Object.assign({}, ticket.ext.private.Permissions[request.params.name]);
+          var Permissions = Object.assign({}, ticket.ext.private.Permissions[request.params.scope]);
 
           reply(Permissions);
         }
@@ -61,62 +62,48 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/{user}/{name}',
+    path: '/{user}/{scope}',
     config: {
       auth: {
         access: {
-          scope: ['{params.name}', 'admin'],
+          scope: ['{params.scope}', 'admin'],
           entity: 'app'
         }
       },
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
+      cors: stdCors,
       state: {
         parse: true,
         failAction: 'log'
       }
     },
     handler: function(request, reply) {
-      queryPermissionsScope({ id: request.params.user }, request.params.name, reply);
+      queryPermissionsScope({ id: request.params.user }, request.params.scope, reply);
     }
   });
 
   // server.route({
   //   method: 'GET',
-  //   path: '/{user}/{name}/{key}',
+  //   path: '/{user}/{scope}/{key}',
   //   config: {
   //     auth: {
   //       access: {
-  //         scope: ['{params.name}', 'admin'],
+  //         scope: ['{params.scope}', 'admin'],
   //         entity: 'app' // <-- Important. Users must not be allowed to query permissions
   //       }
   //     },
-  //     cors: {
-  //       credentials: true,
-  //       origin: ['*'],
-  //       // access-control-allow-methods:POST
-  //       headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-  //       exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-  //       maxAge: 86400
-  //     },
+  //     cors: stdCors,
   //     state: {
   //       parse: true,
   //       failAction: 'log'
   //     }
   //   },
   //   handler: function(request, reply) {
-  //     console.log('GET permissions key', request.params.name, request.params.key);
+  //     console.log('GET permissions key', request.params.scope, request.params.key);
   //
   //     var queryProject = {
   //       _id: 0
   //     };
-  //     queryProject['Permissions.'.concat(request.params.name, '.', request.params.key)] = 1;
+  //     queryProject['Permissions.'.concat(request.params.scope, '.', request.params.key)] = 1;
   //
   //     MongoDB.collection('users').findOne(
   //       {
@@ -137,22 +124,15 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/{user}/{name}',
+    path: '/{user}/{scope}',
     config: {
       auth: {
         access: {
-          scope: ['{params.name}', 'admin'],
+          scope: ['{params.scope}', 'admin'],
           entity: 'app' // <-- Important. Users must not be allowed to set permissions
         }
       },
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
+      cors: stdCors,
       state: {
         parse: true,
         failAction: 'log'
@@ -166,7 +146,7 @@ module.exports.register = function (server, options, next) {
         {
           id: request.params.user
         },
-        request.params.name,
+        request.params.scope,
         request.payload,
         reply
       );
@@ -184,14 +164,7 @@ module.exports.register = function (server, options, next) {
           entity: 'app'
         }
       },
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
+      cors: stdCors,
       state: {
         parse: true,
         failAction: 'log'
@@ -230,14 +203,7 @@ module.exports.register = function (server, options, next) {
           entity: 'app' // <-- Important. Users must not be allowed to set permissions
         }
       },
-      cors: {
-        credentials: true,
-        origin: ['*'],
-        // access-control-allow-methods:POST
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        maxAge: 86400
-      },
+      cors: stdCors,
       state: {
         parse: true,
         failAction: 'log'

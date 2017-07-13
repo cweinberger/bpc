@@ -14,19 +14,6 @@ const GigyaUtils = require('./../gigya/gigya_utils');
 const EventLog = require('./../audit/eventlog');
 const exposeError = GigyaUtils.exposeError;
 
-const registrationValidation = Joi.object().keys({
-  data: Joi.object().optional(),
-  email: Joi.string().email().required(),
-  password: Joi.string().required(),
-  profile: Joi.object().optional(),
-  regSource: Joi.string().optional()
-});
-
-const updateValidation = Joi.object().keys({
-  data: Joi.object().optional(),
-  email: Joi.string().email().required(),
-  profile: Joi.object().optional()
-});
 
 
 module.exports.register = function (server, options, next) {
@@ -170,35 +157,6 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
-    method: 'DELETE',
-    path: '/{id}',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin', 'users'],
-          entity: 'any'
-        }
-      },
-      cors: stdCors
-    },
-    handler: (request, reply) => {
-      return Accounts.deleteOne(request.params.id).then(
-        res => reply(GigyaUtils.isError(res) ? GigyaUtils.errorToResponse(res) : res),
-        err => {
-          if (err.code === 403005) {
-            // Unknown id, so reply 404 Not Found.
-            return reply(Boom.notFound(`[${err.code}] ${err.message}`));
-          } else {
-            // Everything else is Internal Server Error.
-            return exposeError(reply, err);
-          }
-        }
-      );
-    }
-  });
-
-
-  server.route({
     method: 'POST',
     path: '/register',
     config: {
@@ -210,7 +168,13 @@ module.exports.register = function (server, options, next) {
       },
       cors: stdCors,
       validate: {
-        payload: registrationValidation
+        payload: {
+          data: Joi.object().optional(),
+          email: Joi.string().email().required(),
+          password: Joi.string().required(),
+          profile: Joi.object().optional(),
+          regSource: Joi.string().optional()
+        }
       }
     },
     handler: (request, reply) => {
@@ -219,6 +183,9 @@ module.exports.register = function (server, options, next) {
       // Lowercase the email.
       user.email = user.email.toLowerCase();
 
+      // TODO: It's not obvious what Accounts.register does.
+      // Does is store in Gigya, MongoDB or both.
+      // Seperate it into more functions
       Accounts.register(user).then(
         data => reply(data.body ? data.body : data),
         err => {
@@ -288,6 +255,62 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
+    method: 'POST',
+    path: '/update',
+    config: {
+      auth:  {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: {
+          data: Joi.object().optional(),
+          email: Joi.string().email().required(),
+          profile: Joi.object().optional()
+        }
+      }
+    },
+    handler: (request, reply) => {
+
+      const user = request.payload;
+      const userQuery = {email: user.email};
+      MongoDB.collection('users').findOne(userQuery, function(err, result) {
+        if (err) {
+          reply(Boom.internal(err.message, userQuery, err.code));
+        }
+        else {
+          if (!result) {
+            reply(Boom.notFound('User not found', userQuery))
+          }
+          else {
+
+            Accounts.updateUserId(result)
+              .catch((err) => {
+                return reply(Boom.notFound("User " + user.email + " not found", err));
+              })
+              .then((id) => {
+                delete user.email;
+                user.uid = id;
+
+                Accounts.update(user).then(
+                  data => reply(data.body ? data.body : data),
+                  err => {
+                    // Reply with the usual Internal Server Error otherwise.
+                    return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+                  }
+                );
+              });
+          }
+        }
+      });
+    }
+  });
+
+
+  server.route({
     method: 'GET',
     path: '/{id}',
     config: {
@@ -320,6 +343,35 @@ module.exports.register = function (server, options, next) {
           }
           reply(result[0]);
       });
+    }
+  });
+
+
+  server.route({
+    method: 'DELETE',
+    path: '/{id}',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors
+    },
+    handler: (request, reply) => {
+      return Accounts.deleteOne(request.params.id).then(
+        res => reply(GigyaUtils.isError(res) ? GigyaUtils.errorToResponse(res) : res),
+        err => {
+          if (err.code === 403005) {
+            // Unknown id, so reply 404 Not Found.
+            return reply(Boom.notFound(`[${err.code}] ${err.message}`));
+          } else {
+            // Everything else is Internal Server Error.
+            return exposeError(reply, err);
+          }
+        }
+      );
     }
   });
 
@@ -424,56 +476,7 @@ module.exports.register = function (server, options, next) {
     }
   });
 
-  server.route({
-    method: 'POST',
-    path: '/update',
-    config: {
-      auth:  {
-        access: {
-          scope: ['admin', 'users'],
-          entity: 'any'
-        }
-      },
-      cors: stdCors,
-      validate: {
-        payload: updateValidation
-      }
-    },
-    handler: (request, reply) => {
 
-      const user = request.payload;
-      const userQuery = {email: user.email};
-      MongoDB.collection('users').findOne(userQuery, function(err, result) {
-        if (err) {
-          reply(Boom.internal(err.message, userQuery, err.code));
-        }
-        else {
-          if (!result) {
-            reply(Boom.notFound('User not found', userQuery))
-          }
-          else {
-
-            Accounts.updateUserId(result)
-              .catch((err) => {
-                return reply(Boom.notFound("User " + user.email + " not found", err));
-              })
-              .then((id) => {
-                delete user.email;
-                user.uid = id;
-
-                Accounts.update(user).then(
-                  data => reply(data.body ? data.body : data),
-                  err => {
-                    // Reply with the usual Internal Server Error otherwise.
-                    return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
-                  }
-                );
-              });
-          }
-        }
-      });
-    }
-  });
 
   next();
 

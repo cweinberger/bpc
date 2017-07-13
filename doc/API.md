@@ -12,36 +12,55 @@ Cases where other types of response headers must be handled, are described as
 part of the endpoint in question.
 
 
-**Table of contents**
+## Table of contents
 
 * [`GET /healthcheck`](#get-healthcheck)
 * [`GET /version`](#get-version)
+* [`GET /rsvp`](#get-rsvp)
+* [`POST /rsvp`](#post-rsvp)
+* [`POST /ticket/app`](#-post-ticketapp)
+* [`POST /ticket/user`](#-post-ticketuser)
+* [`POST /ticket/reissue`](#-post-ticketreissue)
+* [`GET /me`](#get-me)
 * [`GET /users`](#get-users)
-* [`POST /users/register`](#register-user)
-* [`POST /users/delete`](#delete-user)
-* [`GET /users/search`](#search-user)
-* [`GET /users/schema`](#get-user-schema)
-* [`GET /users/exists`](#user-exists)
-* [`GET /users/{id}`](#get-user)
-* [`GET /permissions/{name}`](#get-permissions-name)
-* [`GET /permissions/{user}/{name}`](#get-permissions-user-name)
-* [`POST /permissions/{user}/{name}`](#post-permissions-user-name)
+* [`GET /users/{id}`](#get-usersid)
+* [`DELETE /users/{id}`](#delete-usersid)
+* [`POST /users/register`](#post-usersregister)
+* [`GET /users/search`](#get-userssearch)
+* [`GET /users/exists`](#get-usersexists)
+* [`GET /permissions/{name}`](#get-permissionsname)
+* [`GET /permissions/{user}/{name}`](#get-permissionsusername)
+* [`POST /permissions/{user}/{name}`](#post-permissionsusername)
+* [`GET /permissions/{provider}/{email}/{scope}`](#get-permissionsprovideremailscope)
+* [`POST /permissions/{provider}/{email}/{scope}`](#post-permissionsprovideremailscope)
+* [`POST /validate`](#post-validate)
+* [`GET /applications`](#get-applications)
+* [`POST /applications`](#post-applications)
+* [`GET /applications/{id}`](#get-applicationsid)
+* [`PUT /applications/{id}`](#put-applicationsid)
+* [`DELETE /applications/{id}`](#delete-applicationsid)
+* [`GET /applications/{id}/grants`](#get-applicationsidgrants)
+* [`POST /applications/{id}/grants`](#post-applicationsidgrants)
+* [`POST /applications/{id}/grants/{grantId}`](#post-applicationsidgrantsgrantid)
+* [`DELETE /applications/{id}/grants/{grantId}`](#delete-applicationsidgrantsgrantid)
+* [`GET /settings/{name}`](#)
+* [`GET /settings/{name}/{key}`](#)
+* [`PUT /settings/{name}/{key}`](#)
 
-<a name="get-healthcheck" />
 
 ## [GET /healthcheck]
 
-Query parameters: _None_
+* Query parameters: _None_
 
 Check if the API is up and running. Mostly used by Pingdom and similar
 availability services. Returns 200 OK and a confirmation message.
 
 
-<a name="get-version" />
+
 
 ## [GET /version]
 
-Query parameters: _None_
+* Query parameters: _None_
 
 Returns an object with information about the application:
 
@@ -55,61 +74,129 @@ Returns an object with information about the application:
 ```
 
 
-<a name="get-users" />
+
+
+## [GET /rsvp]
+
+* Query parameters: See [Joi validation object](server/rsvp/index.js#L21)
+
+If the user is validated and have a grant to the application, an RSVP is returned.
+If `returnUrl` is specific, the user will be redirected to this URL with `rsvp` in the querystring.
+
+
+
+## [POST /rsvp]
+
+* Query parameters: _None_
+* Payload: See [Joi validation object](server/rsvp/index.js#L21)
+
+Same as the equivalent GET request (see above).
+The RSVP will be in the response body and `X-RSVP_TOKEN` header.
+
+
+
+
+## [POST /ticket/app]
+
+* Query parameters: _None_
+* Payload: _None_
+* Required Hawk Authorization header: Generated using the App ID and Secret.
+* Required ticket type: _None_
+* Required scope: _None_
+
+Returns an application ticket if the application is valid.
+
+
+
+
+
+## [POST /ticket/user]
+
+* Payload:
+  * `rsvp`: RSVP from user
+* Required ticket type: `app`
+* Required scope: _None_
+
+This the request is valid, a user ticket is returned.
+
+
+
+
+
+
+## [POST /ticket/reissue]
+
+* Required ticket type: `any`
+* Required scope: _None_
+
+The ticket used to sign the request will be renewed with a new expiration time.
+
+
+
+
+
+## [GET /me]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: _None_
+
+Returns user profile data.
+
+
+
+
 
 ## [GET /users]
 
-Query parameters: _None_
+* Query parameters:
+  * `email`: A valid email address
+  * `provider`: 'gigya' (default) or 'google'
+* Required ticket type: `any`
+* Required scope: `admin`, `users`
 
 Returns a list of all users currently created in BPC. Deleted users are omitted.
 
 
-<a name="register-user" />
-
-## [POST /users/register]
-
-Query parameters: _None_
-
-Registers a new Gigya account and creates a user in the local database which is
-a direct match to the corresponding Gigya account, but containing selected data.
-
-Example POST request:
-
-```
-{
-	"email": "camj@berlingskemedia.dk",
-	"password": "my-secret-password",
-	"profile": {
-		"firstName": "Camilla",
-		"lastName": "Julie Jensen"
-	}
-}
-```
-
-Returns the user object as stored in the database.
-
-Profile fields are directly matched to their corresponding whitelisted fields in
-Gigya. Please note the restrictions here; only a limited set of fields are
-allowed.
 
 
-<a name="delete-user" />
+
+
+## [GET /users/{id}]
+
+* Query parameters: _None_
+* Required ticket type: `any`
+* Required scope: `admin`, `users`
+
+Looks up the user with the given id (UID).
+
+
+
+
+
 
 ## [DELETE /users/{id}]
 
-Query parameters: _None_
+* Query parameters: _None_
+* Required ticket type: `any`
+* Required scope: `admin`, `users`
 
 Deletes the user with the given id (UID). This call will attempt to delete the
 user from Gigya, and if successful, mark the local user as deleted.
 
 
-<a name="search-user" />
+
+
+
+
+
 
 ## [GET /users/search]
 
-Query parameters:
-
+* Query parameters:
   * `query` - SQL-style Gigya query to search by
+* Required ticket type: `any`
+* Required scope: `admin`, `users`
 
 Returns all Gigya results matching the query. Note that Gigya has an upper limit
 of 5000 accounts in the result set, which also takes effect in the API.
@@ -162,41 +249,14 @@ Example result:
 ```
 
 
-<a name="get-user-schema" />
 
-## [GET /users/schema]
-
-Query parameters: _None_
-
-Returns the user schema from Gigya. This is the template for what a user object
-should look like.
-
-Example result:
-
-```
-{
-  "profileSchema": {
-    "fields": { ... },
-    "unique": [],
-    "dynamicSchema": false
-  },
-  "dataSchema": { ... },
-  "statusCode": 200,
-  "errorCode": 0,
-  "statusReason": "OK",
-  "callId": "f22339a682c44485bf2ecadfb3ef3797",
-  "time": "2017-03-27T10:33:17.469Z"
-}
-```
-
-
-<a name="user-exists" />
 
 ## [GET /users/exists]
 
-Query parameters:
-
+* Query parameters:
   * `email` - email address to check
+* Required ticket type: `any`
+* Required scope: `admin`, `users`
 
 Checks with Gigya if the given email address is taken or not.
 
@@ -214,53 +274,250 @@ Example result:
 ```
 
 
-<a name="get-user" />
-## [GET /users/{id}]
-
-Query parameters: _None_
-
-Looks up the user with the given id (UID).
 
 
-<a name="create-user" />
-## [POST /users] **Deprecated**
 
-Query parameters: _None_
+## [POST /users/register]
 
-Creates a new (local) user without creating anything in Gigya. This endpoint
-might be useful for certain situations.
+* Query parameters: _None_
+* Required ticket type: `any`
+* Required scope: `admin`, `users`
+
+Registers a new Gigya account and creates a user in the local database which is
+a direct match to the corresponding Gigya account, but containing selected data.
+
+Example POST request:
+
+```
+{
+	"email": "camj@berlingskemedia.dk",
+	"password": "my-secret-password",
+	"profile": {
+		"firstName": "Camilla",
+		"lastName": "Julie Jensen"
+	}
+}
+```
+
+Returns the user object as stored in the database.
+
+Profile fields are directly matched to their corresponding whitelisted fields in
+Gigya. Please note the restrictions here; only a limited set of fields are
+allowed.
 
 
-<a name="get-permissions-name" />
-## [GET /permissions/{name}]
 
-Query parameters: _None_
 
-Required ticket type: _user_
-Required scope: ['{params.name}']
+
+
+## [GET /permissions/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `{params.scope}`
 
 Gets the user permissions. The user is the ticket, with which the request has been signed.
 
 
 
-<a name="get-permissions-user-name" />
-## [GET /permissions/{user}/{name}]
 
-Query parameters: _None_
 
-Required ticket type: _app_
-Required scope: ['{params.name}', 'admin']
+
+## [GET /permissions/{user}/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `app`
+* Required scope: `{params.scope}`, `admin`
 
 
 Gets the user permissions. The users ID is in the request parameters.
 
 
-<a name="post-permissions-user-name" />
-## [POST /permissions/{user}/{name}]
 
-Query parameters: _None_
 
-Required ticket type: _app_
-Required scope: ['{params.name}', 'admin']
+
+## [POST /permissions/{user}/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `app`
+* Required scope: `{params.scope}`, `admin`
 
 Sets the user permissions. The users ID is in the request parameters.
+
+
+
+
+## [GET /permissions/{provider}/{email}/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `app`
+* Required scope: `{params.scope}`, `admin`
+
+
+Gets the user permissions. The parameter `provider` is either _gigya_ or _google_ and `email` must be an email address.
+
+
+## [POST /permissions/{provider}/{email}/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `app`
+* Required scope: `{params.scope}`, `admin`
+
+Sets the user permissions. The parameter `provider` is either _gigya_ or _google_ and `email` must be an email address.
+
+
+## [POST /validate]
+
+* Query parameters: _None_
+* Required ticket type: `app`
+* Required scope: _None_
+
+This endpoint is used to validate requests in an app-to-app authentication scheme.
+
+When we need to secure an API, we can use BPC.
+Let's image an application callled *ApplicationA* needs to make authenticated requests to an API called *ApiB*.
+*ApplicationA* has already received it's app ticket from BPC. In case *ApplicationA* has any users, these will propably also have a user ticket.
+These same tickets and Hawk can be used to authenticated requests to *ApiB*. Just like when making authenticated requests to BPC, the Hawk authentication header is generated using the ticket and adding it to the Authorization HTTP header.
+When *ApiB* receives requests with the Hawk authentication header, these request can validated by making another request from *ApiB* to BPC, containing details about the request from *ApplicationA*. The validation can be specified to be of:
+* A valid ticket (default)
+* A valid ticket issued to a specific app
+* A valid ticket issued to a specific user
+* A valid ticket containing a scope
+
+Example payload:
+
+```
+{
+  method: 'get',
+  url: '/resource/1234',
+  headers:
+  {
+    host: 'exampleapi.com',
+    authorization: 'Hawk id="Fe26.2**9e4*tWfFBw*V5-[SHORTENED]-sQ**7e413*gr62g", ts="1499698964", nonce="xTovQC", mac="GL4PSU3DwJQ+hHAH9NbKnxGEyhQNJON781YYrobEQAQ=", app="application_a"' }
+  },
+  scope: [ 'test_scope' ],
+  app: 'application_a',
+  user: '1234'
+}
+```
+
+If the validation succeeds, BPC responds with a `200 OK`. If else a `401 Unauthorized`.
+
+
+
+
+## [GET /applications]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `admin`
+
+This endpoint is used to get a list all of applications.
+This can only be done by an admin (aka. console user).
+
+
+
+
+
+## [POST /applications]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `admin`
+
+This endpoint is used to create a new application.
+This can only be done by an admin (aka. console user).
+When inserting a new application, the user, who performs the action will automatically become an application-admin.
+
+
+
+
+
+
+## [GET /applications/{id}]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `admin:{params.id}`, `admin:\*`
+
+This endpoint is used to get details on a specific application.
+This can only be done either by an application-admin or a super-admin.
+
+
+
+
+
+## [PUT /applications/{id}]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `admin:{params.id}`, `admin:\*`
+
+This endpoint is used to update a specific application.
+This can only be done either by an application-admin or a super-admin.
+
+
+
+
+
+## [DELETE /applications/{id}]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `admin:{params.id}`, `admin:\*`
+
+This endpoint is used to remove a specific application.
+This can only be done either by an application-admin or a super-admin.
+
+
+
+
+
+## [GET /applications/{id}/grants]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `admin:{params.id}`, `admin:\*`
+
+This endpoint is used to list all grants for a specific application.
+This can only be done either by an application-admin or a super-admin.
+
+
+
+
+
+## [POST /applications/{id}/grants]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `admin:{params.id}`, `admin:\*`
+
+This endpoint is used to create a specific grant.
+This can only be done either by an application-admin or a super-admin.
+
+
+
+
+
+## [POST /applications/{id}/grants/{grantId}]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `admin:{params.id}`, `admin:\*`
+
+This endpoint is used to update a specific grant.
+This can only be done either by an application-admin or a super-admin.
+
+
+
+
+
+
+## [DELETE /applications/{id}/grants/{grantId}]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `admin:{params.id}`, `admin:\*`
+
+This endpoint is used to remove a specific grant.
+This can only be done either by an application-admin or a super-admin.

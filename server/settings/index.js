@@ -11,11 +11,11 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/{name}',
+    path: '/{scope}',
     config: {
       auth: {
         access: {
-          scope: ['{params.name}', 'admin'],
+          scope: ['{params.scope}', 'admin'],
           entity: 'any'
         }
       },
@@ -33,18 +33,18 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('settings', request.params.name);
-      MongoDB.collection('settings').find({name: request.params.name}).toArray(reply);
+      console.log('settings', request.params.scope);
+      MongoDB.collection('settings').find({name: request.params.scope}).toArray(reply);
     }
   });
 
   server.route({
     method: 'GET',
-    path: '/{name}/{key}',
+    path: '/{scope}/{key}',
     config: {
       auth: {
         access: {
-          scope: ['{params.name}', 'admin'],
+          scope: ['{params.scope}', 'admin'],
           entity: 'any'
         }
       },
@@ -62,8 +62,8 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('GET settings key', request.params.name, request.params.key);
-      MongoDB.collection('settings').findOne({name: request.params.name, key: request.params.key}, function(err, result){
+      console.log('GET settings key', request.params.scope, request.params.key);
+      MongoDB.collection('settings').findOne({name: request.params.scope, key: request.params.key}, function(err, result){
         if (err){
           reply(err)
         } else if (result === null) {
@@ -77,11 +77,11 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'PUT',
-    path: '/{name}/{key}',
+    path: '/{scope}/{key}',
     config: {
       auth: {
         access: {
-          scope: ['{params.name}', 'admin'],
+          scope: ['{params.scope}', 'admin'],
           entity: 'any'
         }
       },
@@ -99,16 +99,17 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      console.log('PUT settings key', request.params.name, request.params.key);
+      console.log('PUT settings key', request.params.scope, request.params.key);
 
       if (typeof request.payload === 'object'){
         delete request.payload.name; // Making sure name is not $set
+        delete request.payload.scope; // Making sure scope is not $set
         delete request.payload.key; // Making sure key is not $set
       }
 
       MongoDB.collection('settings').update(
         {
-          name: request.params.name,
+          name: request.params.scope,
           key: request.params.key
         },
         {

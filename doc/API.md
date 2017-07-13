@@ -28,9 +28,9 @@ part of the endpoint in question.
 * [`POST /users/register`](#post-usersregister)
 * [`GET /users/search`](#get-userssearch)
 * [`GET /users/exists`](#get-usersexists)
-* [`GET /permissions/{name}`](#get-permissionsname)
-* [`GET /permissions/{user}/{name}`](#get-permissionsusername)
-* [`POST /permissions/{user}/{name}`](#post-permissionsusername)
+* [`GET /permissions/{scope}`](#get-permissionsscope)
+* [`GET /permissions/{user}/{scope}`](#get-permissionsuserscope)
+* [`POST /permissions/{user}/{scope}`](#post-permissionsuserscope)
 * [`GET /permissions/{provider}/{email}/{scope}`](#get-permissionsprovideremailscope)
 * [`POST /permissions/{provider}/{email}/{scope}`](#post-permissionsprovideremailscope)
 * [`POST /validate`](#post-validate)
@@ -43,9 +43,9 @@ part of the endpoint in question.
 * [`POST /applications/{id}/grants`](#post-applicationsidgrants)
 * [`POST /applications/{id}/grants/{grantId}`](#post-applicationsidgrantsgrantid)
 * [`DELETE /applications/{id}/grants/{grantId}`](#delete-applicationsidgrantsgrantid)
-* [`GET /settings/{name}`](#)
-* [`GET /settings/{name}/{key}`](#)
-* [`PUT /settings/{name}/{key}`](#)
+* [`GET /settings/{scope}`](#)
+* [`GET /settings/{scope}/{key}`](#)
+* [`PUT /settings/{scope}/{key}`](#)
 
 
 ## [GET /healthcheck]

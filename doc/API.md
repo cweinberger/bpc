@@ -43,9 +43,9 @@ part of the endpoint in question.
 * [`POST /applications/{id}/grants`](#post-applicationsidgrants)
 * [`POST /applications/{id}/grants/{grantId}`](#post-applicationsidgrantsgrantid)
 * [`DELETE /applications/{id}/grants/{grantId}`](#delete-applicationsidgrantsgrantid)
-* [`GET /settings/{scope}`](#)
-* [`GET /settings/{scope}/{key}`](#)
-* [`PUT /settings/{scope}/{key}`](#)
+* [`GET /settings/{scope}`](#) TODO
+* [`GET /settings/{scope}/{key}`](#) TODO
+* [`PUT /settings/{scope}/{key}`](#) TODO
 
 
 ## [GET /healthcheck]

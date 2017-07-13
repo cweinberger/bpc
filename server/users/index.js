@@ -8,7 +8,7 @@ const Oz = require('oz');
 const OzLoadFuncs = require('./../oz_loadfuncs');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
-const Accounts = require('./../accounts/accounts');
+const Users = require('./users');
 const GigyaAccounts = require('./../gigya/gigya_accounts');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const EventLog = require('./../audit/eventlog');
@@ -183,10 +183,10 @@ module.exports.register = function (server, options, next) {
       // Lowercase the email.
       user.email = user.email.toLowerCase();
 
-      // TODO: It's not obvious what Accounts.register does.
-      // Does is store in Gigya, MongoDB or both.
-      // Seperate it into more functions
-      Accounts.register(user).then(
+      // TODO: It's not obvious what Users.register does.
+      // Does is store in Gigya, MongoDB or both??
+      // Seperate it into more functions so it's obvious its both Gigya and MongoDB
+      Users.register(user).then(
         data => reply(data.body ? data.body : data),
         err => {
           if (err.code === 400009 && Array.isArray(err.details) &&
@@ -287,7 +287,7 @@ module.exports.register = function (server, options, next) {
           }
           else {
 
-            Accounts.updateUserId(result)
+            Users.updateUserId(result)
               .catch((err) => {
                 return reply(Boom.notFound("User " + user.email + " not found", err));
               })
@@ -295,7 +295,7 @@ module.exports.register = function (server, options, next) {
                 delete user.email;
                 user.uid = id;
 
-                Accounts.update(user).then(
+                Users.update(user).then(
                   data => reply(data.body ? data.body : data),
                   err => {
                     // Reply with the usual Internal Server Error otherwise.
@@ -360,7 +360,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: (request, reply) => {
-      return Accounts.deleteOne(request.params.id).then(
+      return Users.deleteOne(request.params.id).then(
         res => reply(GigyaUtils.isError(res) ? GigyaUtils.errorToResponse(res) : res),
         err => {
           if (err.code === 403005) {

@@ -28,6 +28,12 @@ part of the endpoint in question.
 * [`POST /users/register`](#post-usersregister)
 * [`GET /users/search`](#get-userssearch)
 * [`GET /users/exists`](#get-usersexists)
+* [`GET /users/schema`](#) TODO
+* [`PATCH /users/schema`](#) TODO
+* [`POST /users/resetpassword`](#) TODO
+* [`POST /users/update`](#) TODO
+* [`POST /users/{id}/superadmin`](#) TODO
+* [`DELETE /users/{id}/superadmin`](#) TODO
 * [`GET /permissions/{scope}`](#get-permissionsscope)
 * [`GET /permissions/{user}/{scope}`](#get-permissionsuserscope)
 * [`POST /permissions/{user}/{scope}`](#post-permissionsuserscope)

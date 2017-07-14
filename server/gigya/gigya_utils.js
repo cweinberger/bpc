@@ -6,7 +6,7 @@ const Boom = require('boom');
 const Crypto = require('crypto');
 const GigyaError = require('./gigya_error');
 
-const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY;
+const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY || '';
 
 module.exports = {
   isError,

@@ -58,6 +58,7 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  // TODO: Remove GET /schema
   server.route({
     method: 'GET',
     path: '/schema',
@@ -79,6 +80,7 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  // TODO: Remove PATCH /schema
   server.route({
     method: 'PATCH',
     path: '/schema',
@@ -156,6 +158,8 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  // TODO: this endpoint must be moved to /gigya and re-written to only create user in Gigya.
+  // Then the webhook event accountCreated will be fired and the user created in Mongo
   server.route({
     method: 'POST',
     path: '/register',
@@ -206,54 +210,8 @@ module.exports.register = function (server, options, next) {
   });
 
 
-  server.route({
-    method: 'POST',
-    path: '/resetpassword',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin', 'users'],
-          entity: 'any'
-        }
-      },
-      cors: stdCors,
-      validate: {
-        payload: {
-          email: Joi.string().email().required(),
-          newPassword: Joi.string().required()
-        }
-      }
-    },
-    handler: function(request, reply) {
-
-      var newPassword = request.payload.newPassword;
-
-      GigyaAccounts.resetPassword({
-        loginID: request.payload.email,
-        sendEmail: false
-      }).then(function (response) {
-
-        GigyaAccounts.resetPassword({
-          passwordResetToken: response.body.passwordResetToken,
-          newPassword: newPassword,
-          sendEmail: false
-        }).then(function(response) {
-          reply({'status': 'ok'});
-        }).catch(function(err){
-          console.error(err);
-          return exposeError(reply, err);
-        });
-
-      }).catch(function(err) {
-
-        console.error(err);
-        return exposeError(reply, err);
-
-      });
-    }
-  });
-
-
+  // TODO: this endpoint must be moved to /gigya and re-written to only update user in Gigya.
+  // Then the webhook event accountUpdatedEventHandler will be fired and the user created in Mongo
   server.route({
     method: 'POST',
     path: '/update',
@@ -311,6 +269,55 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
+    method: 'POST',
+    path: '/resetpassword',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: {
+          email: Joi.string().email().required(),
+          newPassword: Joi.string().required()
+        }
+      }
+    },
+    handler: function(request, reply) {
+
+      var newPassword = request.payload.newPassword;
+
+      GigyaAccounts.resetPassword({
+        loginID: request.payload.email,
+        sendEmail: false
+      }).then(function (response) {
+
+        GigyaAccounts.resetPassword({
+          passwordResetToken: response.body.passwordResetToken,
+          newPassword: newPassword,
+          sendEmail: false
+        }).then(function(response) {
+          reply({'status': 'ok'});
+        }).catch(function(err){
+          console.error(err);
+          return exposeError(reply, err);
+        });
+
+      }).catch(function(err) {
+
+        console.error(err);
+        return exposeError(reply, err);
+
+      });
+    }
+  });
+
+
+
+  server.route({
     method: 'GET',
     path: '/{id}',
     config: {
@@ -323,6 +330,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
+      // TODO: Move code to user.js
       MongoDB.collection('users').aggregate(
         [{
           $match: {
@@ -360,18 +368,37 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: (request, reply) => {
-      return Users.deleteOne(request.params.id).then(
-        res => reply(GigyaUtils.isError(res) ? GigyaUtils.errorToResponse(res) : res),
-        err => {
-          if (err.code === 403005) {
-            // Unknown id, so reply 404 Not Found.
-            return reply(Boom.notFound(`[${err.code}] ${err.message}`));
-          } else {
-            // Everything else is Internal Server Error.
-            return exposeError(reply, err);
-          }
+
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+
+        if (err) {
+          console.error(err);
+          return reply(GigyaUtils.errorToResponse(err));
         }
-      );
+
+        if (ticket.user === request.params.id){
+          return reply(Boom.badRequest('You cannot delete yourself'));
+        }
+
+        // TODO: Move code to user.js
+        // TODO: Set deletedAt timestamp? Or should we do more?
+        return MongoDB.collection('users').update(
+          { id: request.params.id },
+          { $set: { deletedAt: new Date() } },
+          function (err, result) {
+            if (err) {
+              EventLog.logUserEvent(
+                request.params.id,
+                'Deleting user Failed'
+              );
+              return reply(err);
+            }
+
+            EventLog.logUserEvent(request.params.id, 'Deleting user');
+            reply({'status': 'ok'});
+          }
+        );
+      });
     }
   });
 
@@ -389,8 +416,8 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization,
-          function(err, ticket) {
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket) {
+        // TODO: Move code to user.js
         MongoDB.collection('grants').update(
           {
             app: ticket.app,
@@ -415,7 +442,8 @@ module.exports.register = function (server, options, next) {
             );
             reply({'status': 'ok'});
 
-          });
+          }
+        );
       });
     }
   });
@@ -445,6 +473,7 @@ module.exports.register = function (server, options, next) {
           return reply(Boom.badRequest('You cannot demote yourself'));
         }
 
+        // TODO: Move code to user.js
         MongoDB.collection('grants').update(
           {
             app: ticket.app,

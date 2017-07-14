@@ -25,15 +25,19 @@ part of the endpoint in question.
 * [`GET /users`](#get-users)
 * [`GET /users/{id}`](#get-usersid)
 * [`DELETE /users/{id}`](#delete-usersid)
-* [`POST /users/register`](#post-usersregister)
-* [`GET /users/search`](#get-userssearch)
-* [`GET /users/exists`](#get-usersexists)
-* [`GET /users/schema`](#) TODO
-* [`PATCH /users/schema`](#) TODO
-* [`POST /users/resetpassword`](#) TODO
-* [`POST /users/update`](#) TODO
 * [`POST /users/{id}/superadmin`](#) TODO
 * [`DELETE /users/{id}/superadmin`](#) TODO
+* [`GET /users/exists`](#get-usersexists)
+* [`POST /users/register`](#post-usersregister)
+* [`POST /users/update`](#post-usersupdate)
+* [`POST /users/resetpassword`](#post-usersresetpassword)
+* [`GET /users/search`](#get-userssearch)
+* [`GET /users/schema`](#get-usersschema)
+* [`PATCH /users/schema`](#patch-usersschema)
+* [`GET /gigya/schema`](#get-gigyaschema)
+* [`PATCH /gigya/schema`](#patch-gigyaschema)
+* [`GET /gigya/search`](#get-gigyasearch)
+* [`GET /gigya/exists`](#get-gigyaexists)
 * [`GET /permissions/{scope}`](#get-permissionsscope)
 * [`GET /permissions/{user}/{scope}`](#get-permissionsuserscope)
 * [`POST /permissions/{user}/{scope}`](#post-permissionsuserscope)
@@ -190,14 +194,71 @@ Looks up the user with the given id (UID).
 Deletes the user with the given id (UID). This call will attempt to delete the
 user from Gigya, and if successful, mark the local user as deleted.
 
+**TEMPORARY**: This endpoint will eventually be removed.
+Instead, in the future, users are deleted directly in Gigya and webhooks will call BPC to  mark them as deleted.
 
 
 
 
+## [GET /users/exists]
+
+**OBSOLETE**: Use endpoint `GET /gigya/exists` instead.
+
+
+
+
+
+
+## [POST /users/register]
+
+* Query parameters: _None_
+* Required ticket type: `any`
+* Required scope: `admin`, `users`
+
+Registers a new Gigya account and creates a user in the local database which is
+a direct match to the corresponding Gigya account, but containing selected data.
+
+Example POST request:
+
+```
+{
+	"email": "camj@berlingskemedia.dk",
+	"password": "my-secret-password",
+	"profile": {
+		"firstName": "Camilla",
+		"lastName": "Julie Jensen"
+	}
+}
+```
+
+Returns the user object as stored in the database.
+
+Profile fields are directly matched to their corresponding whitelisted fields in
+Gigya. Please note the restrictions here; only a limited set of fields are
+allowed.
+
+
+
+## [POST /users/update]
+
+**TEMPORARY**: This endpoint will eventually be removed.
+Instead, in the future, user profile updates must be made using the Gigya Web SDK.
+
+
+## POST /users/resetpassword
+
+**TEMPORARY**: This endpoint will eventually be removed.
+Instead, in the future, user password reset must be made using the Gigya API.
 
 
 
 ## [GET /users/search]
+
+**OBSOLETE**: Use endpoint `GET /gigya/search` instead.
+
+
+
+## GET /gigya/search
 
 * Query parameters:
   * `query` - SQL-style Gigya query to search by
@@ -255,9 +316,7 @@ Example result:
 ```
 
 
-
-
-## [GET /users/exists]
+## GET /gigya/exists
 
 * Query parameters:
   * `email` - email address to check
@@ -278,41 +337,6 @@ Example result:
   "time": "2017-03-27T10:44:47.274Z"
 }
 ```
-
-
-
-
-
-## [POST /users/register]
-
-* Query parameters: _None_
-* Required ticket type: `any`
-* Required scope: `admin`, `users`
-
-Registers a new Gigya account and creates a user in the local database which is
-a direct match to the corresponding Gigya account, but containing selected data.
-
-Example POST request:
-
-```
-{
-	"email": "camj@berlingskemedia.dk",
-	"password": "my-secret-password",
-	"profile": {
-		"firstName": "Camilla",
-		"lastName": "Julie Jensen"
-	}
-}
-```
-
-Returns the user object as stored in the database.
-
-Profile fields are directly matched to their corresponding whitelisted fields in
-Gigya. Please note the restrictions here; only a limited set of fields are
-allowed.
-
-
-
 
 
 

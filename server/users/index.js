@@ -8,7 +8,7 @@ const Oz = require('oz');
 const OzLoadFuncs = require('./../oz_loadfuncs');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
-const Accounts = require('./../accounts/accounts');
+const Users = require('./users');
 const GigyaAccounts = require('./../gigya/gigya_accounts');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const EventLog = require('./../audit/eventlog');
@@ -58,6 +58,7 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  // TODO: Remove GET /schema
   server.route({
     method: 'GET',
     path: '/schema',
@@ -79,6 +80,7 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  // TODO: Remove PATCH /schema
   server.route({
     method: 'PATCH',
     path: '/schema',
@@ -156,6 +158,8 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  // TODO: this endpoint must be moved to /gigya and re-written to only create user in Gigya.
+  // Then the webhook event accountCreated will be fired and the user created in Mongo
   server.route({
     method: 'POST',
     path: '/register',
@@ -183,10 +187,10 @@ module.exports.register = function (server, options, next) {
       // Lowercase the email.
       user.email = user.email.toLowerCase();
 
-      // TODO: It's not obvious what Accounts.register does.
-      // Does is store in Gigya, MongoDB or both.
-      // Seperate it into more functions
-      Accounts.register(user).then(
+      // TODO: It's not obvious what Users.register does.
+      // Does is store in Gigya, MongoDB or both??
+      // Seperate it into more functions so it's obvious its both Gigya and MongoDB
+      Users.register(user).then(
         data => reply(data.body ? data.body : data),
         err => {
           if (err.code === 400009 && Array.isArray(err.details) &&
@@ -202,6 +206,64 @@ module.exports.register = function (server, options, next) {
         }
       );
 
+    }
+  });
+
+
+  // TODO: this endpoint must be moved to /gigya and re-written to only update user in Gigya.
+  // Then the webhook event accountUpdatedEventHandler will be fired and the user created in Mongo
+  server.route({
+    method: 'POST',
+    path: '/update',
+    config: {
+      auth:  {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: {
+          data: Joi.object().optional(),
+          email: Joi.string().email().required(),
+          profile: Joi.object().optional()
+        }
+      }
+    },
+    handler: (request, reply) => {
+
+      const user = request.payload;
+      const userQuery = {email: user.email};
+      MongoDB.collection('users').findOne(userQuery, function(err, result) {
+        if (err) {
+          reply(Boom.internal(err.message, userQuery, err.code));
+        }
+        else {
+          if (!result) {
+            reply(Boom.notFound('User not found', userQuery))
+          }
+          else {
+
+            Users.updateUserId(result)
+              .catch((err) => {
+                return reply(Boom.notFound("User " + user.email + " not found", err));
+              })
+              .then((id) => {
+                delete user.email;
+                user.uid = id;
+
+                Users.update(user).then(
+                  data => reply(data.body ? data.body : data),
+                  err => {
+                    // Reply with the usual Internal Server Error otherwise.
+                    return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+                  }
+                );
+              });
+          }
+        }
+      });
     }
   });
 
@@ -254,61 +316,6 @@ module.exports.register = function (server, options, next) {
   });
 
 
-  server.route({
-    method: 'POST',
-    path: '/update',
-    config: {
-      auth:  {
-        access: {
-          scope: ['admin', 'users'],
-          entity: 'any'
-        }
-      },
-      cors: stdCors,
-      validate: {
-        payload: {
-          data: Joi.object().optional(),
-          email: Joi.string().email().required(),
-          profile: Joi.object().optional()
-        }
-      }
-    },
-    handler: (request, reply) => {
-
-      const user = request.payload;
-      const userQuery = {email: user.email};
-      MongoDB.collection('users').findOne(userQuery, function(err, result) {
-        if (err) {
-          reply(Boom.internal(err.message, userQuery, err.code));
-        }
-        else {
-          if (!result) {
-            reply(Boom.notFound('User not found', userQuery))
-          }
-          else {
-
-            Accounts.updateUserId(result)
-              .catch((err) => {
-                return reply(Boom.notFound("User " + user.email + " not found", err));
-              })
-              .then((id) => {
-                delete user.email;
-                user.uid = id;
-
-                Accounts.update(user).then(
-                  data => reply(data.body ? data.body : data),
-                  err => {
-                    // Reply with the usual Internal Server Error otherwise.
-                    return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
-                  }
-                );
-              });
-          }
-        }
-      });
-    }
-  });
-
 
   server.route({
     method: 'GET',
@@ -323,6 +330,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
+      // TODO: Move code to user.js
       MongoDB.collection('users').aggregate(
         [{
           $match: {
@@ -360,18 +368,37 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: (request, reply) => {
-      return Accounts.deleteOne(request.params.id).then(
-        res => reply(GigyaUtils.isError(res) ? GigyaUtils.errorToResponse(res) : res),
-        err => {
-          if (err.code === 403005) {
-            // Unknown id, so reply 404 Not Found.
-            return reply(Boom.notFound(`[${err.code}] ${err.message}`));
-          } else {
-            // Everything else is Internal Server Error.
-            return exposeError(reply, err);
-          }
+
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+
+        if (err) {
+          console.error(err);
+          return reply(GigyaUtils.errorToResponse(err));
         }
-      );
+
+        if (ticket.user === request.params.id){
+          return reply(Boom.badRequest('You cannot delete yourself'));
+        }
+
+        // TODO: Move code to user.js
+        // TODO: Set deletedAt timestamp? Or should we do more?
+        return MongoDB.collection('users').update(
+          { id: request.params.id },
+          { $set: { deletedAt: new Date() } },
+          function (err, result) {
+            if (err) {
+              EventLog.logUserEvent(
+                request.params.id,
+                'Deleting user Failed'
+              );
+              return reply(err);
+            }
+
+            EventLog.logUserEvent(request.params.id, 'Deleting user');
+            reply({'status': 'ok'});
+          }
+        );
+      });
     }
   });
 
@@ -389,8 +416,8 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization,
-          function(err, ticket) {
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket) {
+        // TODO: Move code to user.js
         MongoDB.collection('grants').update(
           {
             app: ticket.app,
@@ -415,7 +442,8 @@ module.exports.register = function (server, options, next) {
             );
             reply({'status': 'ok'});
 
-          });
+          }
+        );
       });
     }
   });
@@ -445,6 +473,7 @@ module.exports.register = function (server, options, next) {
           return reply(Boom.badRequest('You cannot demote yourself'));
         }
 
+        // TODO: Move code to user.js
         MongoDB.collection('grants').update(
           {
             app: ticket.app,

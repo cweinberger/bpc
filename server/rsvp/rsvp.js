@@ -2,7 +2,7 @@
 'use strict';
 
 const Oz = require('oz');
-const Boom = require('boom'); // TODO: We don't wanna use the router-centric Boom.js so far into our business logic.
+const Boom = require('boom');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 const GigyaAccounts = require('./../gigya/gigya_accounts');

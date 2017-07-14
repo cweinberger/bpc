@@ -1,7 +1,7 @@
 /* jshint node: true */
 'use strict';
 
-
+const Boom = require('boom');
 const GigyaAccounts = require('./../gigya/gigya_accounts');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const MongoDB = require('./../mongo/mongodb_client');
@@ -10,7 +10,6 @@ const EventLog = require('./../audit/eventlog');
 
 module.exports = {
   register,
-  deleteOne,
   update,
   updateUserId
 };
@@ -114,23 +113,4 @@ function updateUserId({id, email}) {
 
       return id;
     });
-}
-
-/**
- * Deletes a single account from Gigya, and marks the local one as deleted
- *
- * @param {String} Gigya user id
- */
-function deleteOne(id) {
-
-  return GigyaAccounts.deleteAccount(id).then(data => {
-
-    EventLog.logUserEvent(id, 'Deleting user');
-
-    // TODO: Set deletedAt timestamp? Or should we do more?
-    return MongoDB.collection('users')
-      .findOneAndUpdate({id: id}, {$set: {deletedAt: new Date()}});
-
-  }, err => Promise.reject(err));
-
 }

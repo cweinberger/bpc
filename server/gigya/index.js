@@ -92,9 +92,9 @@ module.exports.register = function (server, options, next) {
         reply();
 
       } else {
-        console.log('validNotificationRequest NO');
-        // reply(Boom.badRequest());
-        reply();
+
+        reply(Boom.badRequest());
+        
       }
     }
   })

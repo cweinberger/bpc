@@ -87,14 +87,40 @@ module.exports.register = function (server, options, next) {
       if (GigyaUtils.validNotificationRequest(request)){
 
 
-        request.payload.events.forEach(handleEvent)
+        request.payload.events.forEach(event => {
+          switch (event.type) {
+            // Types of events:
+            // accountCreated
+            // accountRegistered
+            // accountUpdated
+            // accountLoggedIn
+            // accountDeleted
+            case "accountCreated":
+              accountCreatedEventHandler(event);
+              break;
+            case "accountRegistered":
+              accountRegisteredEventHandler(event);
+              break;
+            case "accountUpdated":
+              accountUpdatedEventHandler(event);
+              break;
+            case "accountLoggedIn":
+              accountLoggedInEventHandler(event);
+              break;
+            case "accountDeleted":
+              accountDeletedEventHandler(event);
+              break;
+            default:
+
+          }
+        });
 
         reply();
 
       } else {
 
         reply(Boom.badRequest());
-        
+
       }
     }
   })
@@ -110,34 +136,6 @@ module.exports.register.attributes = {
   version: '1.0.0'
 };
 
-
-function handleEvent(event){
-  switch (event.type) {
-    // Types of events:
-    // accountCreated
-    // accountRegistered
-    // accountUpdated
-    // accountLoggedIn
-    // accountDeleted
-    case "accountCreated":
-      accountCreatedEventHandler(event);
-      break;
-    case "accountRegistered":
-      accountRegisteredEventHandler(event);
-      break;
-    case "accountUpdated":
-      accountUpdatedEventHandler(event);
-      break;
-    case "accountLoggedIn":
-      accountLoggedInEventHandler(event);
-      break;
-    case "accountDeleted":
-      accountDeletedEventHandler(event);
-      break;
-    default:
-
-  }
-}
 
 function accountCreatedEventHandler(event){
   console.log('accountCreatedEventHandler', event.data.uid);

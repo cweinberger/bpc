@@ -41,20 +41,20 @@ module.exports.register = function (server, options, next) {
 
       Oz.server.authenticate(request.payload, OzLoadFuncs.strategyOptions.oz.encryptionPassword, options, function(err, result) {
         if (err) {
-          return reply(Boom.unauthorized());
+          return reply(Boom.forbidden());
         }
 
         // If the validator wants the request to be only valid for a specific app
         if (request.payload.app) {
           if (request.payload.app != result.app) {
-            return reply(Boom.unauthorized());
+            return reply(Boom.forbidden());
           }
         }
 
         // If the validator wants the request to be only valid for a specific user
         if (request.payload.user){
           if (request.payload.user != result.user) {
-            return reply(Boom.unauthorized());
+            return reply(Boom.forbidden());
           }
         }
 
@@ -64,14 +64,14 @@ module.exports.register = function (server, options, next) {
             return result.scope.indexOf(s) > -1;
           });
           if (!hasScope) {
-            return reply(Boom.unauthorized());
+            return reply(Boom.forbidden());
           }
         }
 
         // If the validator wants the request to be only valid for a user with a specific permission
         if (request.payload.permissions) {
           if (!result.user){
-            return reply(Boom.unauthorized());
+            return reply(Boom.forbidden());
           }
 
           // TODO: These validations can also be made against the private part of the ticket, if the permissions has been injected there.
@@ -81,6 +81,52 @@ module.exports.register = function (server, options, next) {
         }
 
         reply({'status': 'ok'});
+      });
+    }
+  });
+
+
+  server.route({
+    method: 'POST',
+    path: '/genpayload',
+    config: {
+      auth: {
+        access: {
+          entity: 'app'
+        }
+      },
+      validate: {
+        payload : {
+         method: Joi.string().uppercase().valid(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']).required(),
+         uri: Joi.string().uri().required(),
+         app: Joi.string(),
+         user: Joi.string(),
+         scope: Joi.array().items(Joi.string())
+       }
+     }
+    },
+    handler: function(request, reply) {
+
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+
+        const _method = request.payload.method.toUpperCase();
+        const Url = require('url');
+        const _url = Url.parse(request.payload.uri);
+        const _authorizationHeader = Oz.hawk.client.header(_url.href, _method, {credentials: ticket, app: ticket.app });
+        if (_authorizationHeader.err) {
+          return reply(Boom.badRequest(_authorizationHeader.err));
+        }
+
+        var tmp = Object.assign({}, request.payload);
+
+        delete tmp.uri;
+        tmp.url = _url.path;
+        tmp.headers = {
+          host: _url.host,
+          authorization: _authorizationHeader.field
+        };
+
+        reply(tmp);
       });
     }
   });

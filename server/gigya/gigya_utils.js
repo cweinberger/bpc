@@ -6,6 +6,10 @@ const Boom = require('boom');
 const Crypto = require('crypto');
 const GigyaError = require('./gigya_error');
 
+if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
+  process.env.GIGYA_SECRET_KEY = 'random_test_password_that_is_longer_than_32_characters';
+}
+
 const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY || '';
 
 module.exports = {

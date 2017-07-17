@@ -13,9 +13,11 @@ module.exports.request = function (options, ticket, callback) {
     method: options.method,
     url: options.url,
     payload: options.payload,
-    headers: {
-      host: 'test.com'
-    }
+    headers: Object.assign(options.headers || {},
+      {
+        host: 'testing.com'
+      }
+    )
   };
 
   if (ticket !== undefined && ticket !== null && ticket !== {}) {

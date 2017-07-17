@@ -11,7 +11,8 @@ const EventLog = require('./../audit/eventlog');
 module.exports = {
   register,
   update,
-  updateUserId
+  updateUserId,
+  updateUserInDB
 };
 
 
@@ -94,6 +95,45 @@ function update(user) {
   });
 
 }
+
+
+function updateUserInDB(data, callback) {
+
+  if (callback === undefined) {
+    callback = function(err, result) {
+      if (err) {
+        console.error(err);
+      }
+    };
+  }
+
+  const query = {
+    $or: [
+      {
+        id: data.id
+      },
+      {
+        provider: data.provider,
+        email: data.email
+      }
+    ]
+  };
+
+  MongoDB.collection('users').update(query, {
+    $setOnInsert: {
+      dataScopes: {}
+    },
+     // We want to update id, email and provider in case we're missing one of the parameters
+    $set: data,
+    $currentDate: {
+      'lastLogin': { $type: "date" }
+    }
+  }, {
+    upsert: true
+  }, callback);
+
+}
+
 
 /**
  * Updates user Id if it doesn't exist

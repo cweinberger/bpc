@@ -5,6 +5,7 @@ const Oz = require('oz');
 const Boom = require('boom');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
+const Users = require('./../users/users');
 const GigyaAccounts = require('./../gigya/gigya_accounts');
 const Google = require('./../google/google_client');
 
@@ -44,7 +45,7 @@ function createGigyaRsvp(data, callback) {
       return callback(Boom.badRequest());
     }
 
-    updateUserInDB({ id: data.UID, email: result.body.profile.email.toLowerCase(), provider: data.provider });
+    Users.updateUserInDB({ id: data.UID, email: result.body.profile.email.toLowerCase(), provider: data.provider });
 
     findGrant({ user: data.UID, app: data.app, provider: data.provider }, callback);
 
@@ -63,7 +64,7 @@ function createGoogleRsvp(data, callback) {
       return callback(Boom.badRequest());
     } else {
 
-      updateUserInDB({ id: data.ID, email: result.email, provider: data.provider });
+      Users.updateUserInDB({ id: data.ID, email: result.email, provider: data.provider });
 
       findGrant({ user: data.ID, app: data.app, provider: data.provider }, callback);
 
@@ -146,39 +147,6 @@ function errorLogger(err, result) {
   }
 };
 
-
-function updateUserInDB(data, callback) {
-
-  if (callback === undefined) {
-    callback = errorLogger;
-  }
-
-  const query = {
-    $or: [
-      {
-        id: data.id
-      },
-      {
-        provider: data.provider,
-        email: data.email
-      }
-    ]
-  };
-
-  MongoDB.collection('users').update(query, {
-    $setOnInsert: {
-      dataScopes: {}
-    },
-     // We want to update id, email and provider in case we're missing one of the parameters
-    $set: data,
-    $currentDate: {
-      'lastLogin': { $type: "date" }
-    }
-  }, {
-    upsert: true
-  }, callback);
-
-}
 
 
 function grantIsExpired(grant) {

@@ -7,7 +7,7 @@ const Lab = require('lab');
 const lab = exports.lab = Lab.script();
 const rewire = require('rewire');
 const sinon = require('sinon');
-const MongoDB = require('./../server/mongo/mongodb_mocked');
+const MongoDB = require('./mongodb_mocked');
 const bpc = require('./../server');
 // const Applications = require('./../server/applications/applications');
 const crypto = require('crypto');

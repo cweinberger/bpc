@@ -171,4 +171,5 @@ function accountLoggedInEventHandler(event){
 
 function accountDeletedEventHandler(event){
   console.log('accountDeletedEventHandler', event.data.uid);
+  Users.deleteUserId({ id: event.data.uid, provider: 'gigya' });
 }

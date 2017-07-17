@@ -154,3 +154,11 @@ function updateUserId({id, email}) {
       return id;
     });
 }
+
+
+function deleteUserId({id, provider}){
+  return MongoDB.collection('users').update(
+    { id: id },
+    { $set: { deletedAt: new Date() } }
+  );
+}

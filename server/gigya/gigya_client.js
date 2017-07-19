@@ -18,10 +18,6 @@ const GigyaUtils = require('./gigya_utils');
 const GigyaError = require('./gigya_error');
 const EventLog = require('./../audit/eventlog');
 
-module.exports = {
-  callApi
-}
-
 
 /**
  * Performs a (POST) request against the Gigya REST API and returns the parsed
@@ -32,11 +28,11 @@ module.exports = {
  * @param {String} API accounts|audit|comments|ds|fidm|gm|ids|reports|socialize
  * @return {Promise} Promise which is resolved when a response is received
  */
-function callApi(path, payload = null, api = 'accounts') {
+module.exports.callApi = function(path, payload = null, api = 'accounts') {
 
   let form = null;
   if (payload) {
-    form = GigyaUtils.payloadToForm(payload);
+    form = payloadToForm(payload);
   }
 
   const options = {
@@ -81,7 +77,7 @@ function callApi(path, payload = null, api = 'accounts') {
         return reject(exception);
       }
 
-      if (GigyaUtils.isError(_body)) {
+      if(_body && (_body.errorCode > 0 || _body.statusCode > 300)) {
         console.error(`  Gigya Error: ${_body.statusCode}, ${_body.errorCode} ${_body.errorMessage}\n  Details: ${_body.errorDetails}`);
         // Check if there are details present in a response.
         if (_body.validationErrors) {
@@ -109,4 +105,23 @@ function callApi(path, payload = null, api = 'accounts') {
     });
 
   });
+}
+
+
+
+/**
+ * Certain data fields needs to be in string format when sent to Gigya - this
+ * function does just that
+ *
+ * @param {object} payload
+ *   Data to check if elements need to be stringified.
+ */
+function payloadToForm(payload) {
+  var form = Object.assign({}, payload);
+  Object.keys(form).forEach(key => {
+    if (typeof form[key] === 'object') {
+      form[key] = JSON.stringify(form[key]);
+    }
+  });
+  return form;
 }

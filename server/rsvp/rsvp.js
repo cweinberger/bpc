@@ -6,7 +6,7 @@ const Boom = require('boom');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 const Users = require('./../users/users');
-const GigyaAccounts = require('./../gigya/gigya_accounts');
+const Gigya = require('./../gigya/gigya_client');
 const Google = require('./../google/google_client');
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
@@ -37,13 +37,16 @@ function createGigyaRsvp(data, callback) {
   // 3. Check if the app uses Gigya accounts or perhaps pre-defined users
   //    (e.g. server-to-server auth keys)
   // Vefify the user is created in Gigya
-  
-  // TODO: Also verify using exchangeUIDSignature
-  //   (UIDSignature + signatureTimestamp).
-  //   Use accounts.exchangeUIDSignature
-  //   See https://developers.gigya.com/display/GD/accounts.exchangeUIDSignature+REST
-  GigyaAccounts.getAccountInfo({ UID: data.UID }).then(result => {
 
+  var exchangeUIDSignatureParams = {
+    UID: data.UID,
+    UIDSignature: data.UIDSignature,
+    signatureTimestamp: data.signatureTimestamp
+  };
+
+  Gigya.callApi('/accounts.exchangeUIDSignature', exchangeUIDSignatureParams)
+  .then(result => Gigya.callApi('/accounts.getAccountInfo', { UID: data.UID }))
+  .then(result => {
     if (data.email !== result.body.profile.email) {
       return callback(Boom.badRequest());
     }
@@ -52,8 +55,8 @@ function createGigyaRsvp(data, callback) {
 
     findGrant({ user: data.UID, app: data.app, provider: data.provider }, callback);
 
-  }, err => callback(err));
-
+  })
+  .catch(err => callback(err));
 }
 
 

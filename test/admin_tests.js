@@ -4,17 +4,8 @@ const Lab = require('lab');
 const lab = exports.lab = Lab.script();
 
 
-// const BPC = require('../server');
 
-// const scopeValidation = Joi.array().items(Joi.string().alphanum().regex(/^(.*?(\badmin\b)[^$]*)$/, { name: 'admin', invert: true }));
-// const scopeValidation = Joi.array().items(Joi.string());
-
-// const scopeValidation = Joi.array().items(Joi.string().regex(/^((?!admin).)*$/, { name: 'admin', invert: true })); // 7 ud af 8
-
-
-
-
-// TODO: I know these tests do NOT test the actual code.These are just examples.
+// I know these tests do NOT test the actual code.These are just examples.
 lab.experiment('the scope containing', () => {
 
   const Joi = require('joi');

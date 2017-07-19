@@ -41,15 +41,16 @@ module.exports.generateRsvp = function(app, grant, callback) {
 
 module.exports.initate = function (done) {
   // Need to wait a sec for the database/mongo-mock to start up...
-  setTimeout(function() {
-    clearMongoMock(function(){
-      fillMongoMock(function(){
-        bpc.start(function(){
-          done();
-        });
-      });
-    });
-  }, 1000);
+  var e = wait(1000)
+  .then(() => clearMongoMock())
+  .then(() => fillMongoMock())
+  .then(() => bpc.start(function(){
+    if (typeof done === 'function') {
+      done();
+    }
+  }));
+
+  return e;
 };
 
 
@@ -58,21 +59,16 @@ function clearMongoMock (done){
     return MongoDB.collection(collectionKey).remove({});
   });
 
-  Promise.all(k).then(res => {
-    done();
-  });
+  return Promise.all(k);
 }
 
 
 function fillMongoMock (done){
-
   var k = Object.keys(test_data).map(function(collectionKey){
     return MongoDB.collection(collectionKey).insert(objectToArray(test_data[collectionKey]))
   });
 
-  Promise.all(k).then(res => {
-    done();
-  });
+  return Promise.all(k);
 
   function objectToArray(input){
     return Object.keys(input).map(function(key){
@@ -85,3 +81,6 @@ function fillMongoMock (done){
 function random40Character() {
   return crypto.randomBytes(20).toString('hex'); // (gives 40 characters)
 }
+
+
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));

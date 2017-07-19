@@ -4,7 +4,7 @@
 
 const Joi = require('joi');
 const Boom = require('boom');
-const GigyaAccounts = require('./../gigya/gigya_accounts');
+const Gigya = require('./../gigya/gigya_client');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const Users = require('./../users/users');
 const exposeError = GigyaUtils.exposeError;
@@ -72,7 +72,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: (request, reply) => {
-      return GigyaAccounts.isEmailAvailable(request.query.email)
+      return Gigya.callApi('/accounts.isAvailableLoginID', {loginID: request.query.email})
         .then(res => reply(res.body), err => exposeError(reply, err));
     }
   });
@@ -140,11 +140,7 @@ module.exports.register.attributes = {
 function accountCreatedEventHandler(event){
   console.log('accountCreatedEventHandler', event.data.uid);
 
-  GigyaAccounts.getAccountInfo({ UID: data.UID }).then(result => {
-
-    if (data.email !== result.body.profile.email) {
-      return callback(Boom.badRequest());
-    }
+  Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid }).then(result => {
 
     Users.updateUserInDB({ id: event.data.uid, email: result.body.profile.email.toLowerCase(), provider: 'gigya' });
 
@@ -171,5 +167,5 @@ function accountLoggedInEventHandler(event){
 
 function accountDeletedEventHandler(event){
   console.log('accountDeletedEventHandler', event.data.uid);
-  Users.deleteUserId({ id: event.data.uid, provider: 'gigya' });
+  Users.deleteUserId(event.data.uid);
 }

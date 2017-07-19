@@ -13,24 +13,11 @@ if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') 
 const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY || '';
 
 module.exports = {
-  isError,
   errorToResponse,
   exposeError,
-  payloadToForm,
   validNotificationRequest
 }
 
-
-/**
- * Checks if the given Gigya response payload contains error information
- *
- * @param {Mixed} data
- */
-function isError(data) {
-
-  return data && (data.errorCode > 0 || data.statusCode > 300);
-
-}
 
 
 /**
@@ -81,28 +68,6 @@ function exposeError(reply, err, code = 500) {
 
 }
 
-
-/**
- * Certain data fields needs to be in string format when sent to Gigya - this
- * function does just that
- *
- * @param {object} payload
- *   Data to check if elements need to be stringified.
- */
-function payloadToForm(payload) {
-  const form = {};
-  for(let param in payload) {
-    if (payload.hasOwnProperty(param)) {
-      if (typeof(payload[param]) == 'object') {
-        form[param] = JSON.stringify(payload[param]);
-      }
-      else {
-        form[param] = payload[param];
-      }
-    }
-  }
-  return form;
-}
 
 const secretBuffer = new Buffer(GIGYA_SECRET_KEY, 'base64');
 const algorithm = 'sha1'; // sha256

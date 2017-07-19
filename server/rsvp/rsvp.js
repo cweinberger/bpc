@@ -36,8 +36,11 @@ function createGigyaRsvp(data, callback) {
   // 3. Check if the app uses Gigya accounts or perhaps pre-defined users
   //    (e.g. server-to-server auth keys)
   // Vefify the user is created in Gigya
+  
   // TODO: Also verify using exchangeUIDSignature
-  // (UIDSignature + signatureTimestamp).
+  //   (UIDSignature + signatureTimestamp).
+  //   Use accounts.exchangeUIDSignature
+  //   See https://developers.gigya.com/display/GD/accounts.exchangeUIDSignature+REST
   GigyaAccounts.getAccountInfo({ UID: data.UID }).then(result => {
 
     if (data.email !== result.body.profile.email) {

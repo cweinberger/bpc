@@ -4,10 +4,12 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
-const OzLoadFuncs = require('./../oz_loadfuncs');
 // const Hawk = require('hawk');
 // const Url = require('url');
 // const MongoDB = require('./../mongo/mongodb_client');
+const OzLoadFuncs = require('./../oz_loadfuncs');
+const ozOptions = Object.assign({}, OzLoadFuncs.strategyOptions.oz, { hawk: {host: null, port: null } });
+const encryptionPassword = OzLoadFuncs.strategyOptions.oz.encryptionPassword;
 
 module.exports.register = function (server, options, next) {
 
@@ -37,10 +39,11 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      var options = OzLoadFuncs.strategyOptions.oz;
 
-      Oz.server.authenticate(request.payload, OzLoadFuncs.strategyOptions.oz.encryptionPassword, options, function(err, result) {
+
+      Oz.server.authenticate(request.payload, encryptionPassword, ozOptions, function(err, result) {
         if (err) {
+          console.error(err);
           return reply(Boom.forbidden());
         }
 
@@ -106,8 +109,11 @@ module.exports.register = function (server, options, next) {
      }
     },
     handler: function(request, reply) {
-
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+        if(err) {
+          console.error(err);
+          return reply(err);
+        }
 
         const _method = request.payload.method.toUpperCase();
         const Url = require('url');

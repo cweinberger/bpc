@@ -5,8 +5,6 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Rsvp = require('./rsvp');
-const GigyaUtils = require('./../gigya/gigya_utils');
-const exposeError = GigyaUtils.exposeError;
 
 const corsRules = {
   credentials: true,
@@ -59,7 +57,9 @@ module.exports.register = function (server, options, next) {
     handler: function (request, reply) {
       Rsvp.createUserRsvp(request.query, (err, rsvp) => {
         if (err) {
-          return exposeError(reply, err);
+          // We want to hide the error from the end user.
+          // Boom.badImplementation() logs the error
+          return reply(Boom.badImplementation())
         }
         // After granting app access, the user returns to the app with the rsvp.
         if (request.query.returnUrl) {
@@ -84,7 +84,9 @@ module.exports.register = function (server, options, next) {
     handler: function (request, reply) {
       Rsvp.createUserRsvp(request.payload, (err, rsvp) => {
         if (err){
-          return exposeError(reply, err);
+          // We want to hide the error from the end user.
+          // Boom.badImplementation() logs the error
+          return reply(Boom.badImplementation())
         }
         // After granting app access, the user returns to the app with the rsvp
         reply(rsvp).header('X-RSVP-TOKEN', rsvp);

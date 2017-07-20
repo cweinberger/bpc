@@ -41,6 +41,7 @@ module.exports.register = function (server, options, next) {
 
       Oz.server.authenticate(request.payload, OzLoadFuncs.strategyOptions.oz.encryptionPassword, options, function(err, result) {
         if (err) {
+          console.error(err);
           return reply(Boom.forbidden());
         }
 
@@ -106,8 +107,11 @@ module.exports.register = function (server, options, next) {
      }
     },
     handler: function(request, reply) {
-
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+        if(err) {
+          console.error(err);
+          return reply(err);
+        }
 
         const _method = request.payload.method.toUpperCase();
         const Url = require('url');

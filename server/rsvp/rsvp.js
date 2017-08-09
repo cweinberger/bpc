@@ -13,22 +13,20 @@ const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
 
 module.exports = {
-  createUserRsvp
+  create: function (data, callback) {
+
+    if (data.provider === 'gigya') {
+      return createGigyaRsvp(data, callback);
+    } else if (data.provider === 'google') {
+      return createGoogleRsvp(data, callback);
+    } else {
+      return callback(new Error('Unsupported provider'));
+    }
+  }
 };
 
 
 // Here we are creating the user->app rsvp.
-function createUserRsvp(data, callback) {
-
-  if (data.provider === 'gigya') {
-    return createGigyaRsvp(data, callback);
-  } else if (data.provider === 'google') {
-    return createGoogleRsvp(data, callback);
-  } else {
-    return callback(new Error('Unsupported provider'));
-  }
-
-}
 
 
 function createGigyaRsvp(data, callback) {

@@ -52,7 +52,7 @@ module.exports.callApi = function(path, payload = null, api = 'accounts') {
 
   // Request logging is for auditing purposes.
   console.log(`HTTP/${options.method} ${options.url}`);
-  console.log(`  Payload: ${JSON.stringify(payload)}`);
+  // console.log(`  Payload: ${JSON.stringify(payload)}`);
 
   return new Promise((resolve, reject) => {
 

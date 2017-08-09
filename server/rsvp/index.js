@@ -55,11 +55,15 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function (request, reply) {
-      Rsvp.createUserRsvp(request.query, (err, rsvp) => {
+      Rsvp.create(request.query, (err, rsvp) => {
         if (err) {
-          // We want to hide the error from the end user.
-          // Boom.badImplementation() logs the error
-          return reply(Boom.badImplementation())
+          if(err.statusCode >= 500) {
+            // We want to hide the error from the end user.
+            // Boom.badImplementation() logs the error
+            return reply(Boom.badImplementation())
+          } else {
+            return reply().statusCode = err.statusCode;
+          }
         }
         // After granting app access, the user returns to the app with the rsvp.
         if (request.query.returnUrl) {
@@ -82,11 +86,15 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function (request, reply) {
-      Rsvp.createUserRsvp(request.payload, (err, rsvp) => {
+      Rsvp.create(request.payload, (err, rsvp) => {
         if (err){
-          // We want to hide the error from the end user.
-          // Boom.badImplementation() logs the error
-          return reply(Boom.badImplementation())
+          if(err.statusCode >= 500) {
+            // We want to hide the error from the end user.
+            // Boom.badImplementation() logs the error
+            return reply(Boom.badImplementation())
+          } else {
+            return reply().statusCode = err.statusCode;
+          }
         }
         // After granting app access, the user returns to the app with the rsvp
         reply(rsvp).header('X-RSVP-TOKEN', rsvp);

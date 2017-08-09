@@ -4,11 +4,9 @@
 const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
-// const Hawk = require('hawk');
-// const Url = require('url');
-// const MongoDB = require('./../mongo/mongodb_client');
+const Url = require('url');
 const OzLoadFuncs = require('./../oz_loadfuncs');
-const ozOptions = Object.assign({}, OzLoadFuncs.strategyOptions.oz, { hawk: {host: null, port: null } });
+const ozOptions = Object.assign({}, OzLoadFuncs.strategyOptions.oz, { hawk: { host: null, port: null } });
 const encryptionPassword = OzLoadFuncs.strategyOptions.oz.encryptionPassword;
 
 module.exports.register = function (server, options, next) {
@@ -25,11 +23,8 @@ module.exports.register = function (server, options, next) {
       validate: {
         payload : {
          method: Joi.string().required(),
-         url: Joi.string().required(),
-         headers: {
-           host: Joi.string().required(),
-           authorization: Joi.string().required(),
-         },
+         url: Joi.string().uri().required(),
+         authorization: Joi.string().required(),
          app: Joi.string(),
          user: Joi.string(),
          scope: Joi.array().items(Joi.string()),
@@ -40,8 +35,21 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
 
 
+      var url = Url.parse(request.payload.url);
 
-      Oz.server.authenticate(request.payload, encryptionPassword, ozOptions, function(err, result) {
+      var payload = {
+        method: request.payload.method,
+        url: url.path,
+        headers: {
+          host: url.host,
+          authorization: request.payload.authorization
+        },
+        connection: {
+          encrypted: url.protocol === 'https:' ? true : false
+        }
+      };
+
+      Oz.server.authenticate(payload, encryptionPassword, ozOptions, function(err, result) {
         if (err) {
           console.error(err);
           return reply(Boom.forbidden());

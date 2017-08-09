@@ -12,22 +12,20 @@ const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
 
 module.exports = {
-  createUserRsvp
+  create: function (data, callback) {
+
+    if (data.provider === 'gigya') {
+      return createGigyaRsvp(data, callback);
+    } else if (data.provider === 'google') {
+      return createGoogleRsvp(data, callback);
+    } else {
+      return callback(new Error('Unsupported provider'));
+    }
+  }
 };
 
 
 // Here we are creating the user->app rsvp.
-function createUserRsvp(data, callback) {
-
-  if (data.provider === 'gigya') {
-    return createGigyaRsvp(data, callback);
-  } else if (data.provider === 'google') {
-    return createGoogleRsvp(data, callback);
-  } else {
-    return callback(new Error('Unsupported provider'));
-  }
-
-}
 
 
 function createGigyaRsvp(data, callback) {
@@ -36,7 +34,7 @@ function createGigyaRsvp(data, callback) {
   // 3. Check if the app uses Gigya accounts or perhaps pre-defined users
   //    (e.g. server-to-server auth keys)
   // Vefify the user is created in Gigya
-  
+
   // TODO: Also verify using exchangeUIDSignature
   //   (UIDSignature + signatureTimestamp).
   //   Use accounts.exchangeUIDSignature

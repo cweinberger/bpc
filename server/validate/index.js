@@ -45,7 +45,7 @@ module.exports.register = function (server, options, next) {
           authorization: request.payload.authorization
         },
         connection: {
-          encrypted: url.protocol === 'https:' ? true : false
+          encrypted: url.protocol === 'https:'
         }
       };
 

@@ -30,7 +30,7 @@ describe('gigya notifications - functional tests', () => {
 
   describe('accountRegisteredEventHandler', () => {
 
-    it('getting accountRegistered test 1', (done) => {
+    it('getting accountCreated test 1', (done) => {
 
       const notifications_request = {
         method: 'POST',
@@ -40,11 +40,19 @@ describe('gigya notifications - functional tests', () => {
         payload: {
           "events": [
             {
-              "type": "accountRegistered",
+              "type": "accountCreated",
               "id": "b3e95b42-5788-49a7-842a-90c0f183d653",
               "timestamp": 1450011476,
               "data": {
                 "uid": "9465ce7ee5d741209b635f7ad8137ae3"
+              }
+            },
+            {
+              "type": "accountCreated",
+              "id": "c3e95b42-5788-49a7-842a-90c0f183d664",
+              "timestamp": 1450011477,
+              "data": {
+                "uid": "3218736128736123215732"
               }
             }
           ]

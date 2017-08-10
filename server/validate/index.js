@@ -21,15 +21,15 @@ module.exports.register = function (server, options, next) {
         }
       },
       validate: {
-        payload : {
-         method: Joi.string().required(),
-         url: Joi.string().uri().required(),
-         authorization: Joi.string().required(),
-         app: Joi.string(),
-         user: Joi.string(),
-         scope: Joi.array().items(Joi.string()),
-         permissions: Joi.any()
-        }
+        payload: {
+           method: Joi.string().uppercase().valid(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']).required(),
+           url: Joi.string().uri().required(),
+           authorization: Joi.string().required(),
+           app: Joi.string(),
+           user: Joi.string(),
+           scope: Joi.array().items(Joi.string()),
+           permissions: Joi.any()
+         }
       }
     },
     handler: function(request, reply) {
@@ -97,6 +97,8 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  // Just a helper method to generate authorization header for tests
+
   server.route({
     method: 'POST',
     path: '/genpayload',
@@ -107,13 +109,15 @@ module.exports.register = function (server, options, next) {
         }
       },
       validate: {
-        payload : {
-         method: Joi.string().uppercase().valid(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']).required(),
-         uri: Joi.string().uri().required(),
-         app: Joi.string(),
-         user: Joi.string(),
-         scope: Joi.array().items(Joi.string())
-       }
+        payload: {
+           method: Joi.string().uppercase().valid(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']).required(),
+           url: Joi.string().uri().required(),
+           authorization: Joi.string().forbidden(), // <-- forbidden in this
+           app: Joi.string(),
+           user: Joi.string(),
+           scope: Joi.array().items(Joi.string()),
+           permissions: Joi.any()
+         }
      }
     },
     handler: function(request, reply) {
@@ -123,22 +127,13 @@ module.exports.register = function (server, options, next) {
           return reply(err);
         }
 
-        const _method = request.payload.method.toUpperCase();
-        const Url = require('url');
-        const _url = Url.parse(request.payload.uri);
-        const _authorizationHeader = Oz.hawk.client.header(_url.href, _method, {credentials: ticket, app: ticket.app });
+        let tmp = Object.assign({}, request.payload);
+
+        const _authorizationHeader = Oz.hawk.client.header(request.payload.url, request.payload.method, {credentials: ticket, app: ticket.app });
         if (_authorizationHeader.err) {
           return reply(Boom.badRequest(_authorizationHeader.err));
         }
-
-        var tmp = Object.assign({}, request.payload);
-
-        delete tmp.uri;
-        tmp.url = _url.path;
-        tmp.headers = {
-          host: _url.host,
-          authorization: _authorizationHeader.field
-        };
+        tmp.authorization = _authorizationHeader.field;
 
         reply(tmp);
       });

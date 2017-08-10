@@ -10,7 +10,9 @@ const EventLog = require('./../audit/eventlog');
 module.exports = {
   register,
   updateUserId,
-  updateUserInDB
+  updateUserInDB,
+  createUserId,
+  deleteUserId
 };
 
 
@@ -90,9 +92,9 @@ function register(user) {
 }
 
 
-
+// Used by /rsvp (createRsvp)
+// But should not be nessecary after going full webhooks
 function updateUserInDB(data, callback) {
-
   if (callback === undefined) {
     callback = function(err, result) {
       if (err) {
@@ -113,19 +115,28 @@ function updateUserInDB(data, callback) {
     ]
   };
 
-  MongoDB.collection('users').update(query, {
-    $setOnInsert: {
-      dataScopes: {}
-    },
-     // We want to update id, email and provider in case we're missing one of the parameters
-    $set: data,
-    $currentDate: {
-      'lastLogin': { $type: "date" }
-    }
-  }, {
-    upsert: true
-  }, callback);
+  return new Promise((resolve, reject) => {
 
+    MongoDB.collection('users').update(query, {
+      $setOnInsert: {
+        dataScopes: {}
+      },
+      // We want to update id, email and provider in case we're missing one of the parameters
+      $set: data,
+      $currentDate: {
+        'lastLogin': { $type: "date" }
+      }
+    },
+    { upsert: true },
+    function(err, result) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+      callback(err, result);
+    });
+  });
 }
 
 
@@ -134,6 +145,7 @@ function updateUserInDB(data, callback) {
  * @param user
  * @return Promise
  */
+ // Used by POST /users - but should be removed
 function updateUserId({id, email}) {
   if (id !== undefined) {
     return Promise.resolve(id);
@@ -159,11 +171,58 @@ function updateUserId({id, email}) {
 }
 
 
+function createUserId(data, callback){
+  if (callback === undefined) {
+    callback = function(err, result) {
+      if (err) {
+        console.error(err);
+      }
+    };
+  }
+
+  return new Promise((resolve, reject) => {
+
+    data.dataScopes = {};
+    data.createdAt = new Date();
+
+    MongoDB.collection('users').insert(
+      data,
+      function(err, result) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+        callback(err, result);
+      }
+    );
+  });
+}
+
+
+
 // TODO: Set deletedAt timestamp enough? Or should we do more? Eg. expire grants?
 function deleteUserId(id, callback){
-  return MongoDB.collection('users').update(
-    { id: id },
-    { $set: { deletedAt: new Date() } },
-    callback
-  );
+  if (callback === undefined) {
+    callback = function(err, result) {
+      if (err) {
+        console.error(err);
+      }
+    };
+  }
+
+  return new Promise((resolve, reject) => {
+    MongoDB.collection('users').update(
+      { id: id },
+      { $set: { deletedAt: new Date() } },
+      function(err, result) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+        callback(err, result);
+      }
+    );
+  });
 }

@@ -9,6 +9,7 @@ const rewire = require('rewire');
 const sinon = require('sinon');
 const test_data = require('./test_data');
 const bpc_helper = require('./bpc_helper');
+const MongoDB = require('./mongodb_mocked');
 
 const Crypto = require('crypto');
 
@@ -40,19 +41,19 @@ describe('gigya notifications - functional tests', () => {
         payload: {
           "events": [
             {
-              "type": "accountRegistered ",
+              "type": "accountRegistered",
               "id": "b3e95b42-5788-49a7-842a-90c0f183d653",
               "timestamp": 1450011476,
               "data": {
-                "uid": "9465ce7ee5d741209b635f7ad8137ae3"
+                "uid": "3218736128736123215732"
               }
             },
             {
-              "type": "accountRegistered ",
+              "type": "accountRegistered",
               "id": "c3e95b42-5788-49a7-842a-90c0f183d664",
               "timestamp": 1450011477,
               "data": {
-                "uid": "3218736128736123215732"
+                "uid": "5347895384975934842757"
               }
             }
           ]
@@ -66,10 +67,67 @@ describe('gigya notifications - functional tests', () => {
       bpc_helper.request(notifications_request, null, (response) => {
         // console.log(response);
         expect(response.statusCode).to.equal(200);
+
+        MongoDB.collection('users').find().toArray((err, result) => {
+          console.log('_______', err, result);
+        });
         done();
       });
 
     });
+
+
+
+
+    it('getting accountDeleted  test 1', (done) => {
+
+      const notifications_request = {
+        method: 'POST',
+        url: '/gigya/notifications',
+        headers: {
+        },
+        payload: {
+          "events": [
+            {
+              "type": "accountDeleted",
+              "id": "b3e95b42-5788-49a7-842a-90c0f183d653",
+              "timestamp": 1450011478,
+              "data": {
+                "uid": "3218736128736123215732"
+              }
+            },
+            {
+              "type": "accountDeleted",
+              "id": "c3e95b42-5788-49a7-842a-90c0f183d664",
+              "timestamp": 1450011479,
+              "data": {
+                "uid": "5347895384975934842757"
+              }
+            }
+          ]
+        },
+        "nonce": "8693aa10-9c75-48c9-a959-6ef1ae2b6b54",
+        "timestamp": 1450011477
+      };
+
+      notifications_request.headers['x-gigya-sig-hmac-sha1'] = generateGigyaSigHmax(notifications_request);
+
+      bpc_helper.request(notifications_request, null, (response) => {
+
+        expect(response.statusCode).to.equal(200);
+
+        MongoDB.collection('users').findOne({id: '3218736128736123215732'}, function(err, result){
+          expect(result.deletedAt).to.be.a.date();
+
+          MongoDB.collection('users').findOne({id: '5347895384975934842757'}, function(err, result){
+            expect(result.deletedAt).to.be.a.date();
+
+            done();
+          });
+        });
+      });
+    });
+
   });
 });
 

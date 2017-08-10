@@ -88,39 +88,13 @@ module.exports.register = function (server, options, next) {
 
       if (GigyaUtils.validNotificationRequest(request)){
 
-        request.payload.events.forEach(event => {
-          switch (event.type) {
-            // Types of events:
-            // accountCreated:
-              // Account created - fired when a new account record is actually created in Gigya's database.
-            // accountRegistered:
-              // Account registered - fired when a user completes registration.
-            // accountUpdated:
-              // Account updated - fired when a user record is updated.
-            // accountLoggedIn:
-              // Account logged in - fired when a user logs in.
-            // accountDeleted:
-              // Account deleted - fired when an account is deleted.
-
-            // case "accountCreated":
-            //   accountCreatedEventHandler(event, reply);
-            //   break;
-            case "accountRegistered":
-              accountRegisteredEventHandler(event, reply);
-              break;
-            // case "accountUpdated":
-            //   accountUpdatedEventHandler(event, reply);
-            //   break;
-            // case "accountLoggedIn":
-            //   accountLoggedInEventHandler(event, reply);
-            //   break;
-            case "accountDeleted":
-              accountDeletedEventHandler(event, reply);
-              break;
-            default:
-              reply();
-
-          }
+        handleEvents(request.payload.events)
+        .then(() => {
+          reply();
+        })
+        .catch((err) => {
+          console.error(err);
+          reply(Boom.badRequest());
         });
 
       } else {
@@ -143,48 +117,79 @@ module.exports.register.attributes = {
 };
 
 
-function accountCreatedEventHandler(event, callback){
+function handleEvents(events){
+  let p = [];
+
+  events.forEach(event => {
+    switch (event.type) {
+      // Types of events:
+      // accountCreated:
+        // Account created - fired when a new account record is actually created in Gigya's database.
+      // accountRegistered:
+        // Account registered - fired when a user completes registration.
+      // accountUpdated:
+        // Account updated - fired when a user record is updated.
+      // accountLoggedIn:
+        // Account logged in - fired when a user logs in.
+      // accountDeleted:
+        // Account deleted - fired when an account is deleted.
+
+      // case "accountCreated":
+      //   accountCreatedEventHandler(event);
+      //   break;
+      case "accountRegistered":
+        let a = accountRegisteredEventHandler(event);
+        p.push(a);
+        break;
+      // case "accountUpdated":
+      //   accountUpdatedEventHandler(event);
+      //   break;
+      // case "accountLoggedIn":
+      //   accountLoggedInEventHandler(event);
+      //   break;
+      case "accountDeleted":
+        let b = accountDeletedEventHandler(event);
+        p.push(b);
+        break;
+      default:
+
+    }
+  });
+
+  return Promise.all(p);
+
+}
+
+
+function accountCreatedEventHandler(event) {
   console.log('accountCreatedEventHandler', event.data.uid);
   // Do nothing
-  callback();
+  return Promise.resolve();
 }
 
 
-function accountRegisteredEventHandler(event, callback){
+function accountRegisteredEventHandler(event) {
   console.log('accountRegisteredEventHandler', event.data.uid);
-  Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid }).then(result => {
-
-    Users.updateUserInDB({ id: event.data.uid, email: result.body.profile.email.toLowerCase(), provider: 'gigya' }, (err) => {
-      if (err) {
-        callback(Boom.badRequest());
-      } else {
-        callback();
-      }
-    });
-
-  }, err => {
-    console.error(err);
-    callback(Boom.badRequest());
-  });
+  return Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid })
+  .then(result => Users.createUserId({ id: event.data.uid, email: result.body.profile.email.toLowerCase(), provider: 'gigya' }));
 }
 
 
-function accountUpdatedEventHandler(event, callback){
+function accountUpdatedEventHandler(event) {
   console.log('accountUpdatedEventHandler', event.data.uid);
   // Do nothing
-  callback();
+  return Promise.resolve();
 }
 
 
-function accountLoggedInEventHandler(event, callback){
+function accountLoggedInEventHandler(event) {
   console.log('accountLoggedInEventHandler', event.data.uid);
   // Do nothing
-  callback();
+  return Promise.resolve();
 }
 
 
-function accountDeletedEventHandler(event, callback){
+function accountDeletedEventHandler(event) {
   console.log('accountDeletedEventHandler', event.data.uid);
-  Users.deleteUserId(event.data.uid);
-  callback();
+  return Users.deleteUserId(event.data.uid);
 }

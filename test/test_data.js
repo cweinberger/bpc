@@ -26,8 +26,25 @@ module.exports = {
 
   users: {
     simple_first_user: {
-      email: 'user@berlingskemedia.dk',
+      email: 'first_user@berlingskemedia.dk',
       id: '3218736128736123215732',
+      provider: 'gigya',
+      lastLogin: new Date(),
+      dataScopes: {
+        'bt': {
+          bt_paywall: true,
+          bt_subscription_tier: 'free'
+        },
+        'berlingske': {
+          berlingske_paywall: true,
+          berlingske_subscription_tier: 'premium'
+        }
+      },
+      providerData: {}
+    },
+    simple_second_user: {
+      email: 'second_user@berlingskemedia.dk',
+      id: '5347895384975934842757',
       provider: 'gigya',
       lastLogin: new Date(),
       dataScopes: {

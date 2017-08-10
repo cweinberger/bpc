@@ -123,6 +123,7 @@ function findGrant(input, callback) {
 
         // Creating new clean grant
         grant = createNewCleanGrant(input.app, input.user);
+        
       }
 
       // This exp is only the expiration of the rsvp - not the expiration of

@@ -1,6 +1,10 @@
 /* jshint node: true */
 'use strict';
 
+if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
+  module.exports = require('../../test/gigya_mocked');
+  return;
+}
 
 // Gigya configuration.
 const GIGYA_DC = 'eu1';

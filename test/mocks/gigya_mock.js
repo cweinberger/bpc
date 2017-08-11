@@ -9,13 +9,26 @@ console.log('Using Gigya MOCK');
 let callApiStub = sinon.stub();
 module.exports.callApi = callApiStub;
 
-callApiStub.withArgs('/accounts.getAccountInfo', { UID: '3218736128736123215732' })
-.returns(Promise.resolve({body:'WOWOWOW'}));
+Object.keys(test_data.users)
+.map(key => {
+  return test_data.users[key];
+})
+.forEach(user => {
+  addWithArgsReturns({id: user.id, email: user.email});
+});
 
-callApiStub.withArgs('/accounts.getAccountInfo', { UID: '5347895384975934842757' })
-.returns(Promise.resolve({body:'WOWOWOW'}));
+function addWithArgsReturns({id, email}){
+  let returns = {
+    body: {
+      UID: id,
+      profile: {
+        email:email
+      }
+    }
+  };
 
+  callApiStub.withArgs('/accounts.getAccountInfo', { UID: id })
+  .returns(Promise.resolve(returns));
+}
 
-// module.exports.callApi = function(path, payload = null, api = 'accounts') {
-//   return Promise.resolve({{id: 'TST'}});
-// };
+module.exports.addWithArgsReturns = addWithArgsReturns;

@@ -30,6 +30,12 @@ describe('gigya notifications - functional tests', () => {
     });
   });
 
+  before(done => {
+    Gigya.addWithArgsReturns({id: '1', email: '1@test.nl'});
+    Gigya.addWithArgsReturns({id: '2', email: '2@test.nl'});
+    done();
+  });
+
   describe('accountRegisteredEventHandler', () => {
 
     it('getting accountRegistered  test 1', (done) => {
@@ -46,7 +52,7 @@ describe('gigya notifications - functional tests', () => {
               "id": "b3e95b42-5788-49a7-842a-90c0f183d653",
               "timestamp": 1450011476,
               "data": {
-                "uid": "3218736128736123215732"
+                "uid": "1"
               }
             },
             {
@@ -54,7 +60,7 @@ describe('gigya notifications - functional tests', () => {
               "id": "c3e95b42-5788-49a7-842a-90c0f183d664",
               "timestamp": 1450011477,
               "data": {
-                "uid": "5347895384975934842757"
+                "uid": "2"
               }
             }
           ]
@@ -69,10 +75,19 @@ describe('gigya notifications - functional tests', () => {
         // console.log(response);
         expect(response.statusCode).to.equal(200);
 
-        MongoDB.collection('users').find().toArray((err, result) => {
-          console.log('_______', err, result);
+        MongoDB.collection('users').findOne({id: '1'}, (err, result) => {
+          expect(result.email).to.equal('1@test.nl')
+          expect(result.provider).to.equal('gigya');
+          expect(result.createdAt).to.be.a.date();
+
+          MongoDB.collection('users').findOne({id: '2'}, (err, result) => {
+            expect(result.email).to.equal('2@test.nl')
+            expect(result.provider).to.equal('gigya');
+            expect(result.createdAt).to.be.a.date();
+
+            done();
+          });
         });
-        done();
       });
 
     });

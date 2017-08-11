@@ -72,7 +72,6 @@ describe('gigya notifications - functional tests', () => {
       notifications_request.headers['x-gigya-sig-hmac-sha1'] = generateGigyaSigHmax(notifications_request);
 
       bpc_helper.request(notifications_request, null, (response) => {
-        // console.log(response);
         expect(response.statusCode).to.equal(200);
 
         MongoDB.collection('users').findOne({id: '1'}, (err, result) => {
@@ -89,7 +88,6 @@ describe('gigya notifications - functional tests', () => {
           });
         });
       });
-
     });
 
 

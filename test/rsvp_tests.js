@@ -19,19 +19,16 @@ const expect = Code.expect;
 const before = lab.before;
 const after = lab.after;
 
-// TODO
-return; // currently these tests must be re-written
 
 
 // Rewire rsvp.js in order to test internal functions.
 const Rsvp = rewire('./../server/rsvp/rsvp');
 const grantIsExpired = Rsvp.__get__('grantIsExpired');
 const createNewCleanGrant = Rsvp.__get__('createNewCleanGrant');
-const createUserRsvp = Rsvp.__get__('createUserRsvp');
+const createUserRsvp = Rsvp.create;
 
 
-// TODO: I know these tests do NOT test the actual code. These are just examples.
-describe('rsvp', () => {
+describe('rsvp unit tests', () => {
 
   describe('grant', () => {
 
@@ -85,6 +82,8 @@ describe('rsvp', () => {
 
   });
 
+
+
   describe('createNewCleanGrant()', () => {
 
     it('contains a 40-char id', done => {
@@ -100,40 +99,14 @@ describe('rsvp', () => {
 
   });
 
+
+
   describe('createUserRsvp()', () => {
 
     before(done => {
-      // Give the test cases an app to use.
-      MongoDB.collection('applications').insert({
-        id: 'valid-app',
-        scope: [
-          'admin',
-          'admin:*',
-          'admin:gdfgfd',
-          'admin:uyutyutu'
-        ],
-        delegate: false,
-        key: 'something_long_and_random',
-        algorithm: 'sha256'
-      });
-      // Give the test cases a grant to use.
-      MongoDB.collection('grants').insert({
-        id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
-        app: 'valid-app',
-        user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
-        scope: []
-      });
-      // Give the test cases a user to use.
-      MongoDB.collection('users').insert({
-        email: 'mkoc@berlingskemedia.dk',
-        id: '117880216634946654515',
-        provider: 'gigya',
-        lastLogin: new Date(),
-        dataScopes: {},
-        providerData: {}
-      });
-      done();
+      MongoDB.initate().then(done);
     });
+
 
     it('throws an error for unsupported provider', done => {
 
@@ -151,7 +124,7 @@ describe('rsvp', () => {
       getAccountInfoStub.returns(
         Promise.resolve({body: {profile: {email: 'different@email.com'}}})
       );
-      Rsvp.__set__('GigyaAccounts.getAccountInfo', getAccountInfoStub);
+      Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
 
       createUserRsvp({
         provider: 'gigya',
@@ -165,6 +138,7 @@ describe('rsvp', () => {
       });
 
     });
+
 
     it('throws an error for mismatched emails (Google)', done => {
 
@@ -193,7 +167,7 @@ describe('rsvp', () => {
       getAccountInfoStub.returns(
         Promise.resolve({body: {profile: {email: 'some@email.com'}}})
       );
-      Rsvp.__set__('GigyaAccounts.getAccountInfo', getAccountInfoStub);
+      Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
 
       createUserRsvp({
         provider: 'gigya',
@@ -216,7 +190,7 @@ describe('rsvp', () => {
       getAccountInfoStub.returns(
         Promise.resolve({body: {profile: {email: 'some@email.com'}}})
       );
-      Rsvp.__set__('GigyaAccounts.getAccountInfo', getAccountInfoStub);
+      Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
 
       createUserRsvp({
         provider: 'gigya',

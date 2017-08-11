@@ -6,7 +6,6 @@ const MongoDB = require('../mocks/mongodb_mock');
 const test_data = require('../data/test_data');
 
 
-
 module.exports.request = function (options, ticket, callback) {
 
   const req = {
@@ -38,49 +37,17 @@ module.exports.generateRsvp = function(app, grant, callback) {
 };
 
 
-
-module.exports.initate = function (done) {
-  // Need to wait a sec for the database/mongo-mock to start up...
-  var e = wait(1000)
-  .then(() => clearMongoMock())
-  .then(() => fillMongoMock())
-  .then(() => bpc.start(function(){
-    if (typeof done === 'function') {
-      done();
-    }
-  }));
-
-  return e;
+module.exports.start = function(done){
+  return new Promise((resolve, reject) => {
+    MongoDB.initate().then(() => bpc.start(function(err){
+      if (typeof done === 'function') {
+        done(err);
+      }
+      if (err) {
+        reject();
+      } else {
+        resolve();
+      }
+    }));
+  });
 };
-
-
-function clearMongoMock (done){
-  var k = Object.keys(test_data).map(function(collectionKey){
-    return MongoDB.collection(collectionKey).remove({});
-  });
-
-  return Promise.all(k);
-}
-
-
-function fillMongoMock (done){
-  var k = Object.keys(test_data).map(function(collectionKey){
-    return MongoDB.collection(collectionKey).insert(objectToArray(test_data[collectionKey]))
-  });
-
-  return Promise.all(k);
-
-  function objectToArray(input){
-    return Object.keys(input).map(function(key){
-      return input[key];
-    });
-  }
-}
-
-
-function random40Character() {
-  return crypto.randomBytes(20).toString('hex'); // (gives 40 characters)
-}
-
-
-const wait = ms => new Promise(resolve => setTimeout(resolve, ms));

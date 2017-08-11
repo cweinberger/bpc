@@ -5,7 +5,6 @@
 const Code = require('code');   // assertion library
 const Lab = require('lab');
 const lab = exports.lab = Lab.script();
-const rewire = require('rewire');
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
@@ -24,10 +23,9 @@ describe('console - functional tests:', () => {
   var console_app = test_data.applications.console;
   var console_app_ticket;
 
+
   before(done => {
-    bpc_helper.initate(function(){
-      done();
-    });
+    bpc_helper.start().then(done);
   });
 
   // Getting the console_app_ticket

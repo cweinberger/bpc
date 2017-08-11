@@ -21,6 +21,30 @@ module.exports = {
       scope: ['berlingske'],
       key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
       algorithm: 'sha256'
+    },
+    valid_app: {
+      id: 'valid-app',
+      scope: [
+        'admin',
+        'admin:*',
+        'business:all',
+        'bt:all'
+      ],
+      delegate: false,
+      key: 'something_long_and_random',
+      algorithm: 'sha256'
+    },
+    delete_me_app: {
+      id: 'delete-me-app',
+      scope: [
+        'admin',
+        'admin:*',
+        'admin:gdfgfd',
+        'admin:uyutyutu'
+      ],
+      delegate: false,
+      key: 'something_long_and_random',
+      algorithm: 'sha256'
     }
   },
 
@@ -74,6 +98,14 @@ module.exports = {
       lastLogin: new Date(),
       dataScopes: {},
       providerData: {}
+    },
+    mkoc_user: {
+      email: 'mkoc@berlingskemedia.dk',
+      id: '117880216634946654515',
+      provider: 'gigya',
+      lastLogin: new Date(),
+      dataScopes: {},
+      providerData: {}
     }
   },
 
@@ -93,6 +125,18 @@ module.exports = {
       scope : [],
       exp : null,
       createdAt: new Date()
+    },
+    valid_app_grant: {
+      id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
+      app: 'valid-app',
+      user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
+      scope: []
+    },
+    delete_me_app_grant: {
+      id: 'jhfgs294723ijsdhfsdfhskjh329423798animal',
+      app: 'delete-me-app',
+      user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
+      scope: []
     }
   }
 };

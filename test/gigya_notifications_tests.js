@@ -5,7 +5,6 @@
 const Code = require('code');   // assertion library
 const Lab = require('lab');
 const lab = exports.lab = Lab.script();
-const rewire = require('rewire');
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
@@ -25,9 +24,7 @@ const after = lab.after;
 describe('gigya notifications - functional tests', () => {
 
   before(done => {
-    bpc_helper.initate(function(){
-      done();
-    });
+    bpc_helper.start().then(done);
   });
 
   before(done => {

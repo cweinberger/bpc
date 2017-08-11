@@ -14,7 +14,6 @@ const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
 module.exports = {
   create: function (data, callback) {
-
     if (data.provider === 'gigya') {
       return createGigyaRsvp(data, callback);
     } else if (data.provider === 'google') {
@@ -123,7 +122,7 @@ function findGrant(input, callback) {
 
         // Creating new clean grant
         grant = createNewCleanGrant(input.app, input.user);
-        
+
       }
 
       // This exp is only the expiration of the rsvp - not the expiration of

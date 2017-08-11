@@ -2,7 +2,7 @@
 'use strict';
 
 if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
-  module.exports = require('../../test/gigya_mocked');
+  module.exports = require('../../test/mocks/gigya_mock.js');
   return;
 }
 

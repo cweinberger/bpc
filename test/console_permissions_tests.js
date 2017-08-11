@@ -7,8 +7,8 @@ const Lab = require('lab');
 const lab = exports.lab = Lab.script();
 const rewire = require('rewire');
 const sinon = require('sinon');
-const test_data = require('./test_data');
-const bpc_helper = require('./bpc_helper');
+const test_data = require('./data/test_data');
+const bpc_helper = require('./helpers/bpc_helper');
 // const Permissions = require('./../server/permissions');
 
 // Test shortcuts.

@@ -9,7 +9,7 @@ const lab = exports.lab = Lab.script();
 const Oz = require('oz');
 const rewire = require('rewire');
 const sinon = require('sinon');
-const MongoDB = require('./mongodb_mocked');
+const MongoDB = require('./mocks/mongodb_mock');
 const bpc = require('./../server');
 
 // Test shortcuts.

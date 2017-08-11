@@ -1,9 +1,9 @@
-const MongoDB = require('./mongodb_mocked');
 const Hawk = require('hawk');
 const Oz = require('oz');
-const bpc = require('./../server');
 const crypto = require('crypto');
-const test_data = require('./test_data');
+const bpc = require('../../server');
+const MongoDB = require('../mocks/mongodb_mock');
+const test_data = require('../data/test_data');
 
 
 

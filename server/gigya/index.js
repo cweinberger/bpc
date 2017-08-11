@@ -162,34 +162,29 @@ function handleEvents(events){
 
 
 function accountCreatedEventHandler(event) {
-  console.log('accountCreatedEventHandler', event.data.uid);
   // Do nothing
   return Promise.resolve();
 }
 
 
 function accountRegisteredEventHandler(event) {
-  console.log('accountRegisteredEventHandler', event.data.uid);
   return Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid })
   .then(result => Users.createUserId({ id: event.data.uid, email: result.body.profile.email.toLowerCase(), provider: 'gigya' }));
 }
 
 
 function accountUpdatedEventHandler(event) {
-  console.log('accountUpdatedEventHandler', event.data.uid);
   // Do nothing
   return Promise.resolve();
 }
 
 
 function accountLoggedInEventHandler(event) {
-  console.log('accountLoggedInEventHandler', event.data.uid);
   // Do nothing
   return Promise.resolve();
 }
 
 
 function accountDeletedEventHandler(event) {
-  console.log('accountDeletedEventHandler', event.data.uid);
   return Users.deleteUserId(event.data.uid);
 }

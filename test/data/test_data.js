@@ -45,6 +45,16 @@ module.exports = {
       delegate: false,
       key: 'something_long_and_random',
       algorithm: 'sha256'
+    },
+    app_with_disallowAutoCreationGrants: {
+      id: 'app_with_disallowAutoCreationGrants',
+      scope: [],
+      delegate: false,
+      key: 'something_long_and_random',
+      algorithm: 'sha256',
+      settings: {
+        disallowAutoCreationGrants: tue
+      }
     }
   },
 

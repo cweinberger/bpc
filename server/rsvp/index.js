@@ -62,7 +62,7 @@ module.exports.register = function (server, options, next) {
             // Boom.badImplementation() logs the error
             return reply(Boom.badImplementation())
           } else {
-            return reply().statusCode = err.statusCode;
+            return reply(Boom.wrap(err, err.statusCode));
           }
         }
         // After granting app access, the user returns to the app with the rsvp.
@@ -93,7 +93,7 @@ module.exports.register = function (server, options, next) {
             // Boom.badImplementation() logs the error
             return reply(Boom.badImplementation())
           } else {
-            return reply().statusCode = err.statusCode;
+            return reply(Boom.wrap(err, err.statusCode));
           }
         }
         // After granting app access, the user returns to the app with the rsvp

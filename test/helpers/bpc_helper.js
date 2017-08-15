@@ -1,9 +1,12 @@
+
+const ENCRYPTIONPASSWORD = 'random_test_password_that_is_longer_than_32_characters';
+process.env.ENCRYPTIONPASSWORD = ENCRYPTIONPASSWORD;
+
 const Hawk = require('hawk');
 const Oz = require('oz');
 const crypto = require('crypto');
 const bpc = require('../../server');
 const MongoDB = require('../mocks/mongodb_mock');
-const test_data = require('../data/test_data');
 
 
 module.exports.request = function (options, ticket, callback) {
@@ -33,7 +36,7 @@ module.exports.request = function (options, ticket, callback) {
 
 
 module.exports.generateRsvp = function(app, grant, callback) {
-  Oz.ticket.rsvp(app, grant, process.env.ENCRYPTIONPASSWORD, {}, callback);
+  Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, callback);
 };
 
 

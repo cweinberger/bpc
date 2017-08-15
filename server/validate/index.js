@@ -7,7 +7,8 @@ const Oz = require('oz');
 const Url = require('url');
 const OzLoadFuncs = require('./../oz_loadfuncs');
 const ozOptions = Object.assign({}, OzLoadFuncs.strategyOptions.oz, { hawk: { host: null, port: null } });
-const encryptionPassword = OzLoadFuncs.strategyOptions.oz.encryptionPassword;
+
+const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
 module.exports.register = function (server, options, next) {
 
@@ -49,7 +50,7 @@ module.exports.register = function (server, options, next) {
         }
       };
 
-      Oz.server.authenticate(payload, encryptionPassword, ozOptions, function(err, result) {
+      Oz.server.authenticate(payload, ENCRYPTIONPASSWORD, ozOptions, function(err, result) {
         if (err) {
           console.error(err);
           return reply(Boom.forbidden());

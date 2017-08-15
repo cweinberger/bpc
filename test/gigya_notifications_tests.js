@@ -28,8 +28,10 @@ describe('gigya notifications - functional tests', () => {
   });
 
   before(done => {
-    Gigya.addWithArgsReturns({id: '1', email: '1@test.nl'});
-    Gigya.addWithArgsReturns({id: '2', email: '2@test.nl'});
+    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '1'})
+    .resolves({body: {UID: '1', profile: { email: '1@test.nl'}}});
+    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '2'})
+    .resolves({body: {UID: '2', profile: { email: '2@test.nl'}}});
     done();
   });
 

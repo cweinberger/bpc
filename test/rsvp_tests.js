@@ -9,8 +9,9 @@ const lab = exports.lab = Lab.script();
 const Oz = require('oz');
 const rewire = require('rewire');
 const sinon = require('sinon');
+const bpc_helper = require('./helpers/bpc_helper');
 const MongoDB = require('./mocks/mongodb_mock');
-const bpc = require('./../server');
+const Gigya = require('./mocks/gigya_mock');
 
 // Test shortcuts.
 const describe = lab.describe;
@@ -206,6 +207,81 @@ describe('rsvp unit tests', () => {
 
       });
 
+    });
+
+  });
+
+
+  it('created a new clean grant when disallowAutoCreationGrants is not set', done => {
+
+    const getAccountInfoStub = sinon.stub();
+    getAccountInfoStub.returns(
+      Promise.resolve({body: {profile: {email: 'userwithnopreviousgrant@email.com'}}})
+    );
+    Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
+
+    createUserRsvp({
+      provider: 'gigya',
+      UID: 'userwithnopreviousgrant',
+      email: 'userwithnopreviousgrant@email.com',
+      app: 'valid-app'
+    }, (err, res) => {
+      expect(err).to.be.null();
+      expect(res).to.be.a.string();
+      expect(res).to.have.length(334);
+
+      // Wating a second to make sure the grant is saved to MongoDB
+      setTimeout(
+        () => {
+          MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant', app: 'valid-app'}, (err, grant) => {
+            expect(grant).to.not.be.null();
+            expect(grant.id).to.have.length(40);
+            done();
+          });
+        },
+        1000
+      );
+
+    });
+  });
+
+
+  it('does not create a new clean grant because of disallowAutoCreationGrants is set', done => {
+    // TODO
+
+    done();
+  });
+
+
+});
+
+describe('rsvp integration test', () => {
+
+  before(done => {
+    bpc_helper.start().then(done);
+  });
+
+  before(done => {
+    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: 'doensnotexists'})
+    .resolves({body: {UID: 'doensnotexists', profile: { email: 'doensnotexists@test.nl'}}});
+    done();
+  });
+
+  it('get rsvp for a gigya user', done => {
+
+    let payload = {
+      provider: 'gigya',
+      UID: 'doensnotexists',
+      email: 'doensnotexists@test.nl',
+      app: 'valid-app',
+      UIDSignature: 'ignored_in_this_test',
+      signatureTimestamp: 'ignored_in_this_test'
+    };
+
+    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null, (response) => {
+      expect(response.statusCode).to.be.equal(200);
+      expect(response.payload).to.have.length(334);
+      done();
     });
 
   });

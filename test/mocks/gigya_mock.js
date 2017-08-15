@@ -5,30 +5,26 @@ const test_data = require('../data/test_data');
 
 console.log('Using Gigya MOCK');
 
-
 let callApiStub = sinon.stub();
-module.exports.callApi = callApiStub;
 
 Object.keys(test_data.users)
 .map(key => {
   return test_data.users[key];
 })
-.forEach(user => {
-  addWithArgsReturns({id: user.id, email: user.email});
-});
-
-function addWithArgsReturns({id, email}){
-  let returns = {
+.map(user => {
+  return {
     body: {
-      UID: id,
+      UID: user.id,
       profile: {
-        email:email
+        email: user.email
       }
     }
   };
+})
+.forEach(accountInfo => {
+  callApiStub.withArgs('/accounts.getAccountInfo', { UID: accountInfo.body.UID })
+  .resolves(accountInfo);
+});
 
-  callApiStub.withArgs('/accounts.getAccountInfo', { UID: id })
-  .returns(Promise.resolve(returns));
-}
 
-module.exports.addWithArgsReturns = addWithArgsReturns;
+module.exports.callApi = callApiStub;

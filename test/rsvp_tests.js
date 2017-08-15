@@ -207,7 +207,6 @@ describe('rsvp unit tests', () => {
       });
     });
 
-
     it('does not create a new clean grant because of disallowAutoCreationGrants is set', done => {
       createUserRsvp({
         provider: 'gigya',

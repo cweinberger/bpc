@@ -104,7 +104,7 @@ function findGrant(input, callback) {
           return callback(Boom.unauthorized(err.message));
         } else if (app === null){
           return callback(Boom.unauthorized('Unknown application'));
-        } else if (app.settings && app.settings.provider !== input.provider){
+        } else if (app.settings && app.settings.provider && app.settings.provider !== input.provider){
           return callback(Boom.unauthorized('Invalid provider'));
         }
 

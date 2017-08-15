@@ -11,7 +11,7 @@ const MongoDB = require('./mocks/mongodb_mock');
 const Gigya = require('./mocks/gigya_mock');
 
 // Test shortcuts.
-const { describe, it, before, after } = exports.lab = require('lab').script();
+const { describe, it, before, beforeEach, after } = exports.lab = require('lab').script();
 // Assertion library
 const { expect } = require('code');
 
@@ -28,51 +28,39 @@ describe('rsvp unit tests', () => {
   describe('grant', () => {
 
     it('is not expired when grant is undefined', done => {
-
       const result = grantIsExpired();
       expect(result).to.be.false();
       done();
-
     });
 
     it('is not expired when grant is null', done => {
-
       const result = grantIsExpired(null);
       expect(result).to.be.false();
       done();
-
     });
 
     it('is not expired when grant.exp is undefined', done => {
-
       const result = grantIsExpired({});
       expect(result).to.be.false();
       done();
-
     });
 
     it('is not expired when grant.exp is null', done => {
-
       const result = grantIsExpired({ exp: null });
       expect(result).to.be.false();
       done();
-
     });
 
     it('is not expired when grant.exp is now() + 20000', done => {
-
       const result = grantIsExpired({ exp: Oz.hawk.utils.now() + 20000 });
       expect(result).to.be.false();
       done();
-
     });
 
     it('expired when grant.exp is now() - 20000', done => {
-
       const result = grantIsExpired({ exp: Oz.hawk.utils.now() - 20000 });
       expect(result).to.be.true();
       done();
-
     });
 
   });
@@ -82,13 +70,10 @@ describe('rsvp unit tests', () => {
   describe('createNewCleanGrant()', () => {
 
     it('contains a 40-char id', done => {
-
       const result = createNewCleanGrant();
-
       expect(result).to.be.an.object();
       expect(result).to.contain('id');
       expect(result.id).to.have.length(40);
-
       done();
     });
 
@@ -103,102 +88,78 @@ describe('rsvp unit tests', () => {
     });
 
 
-    it('throws an error for unsupported provider', done => {
+    before(done => {
+      const getAccountInfoStub = sinon.stub();
+      getAccountInfoStub.resolves({body: {profile: {email: 'some@email.com'}}});
+      Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
+      done();
+    });
 
-      createUserRsvp({provider: 'Illegal'}, (err, res) => {
+    before(done => {
+      const tokeninfoStub = sinon.stub();
+      tokeninfoStub.callsArgWith(1, null, {email: 'different@email.com'});
+      Rsvp.__set__('Google.tokeninfo', tokeninfoStub);
+      done();
+    });
+
+    it('throws an error for unsupported provider', done => {
+      createUserRsvp({
+        provider: 'illegal',
+        UID: '123',
+        email: 'some@email.com',
+        app: 'valid-app'
+      }, (err, res) => {
         expect(err).to.be.an.error();
         done();
       });
-
     });
 
     it('throws an error for mismatched emails (Gigya)', done => {
-
-      // Stub out getAccountInfo() so we don't interact with Gigya.
-      const getAccountInfoStub = sinon.stub();
-      getAccountInfoStub.returns(
-        Promise.resolve({body: {profile: {email: 'different@email.com'}}})
-      );
-      Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
-
       createUserRsvp({
         provider: 'gigya',
-        UID: 123,
+        UID: '123',
         email: 'incorrect@domain.com'
       }, (err, res) => {
-
         expect(err).to.be.an.error();
         done();
-
       });
-
     });
 
 
     it('throws an error for mismatched emails (Google)', done => {
-
-      // Stub out tokeninfo() so we don't interact with Google.
-      const tokeninfoStub = sinon.stub();
-      tokeninfoStub.callsArgWith(1, null, {email: 'different@email.com'});
-      Rsvp.__set__('Google.tokeninfo', tokeninfoStub);
-
       createUserRsvp({
         provider: 'google',
-        UID: 123,
+        UID: '123',
         email: 'incorrect@domain.com'
       }, (err, res) => {
-
         expect(err).to.be.an.error();
         done();
-
       });
-
     });
 
     it('fails for invalid app id (Gigya)', done => {
-
-      // Stub out getAccountInfo() so we don't interact with Gigya.
-      const getAccountInfoStub = sinon.stub();
-      getAccountInfoStub.returns(
-        Promise.resolve({body: {profile: {email: 'some@email.com'}}})
-      );
-      Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
-
       createUserRsvp({
         provider: 'gigya',
-        UID: 123,
+        UID: '123',
         email: 'some@email.com',
         app: 'invalid-app'
       }, (err, res) => {
-
         expect(err).to.be.an.error('Unknown application');
         done();
-
       });
-
     });
 
     it('returns a grant for a valid app id (Gigya)', done => {
-
-      // Stub out getAccountInfo() so we don't interact with Gigya.
-      const getAccountInfoStub = sinon.stub();
-      getAccountInfoStub.returns(
-        Promise.resolve({body: {profile: {email: 'some@email.com'}}})
-      );
-      Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
-
       createUserRsvp({
         provider: 'gigya',
-        UID: '117880216634946654515',
+        UID: '123',
         email: 'some@email.com',
         app: 'valid-app'
       }, (err, res) => {
-
         expect(err).to.be.null();
         expect(res).to.be.a.string();
         expect(res).to.have.length(334);
         done();
-
       });
 
     });
@@ -206,46 +167,68 @@ describe('rsvp unit tests', () => {
   });
 
 
-  it('created a new clean grant when disallowAutoCreationGrants is not set', done => {
+  describe('creating new clean grant', () => {
 
-    const getAccountInfoStub = sinon.stub();
-    getAccountInfoStub.returns(
-      Promise.resolve({body: {profile: {email: 'userwithnopreviousgrant@email.com'}}})
-    );
-    Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
+    before(done => {
+      const getAccountInfoStub = sinon.stub();
+      getAccountInfoStub.resolves({body: {profile: {email: 'userwithnopreviousgrant@email.com'}}});
+      Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
+      done();
+    });
 
-    createUserRsvp({
-      provider: 'gigya',
-      UID: 'userwithnopreviousgrant',
-      email: 'userwithnopreviousgrant@email.com',
-      app: 'valid-app'
-    }, (err, res) => {
-      expect(err).to.be.null();
-      expect(res).to.be.a.string();
-      expect(res).to.have.length(334);
+    beforeEach(done => {
+      MongoDB.collection('grants').remove({user:'userwithnopreviousgrant'}, (err) => {
+        expect(err).to.be.null();
+        done();
+      });
+    });
 
-      // Wating a second to make sure the grant is saved to MongoDB
-      setTimeout(
-        () => {
-          MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant', app: 'valid-app'}, (err, grant) => {
-            expect(grant).to.not.be.null();
-            expect(grant.id).to.have.length(40);
-            done();
-          });
-        },
-        1000
-      );
+    it('created a new clean grant when disallowAutoCreationGrants is not set', done => {
+      createUserRsvp({
+        provider: 'gigya',
+        UID: 'userwithnopreviousgrant',
+        email: 'userwithnopreviousgrant@email.com',
+        app: 'valid-app'
+      }, (err, res) => {
+        expect(err).to.be.null();
+        expect(res).to.be.a.string();
+        expect(res).to.have.length(334);
+        // Wating a second to make sure the grant is saved to MongoDB
+        setTimeout(
+          () => {
+            MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant', app: 'valid-app'}, (err, grant) => {
+              expect(grant).to.not.be.null();
+              expect(grant.id).to.have.length(40);
+              done();
+            });
+          },
+          1000
+        );
+      });
+    });
 
+
+    it('does not create a new clean grant because of disallowAutoCreationGrants is set', done => {
+      createUserRsvp({
+        provider: 'gigya',
+        UID: 'userwithnopreviousgrant',
+        email: 'userwithnopreviousgrant@email.com',
+        app: 'app_with_disallowAutoCreationGrants'
+      }, (err, res) => {
+        expect(err).to.be.an.error('Forbidden');
+        // Wating a second before make a query to Mongo
+        setTimeout(
+          () => {
+            MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant', app: 'app_with_disallowAutoCreationGrants'}, (err, grant) => {
+              expect(grant).to.be.null();
+              done();
+            });
+          },
+          1000
+        );
+      });
     });
   });
-
-
-  it('does not create a new clean grant because of disallowAutoCreationGrants is set', done => {
-    // TODO
-
-    done();
-  });
-
 
 });
 

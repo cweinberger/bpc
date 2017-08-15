@@ -2,20 +2,16 @@
 'use strict';
 
 // Bootstrap the testing harness.
-const Code = require('code');   // assertion library
-const Lab = require('lab');
-const lab = exports.lab = Lab.script();
 const sinon = require('sinon');
 const MongoDB = require('./mocks/mongodb_mock');
 const Applications = require('./../server/applications/applications');
 const crypto = require('crypto');
 
 // Test shortcuts.
-const describe = lab.describe;
-const it = lab.it;
-const expect = Code.expect;
-const before = lab.before;
-const after = lab.after;
+const { describe, it, before, after } = exports.lab = require('lab').script();
+// Assertion library
+const { expect } = require('code');
+
 
 
 describe('application unit tests', () => {

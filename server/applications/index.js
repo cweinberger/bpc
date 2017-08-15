@@ -225,7 +225,6 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
 
-      // TODO: Application layer could simplify this for us.
       const grant = Object.assign(request.payload, {
         id: crypto.randomBytes(20).toString('hex'),
         app: request.params.id

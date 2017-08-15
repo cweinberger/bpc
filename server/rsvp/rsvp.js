@@ -108,10 +108,9 @@ function findGrant(input, callback) {
           return callback(Boom.unauthorized('Invalid provider'));
         }
 
-        // We only looking for grants that have not expired
-        // TODO: Actually, I think we drop the exp_conditions. Instead find any
-        // grant and only insert a new one, the the old is not expired.
-        // If the old grant is expired, the user should be denied access.
+        // We only looking for any grants between user and app.
+        // We only insert a new one if none is found, the app allows it creation of now blank grants.
+        // If the existing grant is expired, the user should be denied access.
         MongoDB.collection('grants').findOne(
           { user: input.user, app: input.app },
           { fields: { _id: 0 } },
@@ -162,13 +161,6 @@ function findGrant(input, callback) {
   });
 
 }
-
-
-function errorLogger(err, result) {
-  if (err) {
-    console.error(err);
-  }
-};
 
 
 

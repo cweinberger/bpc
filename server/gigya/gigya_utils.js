@@ -16,7 +16,7 @@ module.exports = {
   errorToResponse,
   exposeError,
   validNotificationRequest
-}
+};
 
 
 

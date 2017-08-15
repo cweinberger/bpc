@@ -109,7 +109,7 @@ module.exports.callApi = function(path, payload = null, api = 'accounts') {
     });
 
   });
-}
+};
 
 
 

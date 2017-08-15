@@ -53,7 +53,7 @@ module.exports = {
       key: 'something_long_and_random',
       algorithm: 'sha256',
       settings: {
-        disallowAutoCreationGrants: tue
+        disallowAutoCreationGrants: true
       }
     }
   },

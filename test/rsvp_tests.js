@@ -3,9 +3,9 @@
 
 
 // Bootstrap the testing harness.
-const Code = require('code');   // assertion library
-const Lab = require('lab');
-const lab = exports.lab = Lab.script();
+// const Code = require('code');   // assertion library
+// const Lab = require('lab');
+// const lab = exports.lab = Lab.script();
 const Oz = require('oz');
 const rewire = require('rewire');
 const sinon = require('sinon');
@@ -14,12 +14,13 @@ const MongoDB = require('./mocks/mongodb_mock');
 const Gigya = require('./mocks/gigya_mock');
 
 // Test shortcuts.
-const describe = lab.describe;
-const it = lab.it;
-const expect = Code.expect;
-const before = lab.before;
-const after = lab.after;
+// const describe = lab.describe;
+// const it = lab.it;
+// const before = lab.before;
+// const after = lab.after;
 
+const { describe, it, before, after } = exports.lab = require('lab').script();
+const { expect } = require('code');
 
 
 // Rewire rsvp.js in order to test internal functions.

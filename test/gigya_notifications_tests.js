@@ -30,6 +30,11 @@ describe('gigya notifications - functional tests', () => {
     done();
   });
 
+  after(done => {
+    Gigya.callApi.reset();
+    done();
+  });
+
   describe('accountRegisteredEventHandler', () => {
 
     it('getting accountRegistered  test 1', (done) => {

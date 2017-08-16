@@ -41,7 +41,7 @@ module.exports.generateRsvp = function(app, grant, callback) {
 
 module.exports.start = function(){
   if(bpc.info.started > 0){
-    return Promise.resolve();
+    return MongoDB.initate();
   } else {
     return new Promise((resolve, reject) => {
       MongoDB.initate().then(() => bpc.start(function(err){

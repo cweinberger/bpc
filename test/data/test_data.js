@@ -55,6 +55,12 @@ module.exports = {
       settings: {
         disallowAutoCreationGrants: true
       }
+    },
+    app_with_users_scope: {
+      id: 'app_with_users_scope',
+      scope: ['users'],
+      key: '908345kojte9kgjef08934j5lkjgfed890435lkjgle',
+      algorithm: 'sha256'
     }
   },
 

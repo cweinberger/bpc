@@ -29,7 +29,6 @@ function register(user) {
   }
 
   return Gigya.callApi('/accounts.initRegistration').then(initRes => {
-
     if (!initRes.body && !initRes.body.regToken) {
       return Promise.reject(new Error('"regToken" is required'));
     }
@@ -53,7 +52,7 @@ function register(user) {
       //     EventLog.logUserEvent(res.id, 'User registered');
       //     return res;
       //   });
-
+      return Promise.resolve(data);
     }, err => {
       EventLog.logUserEvent(null, 'User registration failed', {email: user.email});
       return Promise.reject(err);

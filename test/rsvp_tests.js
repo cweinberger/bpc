@@ -87,7 +87,6 @@ describe('rsvp unit tests', () => {
       MongoDB.initate().then(done);
     });
 
-
     before(done => {
       const getAccountInfoStub = sinon.stub();
       getAccountInfoStub.resolves({body: {profile: {email: 'some@email.com'}}});
@@ -161,9 +160,7 @@ describe('rsvp unit tests', () => {
         expect(res).to.have.length(334);
         done();
       });
-
     });
-
   });
 
 
@@ -228,7 +225,6 @@ describe('rsvp unit tests', () => {
       });
     });
   });
-
 });
 
 describe('rsvp integration test', () => {
@@ -240,6 +236,11 @@ describe('rsvp integration test', () => {
   before(done => {
     Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: 'doensnotexists'})
     .resolves({body: {UID: 'doensnotexists', profile: { email: 'doensnotexists@test.nl'}}});
+    done();
+  });
+
+  after(done => {
+    Gigya.callApi.reset();
     done();
   });
 

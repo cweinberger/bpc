@@ -5,7 +5,7 @@
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-// const Permissions = require('./../server/permissions');
+const Gigya = require('./mocks/gigya_mock');
 
 // Test shortcuts.
 const { describe, it, before, after } = exports.lab = require('lab').script();
@@ -44,6 +44,67 @@ describe('users - functional tests', () => {
       });
     });
 
+  });
+
+});
+
+
+describe('users - integration tests', () => {
+
+  let app = test_data.applications.app_with_users_scope;
+  let appTicket;
+
+  before(done => {
+    bpc_helper.start().then(done);
+  });
+
+  // Getting the appTicket
+  before(done => {
+    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, {credentials: app}, (response) => {
+      expect(response.statusCode).to.equal(200);
+      appTicket = {credentials: JSON.parse(response.payload), app: app.id};
+      done();
+    });
+  });
+
+  before(done => {
+    // Gigya.callApi.withArgs('/accounts.initRegistration').resolves({body: {regToken: 'randomRegToken1234'}});
+    // Gigya.callApi.withArgs('/accounts.register', {
+    //   email: 'newuser@notyetcreated.nl',
+    //   password: 'justsomerandomtext',
+    //   finalizeRegistration: true,
+    //   include: 'profile,data',
+    //   format: 'json',
+    //   regToken: 'randomRegToken1234'
+    // }).resolves({body: {UID: 'randomUID1234'}});
+
+    Gigya.callApi.onFirstCall().resolves({body: {regToken: 'randomRegToken1234'}});
+    Gigya.callApi.onSecondCall().resolves({body: {UID: 'randomUID1234'}});
+    done();
+  });
+
+  after(done => {
+    Gigya.callApi.reset();
+    done();
+  });
+
+  it('create new user', done => {
+    let options = {
+      method: 'POST',
+      url: '/users/register',
+      headers: {
+      },
+      payload: {
+        email: 'newuser@notyetcreated.nl',
+        password: 'justsomerandomtext'
+      }
+    };
+
+    bpc_helper.request(options, appTicket, (response) => {
+      expect(response.statusCode).to.equal(200);
+      expect(response.payload).to.equal("{\"UID\":\"randomUID1234\"}");
+      done();
+    });
   });
 
 });

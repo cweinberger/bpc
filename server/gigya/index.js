@@ -94,6 +94,7 @@ module.exports.register = function (server, options, next) {
         })
         .catch((err) => {
           console.error(err);
+          console.error('  when getting gigya notifications payload', request.payload);
           reply(Boom.badRequest());
         });
 

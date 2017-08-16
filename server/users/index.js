@@ -9,7 +9,7 @@ const OzLoadFuncs = require('./../oz_loadfuncs');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 const Users = require('./users');
-const GigyaAccounts = require('./../gigya/gigya_accounts');
+const Gigya = require('./../gigya/gigya_client');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const EventLog = require('./../audit/eventlog');
 const exposeError = GigyaUtils.exposeError;
@@ -72,7 +72,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      GigyaAccounts.getAccountSchema().then(
+      Gigya.callApi('/accounts.getSchema', {format: 'json'}).then(
         res => reply(res.body),
         err => exposeError(reply, err)
       );
@@ -94,7 +94,11 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      GigyaAccounts.setAccountSchema(request.payload).then(
+      const _body = Object.assign({}, request.payload, {
+        format: 'json'
+      });
+
+      Gigya.callApi('/accounts.setSchema', _body).then(
         res => reply(res.body),
         err => exposeError(reply, err)
       );
@@ -122,7 +126,12 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: (request, reply) => {
-      return GigyaAccounts.searchAccount(request.query.query)
+
+      const payload = {
+        query: request.query.query
+      };
+
+      return Gigya.callApi('/accounts.search', payload)
         .then(res => reply(res.body), err => exposeError(reply, err));
     }
   });
@@ -152,7 +161,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: (request, reply) => {
-      return GigyaAccounts.isEmailAvailable(request.query.email)
+      return Gigya.callApi('/accounts.isAvailableLoginID', {loginID: request.query.email})
         .then(res => reply(res.body), err => exposeError(reply, err));
     }
   });
@@ -238,29 +247,28 @@ module.exports.register = function (server, options, next) {
       MongoDB.collection('users').findOne(userQuery, function(err, result) {
         if (err) {
           reply(Boom.internal(err.message, userQuery, err.code));
-        }
-        else {
+        } else {
           if (!result) {
             reply(Boom.notFound('User not found', userQuery))
-          }
-          else {
+          } else {
 
             Users.updateUserId(result)
-              .catch((err) => {
-                return reply(Boom.notFound("User " + user.email + " not found", err));
-              })
-              .then((id) => {
-                delete user.email;
-                user.uid = id;
+            .catch((err) => {
+              return reply(Boom.notFound("User " + user.email + " not found", err));
+            })
+            .then((id) => {
+              delete user.email;
+              user.uid = id;
 
-                Users.update(user).then(
-                  data => reply(data.body ? data.body : data),
-                  err => {
-                    // Reply with the usual Internal Server Error otherwise.
-                    return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
-                  }
-                );
-              });
+              Gigya.callApi('/accounts.setAccountInfo', user).then(
+                data => reply(data.body ? data.body : {status: 'ok'}),
+                err => {
+                  EventLog.logUserEvent(null, 'User update failed', {email: user.email});
+                  // Reply with the usual Internal Server Error otherwise.
+                  return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+                }
+              );
+            });
           }
         }
       });
@@ -290,12 +298,12 @@ module.exports.register = function (server, options, next) {
 
       var newPassword = request.payload.newPassword;
 
-      GigyaAccounts.resetPassword({
+      Gigya.callApi('/accounts.resetPassword', {
         loginID: request.payload.email,
         sendEmail: false
       }).then(function (response) {
 
-        GigyaAccounts.resetPassword({
+        Gigya.callApi('/accounts.resetPassword', {
           passwordResetToken: response.body.passwordResetToken,
           newPassword: newPassword,
           sendEmail: false
@@ -380,24 +388,18 @@ module.exports.register = function (server, options, next) {
           return reply(Boom.badRequest('You cannot delete yourself'));
         }
 
-        // TODO: Move code to user.js
-        // TODO: Set deletedAt timestamp? Or should we do more?
-        return MongoDB.collection('users').update(
-          { id: request.params.id },
-          { $set: { deletedAt: new Date() } },
-          function (err, result) {
-            if (err) {
-              EventLog.logUserEvent(
-                request.params.id,
-                'Deleting user Failed'
-              );
-              return reply(err);
-            }
-
-            EventLog.logUserEvent(request.params.id, 'Deleting user');
-            reply({'status': 'ok'});
+        Users.deleteUserId(request.params.id, function (err, result) {
+          if (err) {
+            EventLog.logUserEvent(
+              request.params.id,
+              'Deleting user Failed'
+            );
+            return reply(err);
           }
-        );
+
+          EventLog.logUserEvent(request.params.id, 'Deleting user');
+          reply({'status': 'ok'});
+        });
       });
     }
   });

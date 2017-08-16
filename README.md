@@ -54,7 +54,7 @@ Beyond storing user permissions, BPC has additional functionality:
     or just a subset (by specifying user email.)
   * Access can be revoked.
   * Beside the data that can be stored on a user profile, each application has it's own data storage.
-    This could be used for those settings that are optimal to be stored in the environment.
+    This could be used for those settings that are not optimal to be stored in the environment.
     It could limit the need for a separate database for each application.
   * BPC can be used to secure an API to be used only by applications and/or users with valid BPC tickets.
 

@@ -2,107 +2,23 @@
 'use strict';
 
 // Bootstrap the testing harness.
-const Code = require('code');   // assertion library
-const Lab = require('lab');
-const lab = exports.lab = Lab.script();
-const rewire = require('rewire');
 const sinon = require('sinon');
-const MongoDB = require('./../server/mongo/mongodb_mocked');
-const bpc = require('./../server');
-// const Applications = require('./../server/applications/applications');
+const MongoDB = require('./mocks/mongodb_mock');
+const Applications = require('./../server/applications/applications');
 const crypto = require('crypto');
 
 // Test shortcuts.
-const describe = lab.describe;
-const it = lab.it;
-const expect = Code.expect;
-const before = lab.before;
-const after = lab.after;
+const { describe, it, before, after } = exports.lab = require('lab').script();
+// Assertion library
+const { expect } = require('code');
 
-// TODO
-return; // currently these tests must be re-written
 
-// Here we go...
-describe('applications', () => {
+
+describe('application unit tests', () => {
 
 
   before(done => {
-
-    // Need to wait a sec for the database/mongo-mock to start up...
-    setTimeout(done, 1000);
-
-  });
-
-
-  before(done => {
-
-    // Clear the database.
-    Promise.all([
-      MongoDB.collection('applications').remove({}),
-      MongoDB.collection('grants').remove({}),
-      MongoDB.collection('users').remove({})
-    ]).then(res => {
-      done();
-    });
-
-  });
-
-
-  before(done => {
-
-    Promise.all([
-      // Give the test cases an app to use.
-      MongoDB.collection('applications').insert({
-        id: 'valid-app',
-        scope: [
-          'admin',
-          'admin:*',
-          'business:all',
-          'bt:all'
-        ],
-        delegate: false,
-        key: 'something_long_and_random',
-        algorithm: 'sha256'
-      }),
-      MongoDB.collection('applications').insert({
-        id: 'delete-me-app',
-        scope: [
-          'admin',
-          'admin:*',
-          'admin:gdfgfd',
-          'admin:uyutyutu'
-        ],
-        delegate: false,
-        key: 'something_long_and_random',
-        algorithm: 'sha256'
-      }),
-      // Give the test cases a grant to use.
-      MongoDB.collection('grants').insert({
-        id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
-        app: 'valid-app',
-        user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
-        scope: []
-      }),
-      // Give the test cases a grant to use.
-      MongoDB.collection('grants').insert({
-        id: 'jhfgs294723ijsdhfsdfhskjh329423798animal',
-        app: 'delete-me-app',
-        user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
-        scope: []
-      }),
-      // Give the test cases a user to use.
-      MongoDB.collection('users').insert({
-        email: 'mkoc@berlingskemedia.dk',
-        id: '117880216634946654515',
-        provider: 'gigya',
-        lastLogin: new Date(),
-        dataScopes: {},
-        providerData: {}
-      })
-    ]).then(res => {
-      done();
-    })
-
+    MongoDB.initate().then(done);
   });
 
 

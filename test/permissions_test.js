@@ -2,29 +2,21 @@
 'use strict';
 
 // Bootstrap the testing harness.
-const Code = require('code');   // assertion library
-const Lab = require('lab');
-const lab = exports.lab = Lab.script();
-const rewire = require('rewire');
 const sinon = require('sinon');
-const test_data = require('./test_data');
-const bpc_helper = require('./bpc_helper');
+const test_data = require('./data/test_data');
+const bpc_helper = require('./helpers/bpc_helper');
 // const Permissions = require('./../server/permissions');
 
 // Test shortcuts.
-const describe = lab.describe;
-const it = lab.it;
-const expect = Code.expect;
-const before = lab.before;
-const after = lab.after;
+const { describe, it, before, after } = exports.lab = require('lab').script();
+// Assertion library
+const { expect } = require('code');
 
 
 describe('permissions - functional tests', () => {
 
   before(done => {
-    bpc_helper.initate(function(){
-      done();
-    });
+    bpc_helper.start().then(done);
   });
 
   describe('getting user permissions with an app ticket', () => {
@@ -53,7 +45,7 @@ describe('permissions - functional tests', () => {
     });
 
     it('getting first user bt permissions by provider and uppercase email', (done) => {
-      bpc_helper.request({ method: 'GET', url: '/permissions/gigya/USER@berlingskemedia.dk/bt'}, appTicket, (response) => {
+      bpc_helper.request({ method: 'GET', url: '/permissions/gigya/FIRST_USER@berlingskemedia.dk/bt'}, appTicket, (response) => {
         expect(response.statusCode).to.equal(200);
         var payload = JSON.parse(response.payload);
         expect(payload.bt_subscription_tier).to.equal('free');

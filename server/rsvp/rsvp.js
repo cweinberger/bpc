@@ -53,7 +53,7 @@ function createGigyaRsvp(data) {
       return Promise.reject(Boom.badRequest('Invalid email'));
     }
 
-    Users.updateUserInDB({ id: data.UID, email: result.body.profile.email.toLowerCase(), provider: data.provider });
+    Users.upsertUserId({ id: data.UID, email: result.body.profile.email.toLowerCase(), provider: data.provider });
 
     return findGrant({ user: data.UID, app: data.app, provider: data.provider });
 
@@ -71,7 +71,7 @@ function createGoogleRsvp(data, callback) {
       return callback(Boom.badRequest());
     } else {
 
-      Users.updateUserInDB({ id: data.ID, email: result.email, provider: data.provider });
+      Users.upsertUserId({ id: data.ID, email: result.email.toLowerCase(), provider: data.provider });
 
       findGrant({ user: data.ID, app: data.app, provider: data.provider }, callback);
 

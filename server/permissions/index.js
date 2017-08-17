@@ -5,7 +5,7 @@ const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
 const OzLoadFuncs = require('./../oz_loadfuncs');
-const MongoDB = require('./../mongo/mongodb_client');
+const Users = require('../users/users');
 
 module.exports.register = function (server, options, next) {
 
@@ -43,7 +43,11 @@ module.exports.register = function (server, options, next) {
         // Should we query the database or look in the private part of the ticket?
         if (true) {
 
-          queryPermissionsScope({ id: ticket.user }, request.params.scope, reply);
+          Users.queryPermissionsScope(
+            { id: ticket.user },
+            request.params.scope,
+            reply
+          );
 
         } else {
 
@@ -77,7 +81,11 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      queryPermissionsScope({ id: request.params.user }, request.params.scope, reply);
+      Users.queryPermissionsScope(
+        { id: request.params.user },
+        request.params.scope,
+        reply
+      );
     }
   });
 
@@ -142,10 +150,8 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      setPermissionsScope(
-        {
-          id: request.params.user
-        },
+      Users.setPermissionsScope(
+        { id: request.params.user },
         request.params.scope,
         request.payload,
         reply
@@ -184,7 +190,7 @@ module.exports.register = function (server, options, next) {
         email: request.params.email.toLowerCase()
       };
 
-      queryPermissionsScope(
+      Users.queryPermissionsScope(
         selector,
         request.params.scope,
         reply
@@ -224,7 +230,7 @@ module.exports.register = function (server, options, next) {
         email: request.params.email.toLowerCase()
       };
 
-      setPermissionsScope(
+      Users.setPermissionsScope(
         selector,
         request.params.scope,
         request.payload,
@@ -241,63 +247,3 @@ module.exports.register.attributes = {
   name: 'permissions',
   version: '1.0.0'
 };
-
-
-function queryPermissionsScope(selector, scope, callback) {
-  var queryProject = {
-    _id: 0
-  };
-  queryProject['dataScopes.'.concat(scope)] = 1;
-
-  MongoDB.collection('users').findOne(
-    selector,
-    queryProject
-    , function (err, result){
-      if (err) {
-        console.error(err);
-        return callback(err);
-      }
-
-      if (!result) {
-        callback(Boom.notFound());
-      }
-      else {
-        callback(null, result.dataScopes[scope]);
-      }
-    }
-  );
-}
-
-
-function setPermissionsScope(selector, scope, payload, callback) {
-  var set = {};
-  Object.keys(payload).forEach(function(key){
-    set['dataScopes.'.concat(scope,'.', key)] = payload[key];
-  });
-
-  MongoDB.collection('users').update(
-    selector,
-    {
-      $currentDate: { 'lastUpdated': { $type: "date" } },
-      $set: set
-    },
-    {
-      upsert: true,
-      // We're update multi because when updating using {provider}/{email} endpoint e.g. gigya/dako@berlingskemedia.dk
-      //   there is a possibility that the user was deleted and created in Gigya with a new UID.
-      //   In this case we have multiple user-objects in BPC. So to be safe, we update them all so nothing is lost.
-      multi: true
-      //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
-      //  collation: <document>
-    },
-    function(err, result){
-      if (err){
-        callback(Boom.internal('Database error', err));
-      } else if (result === null) {
-        callback(Boom.notFound());
-      } else {
-        callback({'status': 'ok'});
-      }
-    }
-  );
-}

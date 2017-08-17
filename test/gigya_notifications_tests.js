@@ -7,8 +7,8 @@ const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
 const MongoDB = require('./mocks/mongodb_mock');
 const Gigya = require('./mocks/gigya_mock');
+const gigya_helper = require('./helpers/gigya_helper');
 
-const Crypto = require('crypto');
 
 // Test shortcuts.
 const { describe, it, before, after } = exports.lab = require('lab').script();
@@ -25,8 +25,13 @@ describe('gigya notifications - functional tests', () => {
   before(done => {
     Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '1'})
     .resolves({body: {UID: '1', profile: { email: '1@test.nl'}}});
+
     Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '2'})
     .resolves({body: {UID: '2', profile: { email: '2@test.nl'}}});
+
+    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '3'})
+    .resolves({body: {UID: '3', profile: { email: '3@test.nl'}}});
+
     done();
   });
 
@@ -68,17 +73,19 @@ describe('gigya notifications - functional tests', () => {
         "timestamp": 1450011477
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = generateGigyaSigHmax(notifications_request);
+      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
 
       bpc_helper.request(notifications_request, null, (response) => {
         expect(response.statusCode).to.equal(200);
 
         MongoDB.collection('users').findOne({id: '1'}, (err, result) => {
+          expect(result).not.to.be.null();
           expect(result.email).to.equal('1@test.nl')
           expect(result.provider).to.equal('gigya');
           expect(result.createdAt).to.be.a.date();
 
           MongoDB.collection('users').findOne({id: '2'}, (err, result) => {
+            expect(result).not.to.be.null();
             expect(result.email).to.equal('2@test.nl')
             expect(result.provider).to.equal('gigya');
             expect(result.createdAt).to.be.a.date();
@@ -123,7 +130,7 @@ describe('gigya notifications - functional tests', () => {
         "timestamp": 1450011477
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = generateGigyaSigHmax(notifications_request);
+      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
 
       bpc_helper.request(notifications_request, null, (response) => {
 
@@ -141,15 +148,51 @@ describe('gigya notifications - functional tests', () => {
       });
     });
 
+
+    it('getting multiple identical accountRegistered events', (done) => {
+
+      const notifications_request = {
+        method: 'POST',
+        url: '/gigya/notifications',
+        headers: {
+        },
+        payload: {
+          "events": [
+            {
+              "type": "accountRegistered",
+              "id": "b3e95b42-5788-49a7-842a-90c0f183d655",
+              "timestamp": 1450011476,
+              "data": {
+                "uid": "3"
+              }
+            },
+            {
+              "type": "accountRegistered",
+              "id": "c3e95b42-5788-49a7-842a-90c0f183d666",
+              "timestamp": 1450011477,
+              "data": {
+                "uid": "3"
+              }
+            }
+          ]
+        },
+        "nonce": "8693aa10-9c75-48c9-a959-6ef1ae2b6b54",
+        "timestamp": 1450011477
+      };
+
+      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+
+      bpc_helper.request(notifications_request, null, (response) => {
+        expect(response.statusCode).to.equal(200);
+
+        MongoDB.collection('users').find({id: '3'}).toArray((err, result) => {
+          expect(result.length).to.equal(1)
+          expect(result[0].email).to.equal('3@test.nl');
+
+          done();
+        });
+      });
+    });
+
   });
 });
-
-
-function generateGigyaSigHmax(request){
-  const GIGYA_SECRET_KEY = 'random_test_password_that_is_longer_than_32_characters';
-  const secretBuffer = new Buffer(GIGYA_SECRET_KEY, 'base64');
-  const algorithm = 'sha1'; // sha256
-  const _message = new Buffer.from(JSON.stringify(request.payload));
-  const hmac = Crypto.createHmac(algorithm, secretBuffer).update(_message);
-  return hmac.digest('base64');
-}

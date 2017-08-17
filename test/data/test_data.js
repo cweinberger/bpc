@@ -61,6 +61,12 @@ module.exports = {
       scope: ['users'],
       key: '908345kojte9kgjef08934j5lkjgfed890435lkjgle',
       algorithm: 'sha256'
+    },
+    app_with_profile_scope: {
+      id: 'app_with_profile_scope',
+      scope: ['profile'],
+      key: '908345kojte9kgjef08934j5lkjgfed890435lkjglz',
+      algorithm: 'sha256'
     }
   },
 

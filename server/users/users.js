@@ -246,14 +246,20 @@ function setPermissionsScope(selector, scope, payload, callback) {
 
   // We're adding the selector data to the set data from selector.
   // This is needed when we're inserting (upsert), so we have the values
-  var set = Object.assign({}, selector);
-  const setOnInsert = Object.assign(set,{
-    createdAt: new Date()
-  });
+  let set = Object.assign({}, selector);
 
   Object.keys(payload).forEach(function(key){
     set['dataScopes.'.concat(scope,'.', key)] = payload[key];
   });
+
+  let setOnInsert = {
+    createdAt: new Date()
+  };
+
+  if (MongoDB.isMock) {
+    setOnInsert = Object.assign(setOnInsert, set);
+  }
+
 
   MongoDB.collection('users').update(
     selector,

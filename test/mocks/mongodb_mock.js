@@ -43,6 +43,8 @@ module.exports.initate = function (done) {
   });
 };
 
+module.exports.isMock = true;
+
 
 function clearMongoMock (done){
   var k = Object.keys(test_data).map(function(collectionKey){

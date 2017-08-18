@@ -42,7 +42,7 @@ describe('gigya notifications - functional tests', () => {
 
   describe('accountRegisteredEventHandler', () => {
 
-    it('getting accountRegistered  test 1', (done) => {
+    it('getting accountRegistered test 1', (done) => {
 
       const notifications_request = {
         method: 'POST',
@@ -99,7 +99,7 @@ describe('gigya notifications - functional tests', () => {
 
 
 
-    it('getting accountDeleted  test 1', (done) => {
+    it('getting accountDeleted test 1', (done) => {
 
       const notifications_request = {
         method: 'POST',

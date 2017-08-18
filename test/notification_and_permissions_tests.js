@@ -106,7 +106,8 @@ describe('gigya notifications after permissions - integration tests', () => {
         expect(result[0].email).to.equal('4@test.nl');
         expect(result[0].provider).to.equal('gigya');
         expect(result[0].createdAt).to.be.a.date();
-        // Testing the data scope using this key, since mongo-mock does not insert nested keys
+        // Testing the data scope using this key, since mongo-mock does not support sub-documents
+        // https://github.com/williamkapke/mongo-mock/issues/26
         expect(result[0]['dataScopes.profile.sso-id']).to.be.equal('12345');
 
         done();

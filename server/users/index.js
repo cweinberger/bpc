@@ -388,17 +388,14 @@ module.exports.register = function (server, options, next) {
           return reply(Boom.badRequest('You cannot delete yourself'));
         }
 
-        Users.deleteUserId(request.params.id, function (err, result) {
-          if (err) {
-            EventLog.logUserEvent(
-              request.params.id,
-              'Deleting user Failed'
-            );
-            return reply(err);
-          }
-
+        Users.deleteUserId(request.params.id)
+        .then(() => {
           EventLog.logUserEvent(request.params.id, 'Deleting user');
           reply({'status': 'ok'});
+        })
+        .catch((err) => {
+          EventLog.logUserEvent(request.params.id, 'Deleting user Failed');
+          return reply(err);
         });
       });
     }

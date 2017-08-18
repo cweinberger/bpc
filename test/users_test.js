@@ -6,6 +6,7 @@ const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
 const Gigya = require('./mocks/gigya_mock');
+const MongoDB = require('./mocks/mongodb_mock');
 
 // Test shortcuts.
 const { describe, it, before, after } = exports.lab = require('lab').script();
@@ -107,4 +108,24 @@ describe('users - integration tests', () => {
     });
   });
 
+
+  it('delete user', done => {
+    let options = {
+      method: 'DELETE',
+      url: '/users/5347895384975934842757',
+      headers: {
+      }
+    };
+
+    bpc_helper.request(options, appTicket, (response) => {
+      expect(response.statusCode).to.equal(200);
+
+      MongoDB.collection('users').find({id: '5347895384975934842757'}).toArray(function(err, result){
+        expect(result.length).to.equal(1);
+        expect(result[0].deletedAt).to.be.a.date();
+
+        done();
+      });
+    });
+  });
 });

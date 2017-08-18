@@ -115,14 +115,14 @@ describe('gigya notifications - functional tests', () => {
               "data": {
                 "uid": "3218736128736123215732"
               }
-            },
-            {
-              "type": "accountDeleted",
-              "id": "c3e95b42-5788-49a7-842a-90c0f183d664",
-              "timestamp": 1450011479,
-              "data": {
-                "uid": "5347895384975934842757"
-              }
+            // },
+            // {
+            //   "type": "accountDeleted",
+            //   "id": "c3e95b42-5788-49a7-842a-90c0f183d664",
+            //   "timestamp": 1450011479,
+            //   "data": {
+            //     "uid": "5347895384975934842757"
+            //   }
             }
           ]
         },
@@ -136,14 +136,12 @@ describe('gigya notifications - functional tests', () => {
 
         expect(response.statusCode).to.equal(200);
 
-        MongoDB.collection('users').findOne({id: '3218736128736123215732'}, function(err, result){
-          expect(result.deletedAt).to.be.a.date();
+        MongoDB.collection('users').find({id: '3218736128736123215732'}).toArray(function(err, result){
+          expect(result.length).to.equal(1);
+          expect(result[0].deletedAt).to.be.a.date();
 
-          MongoDB.collection('users').findOne({id: '5347895384975934842757'}, function(err, result){
-            expect(result.deletedAt).to.be.a.date();
+          done();
 
-            done();
-          });
         });
       });
     });

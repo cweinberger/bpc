@@ -190,26 +190,18 @@ function updateUserId({id, email}) {
 
 
 // TODO: Set deletedAt timestamp enough? Or should we do more? Eg. expire grants?
-function deleteUserId(id, callback){
-  if (callback === undefined) {
-    callback = function(err, result) {
-      if (err) {
-        console.error(err);
-      }
-    };
-  }
-
+function deleteUserId(id){
   return new Promise((resolve, reject) => {
     MongoDB.collection('users').update(
       { id: id },
       { $set: { deletedAt: new Date() } },
       function(err, result) {
         if (err) {
+          console.error(err);
           reject(err);
         } else {
           resolve(result);
         }
-        callback(err, result);
       }
     );
   });
@@ -279,6 +271,7 @@ function setPermissionsScope(selector, scope, payload, callback) {
     },
     function(err, result){
       if (err){
+        console.error(err);
         callback(Boom.internal('Database error', err));
       } else if (result === null) {
         callback(Boom.notFound());

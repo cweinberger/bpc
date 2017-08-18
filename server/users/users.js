@@ -109,8 +109,8 @@ function upsertUserId({id, email, provider}, callback) {
         id: id
       },
       {
-        provider: provider,
-        email: email
+        email: email,
+        provider: provider
       }
     ]
   };
@@ -121,10 +121,17 @@ function upsertUserId({id, email, provider}, callback) {
     provider: provider
   };
 
-  const setOnInsert = Object.assign(set,{
+  let setOnInsert = {
     createdAt: new Date(),
     dataScopes: {}
-  });
+  };
+
+  // mongo-mock does not do upset the same way as MongoDB.
+  // $set is ignored when doing upsert in mongo-mock
+  if (MongoDB.isMock) {
+    setOnInsert = Object.assign(setOnInsert, set);
+  }
+
 
   return new Promise((resolve, reject) => {
 

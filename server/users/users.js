@@ -248,6 +248,10 @@ function setPermissionsScope(selector, scope, payload, callback) {
   // This is needed when we're inserting (upsert), so we have the values
   let set = Object.assign({}, selector);
 
+  Object.keys(payload).forEach(function(key){
+    set['dataScopes.'.concat(scope,'.', key)] = payload[key];
+  });
+
   let setOnInsert = {
     createdAt: new Date()
   };
@@ -256,9 +260,6 @@ function setPermissionsScope(selector, scope, payload, callback) {
     setOnInsert = Object.assign(setOnInsert, set);
   }
 
-  Object.keys(payload).forEach(function(key){
-    set['dataScopes.'.concat(scope,'.', key)] = payload[key];
-  });
 
   MongoDB.collection('users').update(
     selector,

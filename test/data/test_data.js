@@ -85,8 +85,7 @@ module.exports = {
           berlingske_paywall: true,
           berlingske_subscription_tier: 'premium'
         }
-      },
-      providerData: {}
+      }
     },
     simple_second_user: {
       email: 'second_user@berlingskemedia.dk',
@@ -102,32 +101,28 @@ module.exports = {
           berlingske_paywall: true,
           berlingske_subscription_tier: 'premium'
         }
-      },
-      providerData: {}
+      }
     },
     console_superadmin_google_user: {
       email: 'console_admin@berlingskemedia.dk',
       id: '1111111111111111111111',
       provider: 'google',
       lastLogin: new Date(),
-      dataScopes: {},
-      providerData: {}
+      dataScopes: {}
     },
     console_google_user: {
       email: 'console_user@berlingskemedia.dk',
       id: '2222222222222222222222',
       provider: 'google',
       lastLogin: new Date(),
-      dataScopes: {},
-      providerData: {}
+      dataScopes: {}
     },
     mkoc_user: {
       email: 'mkoc@berlingskemedia.dk',
       id: '117880216634946654515',
       provider: 'gigya',
       lastLogin: new Date(),
-      dataScopes: {},
-      providerData: {}
+      dataScopes: {}
     }
   },
 

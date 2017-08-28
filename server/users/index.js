@@ -40,7 +40,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors,
       validate: {
         query: Joi.object().keys({
-          email: Joi.string().email(),
+          email: Joi.string().email().required(),
           provider: Joi.string().valid('gigya', 'google').default('gigya')
         }).unknown(false)
       }

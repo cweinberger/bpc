@@ -226,9 +226,7 @@ function queryPermissionsScope(selector, scope, callback) {
 
 function setPermissionsScope(selector, scope, payload, callback) {
 
-  // We're adding the selector data to the set data from selector.
-  // This is needed when we're inserting (upsert), so we have the values
-  let set = Object.assign({}, selector);
+  let set = {};
 
   Object.keys(payload).forEach(function(key){
     set['dataScopes.'.concat(scope,'.', key)] = payload[key];
@@ -239,6 +237,10 @@ function setPermissionsScope(selector, scope, payload, callback) {
   };
 
   if (MongoDB.isMock) {
+    // We're adding the selector data to the set data from selector.
+    // This is needed when we're inserting (upsert), so we have the values
+    set = Object.assign(set, selector)
+    delete set.deletedAt;
     setOnInsert = Object.assign(setOnInsert, set);
   }
 

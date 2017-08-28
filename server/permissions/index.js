@@ -188,7 +188,7 @@ module.exports.register = function (server, options, next) {
       var selector = {
         provider: request.params.provider,
         email: request.params.email.toLowerCase(),
-        deletedAt: { $exist: false }
+        deletedAt: { $exists: false }
       };
 
       Users.queryPermissionsScope(
@@ -229,7 +229,7 @@ module.exports.register = function (server, options, next) {
       var selector = {
         provider: request.params.provider,
         email: request.params.email.toLowerCase(),
-        deletedAt: { $exist: false }
+        deletedAt: { $exists: false }
       };
 
       Users.setPermissionsScope(

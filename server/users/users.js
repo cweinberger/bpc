@@ -99,7 +99,8 @@ function upsertUserId({id, email, provider}, callback) {
       },
       {
         email: email,
-        provider: provider
+        provider: provider,
+        deletedAt: { $exists: false }
       }
     ]
   };

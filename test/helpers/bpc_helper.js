@@ -10,27 +10,42 @@ const MongoDB = require('../mocks/mongodb_mock');
 
 module.exports.request = function (options, ticket, callback) {
 
-  const req = {
-    method: options.method,
-    url: options.url,
-    payload: options.payload,
-    headers: Object.assign(options.headers || {},
-      {
-        host: 'testing.com'
-      }
-    )
-  };
+  return new Promise((resolve, reject) => {
 
-  if (ticket !== undefined && ticket !== null && ticket !== {}) {
-    const hawkHeader = Hawk.client.header('http://'.concat(req.headers.host, options.url), options.method, ticket);
-    if (!hawkHeader.field){
-      callback(hawkHeader);
+    if (callback === undefined) {
+      // callback = function(response) {
+      //   if (response.statusCode >= 400 || response.err) {
+      //     reject(response);
+      //   } else {
+      //     resolve(response);
+      //   }
+      // };
+      // Actually, we don't need to reject anything. We only resolve and the tests should validate the response
+      callback = resolve;
     }
 
-    req.headers.authorization = hawkHeader.field;
-  }
+    const req = {
+      method: options.method,
+      url: options.url,
+      payload: options.payload,
+      headers: Object.assign(options.headers || {},
+        {
+          host: 'testing.com'
+        }
+      )
+    };
 
-  bpc.inject(req, callback);
+    if (ticket !== undefined && ticket !== null && ticket !== {}) {
+      const hawkHeader = Hawk.client.header('http://'.concat(req.headers.host, options.url), options.method, ticket);
+      if (!hawkHeader.field){
+        callback(hawkHeader);
+      }
+
+      req.headers.authorization = hawkHeader.field;
+    }
+
+    bpc.inject(req, callback);
+  });
 };
 
 

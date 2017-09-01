@@ -54,6 +54,22 @@ module.exports.generateRsvp = function(app, grant, callback) {
 };
 
 
+module.exports.getAppTicket = function(app){
+  return new Promise((resolve, reject) => {
+    module.exports.request({ method: 'POST', url: '/ticket/app' }, {credentials: app})
+    .then((response) => {
+      if (response.statusCode !== 200) {
+        return reject(response);
+      } else {
+        appTicket = {credentials: JSON.parse(response.payload), app: app.id};
+        resolve(appTicket);
+      }
+    })
+    .catch(reject);
+  });
+};
+
+
 module.exports.start = function(){
   if(bpc.info.started > 0){
     return MongoDB.initate();

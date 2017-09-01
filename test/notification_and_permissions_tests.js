@@ -55,19 +55,24 @@ describe('gigya notifications after permissions - integration tests', () => {
       }
     };
 
-    bpc_helper.request(permissions_request, appTicket, (response) => {
+    bpc_helper.request(permissions_request, appTicket)
+    .then(response => {
       expect(response.statusCode).to.equal(200);
       // expect(response.payload.status).to.equal('ok');
+      return Promise.resolve();
+    })
+    .then(() => MongoDB.collection('users').find({email: '4@test.nl', provider: 'gigya'}).toArray())
+    .then(result => {
+      expect(result).not.to.be.null();
+      expect(result.length).to.equal(1);
+      expect(result[0].id).to.be.undefined();
+      expect(result[0].createdAt).to.be.a.date();
+      // expect(result[0].lastUpdated).to.be.a.date();
 
-      MongoDB.collection('users').find({email: '4@test.nl', provider: 'gigya'}).toArray((err, result) => {
-        expect(result).not.to.be.null();
-        expect(result.length).to.equal(1);
-        expect(result[0].id).to.be.undefined();
-        expect(result[0].createdAt).to.be.a.date();
-        // expect(result[0].lastUpdated).to.be.a.date();
-
-        done();
-      });
+      done();
+    })
+    .catch(ex => {
+      done(ex);
     });
   });
 
@@ -108,7 +113,10 @@ describe('gigya notifications after permissions - integration tests', () => {
         expect(result[0].createdAt).to.be.a.date();
         // Testing the data scope using this key, since mongo-mock does not support sub-documents
         // https://github.com/williamkapke/mongo-mock/issues/26
-        expect(result[0]['dataScopes.profile.sso-id']).to.be.equal('12345');
+        // expect(result[0]['dataScopes.profile.sso-id']).to.be.equal('12345');
+        // OK, now we can test is better, because I'm doing mock manipulation in the permissions.js file
+        //  in the "if (MongoDB.isMock)" code
+        expect(result[0].dataScopes.profile['sso-id']).to.be.equal('12345');
 
         done();
       });

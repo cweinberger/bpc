@@ -24,12 +24,13 @@ describe('console - functional tests:', () => {
   });
 
   // Getting the console_app_ticket
-  before((done) => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, {credentials: console_app}, (response) => {
-      expect(response.statusCode).to.equal(200);
-      console_app_ticket = {credentials: JSON.parse(response.payload), app: console_app.id};
-      done();
-    });
+  before(done => {
+    bpc_helper.getAppTicket(console_app)
+    .then(result => {
+      console_app_ticket = result;
+    })
+    .then(done)
+    .catch(done);
   });
 
 

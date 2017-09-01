@@ -46,9 +46,13 @@ module.exports.setPermissionsScope = function(selector, scope, payload, callback
   if (MongoDB.isMock) {
     // We're adding the selector data to the set data from selector.
     // This is needed when we're inserting (upsert), so we have the values
-    set = Object.assign(set, selector)
+    var dataScopes = {};
+    dataScopes[scope] = payload;
+    set = Object.assign({}, selector, {
+      dataScopes: dataScopes
+    });
     delete set.deletedAt;
-    setOnInsert = Object.assign(setOnInsert, set);
+    Object.assign(setOnInsert, set);
   }
 
 

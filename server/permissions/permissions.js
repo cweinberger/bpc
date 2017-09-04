@@ -6,14 +6,14 @@ const MongoDB = require('./../mongo/mongodb_client');
 
 
 module.exports.queryPermissionsScope = function(selector, scope, callback) {
-  var queryProject = {
+  var projection = {
     _id: 0
   };
-  queryProject['dataScopes.'.concat(scope)] = 1;
+  projection['dataScopes.'.concat(scope)] = 1;
 
   MongoDB.collection('users').findOne(
     selector,
-    queryProject
+    projection
     , function (err, result){
       if (err) {
         console.error(err);
@@ -102,7 +102,7 @@ module.exports.updatePermissionsScope = function(selector, scope, payload, callb
 
 
   Object.assign(operators, payload);
-  
+
   Object.keys(operators).forEach(operator => {
     Object.keys(operators[operator]).forEach(field => {
       operators[operator]['dataScopes.'.concat(scope,'.',field)] = operators[operator][field];
@@ -113,9 +113,15 @@ module.exports.updatePermissionsScope = function(selector, scope, payload, callb
   // This must come after payload to make sure it cannot be set by the application
   operators['$currentDate']['lastUpdated'] = { $type: "date" };
 
-  MongoDB.collection('users').update(
+  var projection = {
+    _id: 0
+  };
+  projection['dataScopes.'.concat(scope)] = 1;
+
+  MongoDB.collection('users').findOneAndUpdate(
     selector,
     operators,
+    { projection: projection },
     function(err, result){
       if (err){
         console.error(err);
@@ -124,7 +130,7 @@ module.exports.updatePermissionsScope = function(selector, scope, payload, callb
       } else if (result === null) {
         callback(Boom.notFound());
       } else {
-        callback({'status': 'ok'});
+        callback(result.value.dataScopes[scope]);
       }
     }
   );

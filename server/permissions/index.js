@@ -56,9 +56,9 @@ module.exports.register = function (server, options, next) {
           }
 
           // We only want to reply the permissions within the requested scope
-          var Permissions = Object.assign({}, ticket.ext.private.Permissions[request.params.scope]);
+          var scopePermissions = Object.assign({}, ticket.ext.private.Permissions[request.params.scope]);
 
-          reply(Permissions);
+          reply(scopePermissions);
         }
       });
     }
@@ -151,6 +151,36 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
       Permissions.setPermissionsScope(
+        { id: request.params.user },
+        request.params.scope,
+        request.payload,
+        reply
+      );
+    }
+  });
+
+
+  server.route({
+    method: 'PATCH',
+    path: '/{user}/{scope}',
+    config: {
+      auth: {
+        access: {
+          scope: ['{params.scope}', 'admin'],
+          entity: 'app' // <-- Important. Users must not be allowed to set permissions
+        }
+      },
+      cors: stdCors,
+      state: {
+        parse: true,
+        failAction: 'log'
+      },
+      validate: {
+        payload: Joi.object()
+      }
+    },
+    handler: function(request, reply) {
+      Permissions.updatePermissionsScope(
         { id: request.params.user },
         request.params.scope,
         request.payload,

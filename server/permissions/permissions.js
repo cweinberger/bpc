@@ -35,15 +35,13 @@ module.exports.setPermissionsScope = function(selector, scope, payload, callback
 
   let set = {};
 
-  Object.keys(payload).forEach(function(key){
-    set['dataScopes.'.concat(scope,'.', key)] = payload[key];
-  });
-
   let setOnInsert = {
     createdAt: new Date()
   };
 
+
   if (MongoDB.isMock) {
+
     // We're adding the selector data to the set data from selector.
     // This is needed when we're inserting (upsert), so we have the values
     var dataScopes = {};
@@ -51,18 +49,28 @@ module.exports.setPermissionsScope = function(selector, scope, payload, callback
     set = Object.assign({}, selector, {
       dataScopes: dataScopes
     });
+
     delete set.deletedAt;
     Object.assign(setOnInsert, set);
+
+  } else {
+
+    Object.keys(payload).forEach(function(field){
+      set['dataScopes.'.concat(scope,'.',field)] = payload[field];
+    });
+
   }
+
+  let operators = {
+    $currentDate: { 'lastUpdated': { $type: "date" } },
+    $set: set,
+    $setOnInsert: setOnInsert
+  };
 
 
   MongoDB.collection('users').update(
     selector,
-    {
-      $currentDate: { 'lastUpdated': { $type: "date" } },
-      $set: set,
-      $setOnInsert: setOnInsert
-    },
+    operators,
     {
       upsert: true,
       // We're update multi because when updating using {provider}/{email} endpoint e.g. gigya/dako@berlingskemedia.dk
@@ -75,7 +83,44 @@ module.exports.setPermissionsScope = function(selector, scope, payload, callback
     function(err, result){
       if (err){
         console.error(err);
-        callback(Boom.internal('Database error', err));
+        callback(Boom.badImplementation(err.message));
+      } else if (result === null) {
+        callback(Boom.notFound());
+      } else {
+        callback({'status': 'ok'});
+      }
+    }
+  );
+};
+
+
+module.exports.updatePermissionsScope = function(selector, scope, payload, callback) {
+
+  let operators = {
+    '$currentDate': {}
+  };
+
+
+  Object.assign(operators, payload);
+  
+  Object.keys(operators).forEach(operator => {
+    Object.keys(operators[operator]).forEach(field => {
+      operators[operator]['dataScopes.'.concat(scope,'.',field)] = operators[operator][field];
+      delete operators[operator][field];
+    });
+  });
+
+  // This must come after payload to make sure it cannot be set by the application
+  operators['$currentDate']['lastUpdated'] = { $type: "date" };
+
+  MongoDB.collection('users').update(
+    selector,
+    operators,
+    function(err, result){
+      if (err){
+        console.error(err);
+        // We are replying with badRequest here, because it's propably and error in the operators in the request.
+        callback(Boom.badRequest(err.message));
       } else if (result === null) {
         callback(Boom.notFound());
       } else {

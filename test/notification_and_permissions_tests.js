@@ -25,12 +25,13 @@ describe('gigya notifications after permissions - integration tests', () => {
     bpc_helper.start().then(done);
   });
 
-  before((done) => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, {credentials: app}, (response) => {
-      expect(response.statusCode).to.equal(200);
-      appTicket = {credentials: JSON.parse(response.payload), app: app.id};
-      done();
-    });
+  before(done => {
+    bpc_helper.getAppTicket(app)
+    .then(result => {
+      appTicket = result;
+    })
+    .then(done)
+    .catch(done);
   });
 
   before(done => {
@@ -55,20 +56,23 @@ describe('gigya notifications after permissions - integration tests', () => {
       }
     };
 
-    bpc_helper.request(permissions_request, appTicket, (response) => {
+    bpc_helper.request(permissions_request, appTicket)
+    .then(response => {
       expect(response.statusCode).to.equal(200);
       // expect(response.payload.status).to.equal('ok');
+      return Promise.resolve();
+    })
+    .then(() => MongoDB.collection('users').find({email: '4@test.nl', provider: 'gigya'}).toArray())
+    .then(result => {
+      expect(result).not.to.be.null();
+      expect(result.length).to.equal(1);
+      expect(result[0].id).to.be.undefined();
+      expect(result[0].createdAt).to.be.a.date();
+      // expect(result[0].lastUpdated).to.be.a.date();
 
-      MongoDB.collection('users').find({email: '4@test.nl', provider: 'gigya'}).toArray((err, result) => {
-        expect(result).not.to.be.null();
-        expect(result.length).to.equal(1);
-        expect(result[0].id).to.be.undefined();
-        expect(result[0].createdAt).to.be.a.date();
-        // expect(result[0].lastUpdated).to.be.a.date();
-
-        done();
-      });
-    });
+    })
+    .then(done)
+    .catch(done);
   });
 
   it('getting accountRegistered', (done) => {
@@ -96,22 +100,26 @@ describe('gigya notifications after permissions - integration tests', () => {
 
     notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
 
-    bpc_helper.request(notifications_request, null, (response) => {
+    bpc_helper.request(notifications_request, null)
+    .then(response => {
       expect(response.statusCode).to.equal(200);
-
-      MongoDB.collection('users').find({email: '4@test.nl', provider: 'gigya'}).toArray((err, result) => {
-        expect(result).not.to.be.null();
-        expect(result.length).to.equal(1);
-        expect(result[0].id).to.be.equal('4');
-        expect(result[0].email).to.equal('4@test.nl');
-        expect(result[0].provider).to.equal('gigya');
-        expect(result[0].createdAt).to.be.a.date();
-        // Testing the data scope using this key, since mongo-mock does not support sub-documents
-        // https://github.com/williamkapke/mongo-mock/issues/26
-        expect(result[0]['dataScopes.profile.sso-id']).to.be.equal('12345');
-
-        done();
-      });
-    });
+    })
+    .then(() => MongoDB.collection('users').find({email: '4@test.nl', provider: 'gigya'}).toArray())
+    .then(result => {
+      expect(result).not.to.be.null();
+      expect(result.length).to.equal(1);
+      expect(result[0].id).to.be.equal('4');
+      expect(result[0].email).to.equal('4@test.nl');
+      expect(result[0].provider).to.equal('gigya');
+      expect(result[0].createdAt).to.be.a.date();
+      // Testing the data scope using this key, since mongo-mock does not support sub-documents
+      // https://github.com/williamkapke/mongo-mock/issues/26
+      // expect(result[0]['dataScopes.profile.sso-id']).to.be.equal('12345');
+      // OK, now we can test is better, because I'm doing mock manipulation in the permissions.js file
+      //  in the "if (MongoDB.isMock)" code
+      expect(result[0].dataScopes.profile['sso-id']).to.be.equal('12345');
+    })
+    .then(done)
+    .catch(done);
   });
 });

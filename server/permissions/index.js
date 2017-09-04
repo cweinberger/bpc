@@ -5,7 +5,7 @@ const Boom = require('boom');
 const Joi = require('joi');
 const Oz = require('oz');
 const OzLoadFuncs = require('./../oz_loadfuncs');
-const Users = require('../users/users');
+const Permissions = require('./permissions');
 
 module.exports.register = function (server, options, next) {
 
@@ -43,7 +43,7 @@ module.exports.register = function (server, options, next) {
         // Should we query the database or look in the private part of the ticket?
         if (true) {
 
-          Users.queryPermissionsScope(
+          Permissions.queryPermissionsScope(
             { id: ticket.user },
             request.params.scope,
             reply
@@ -56,9 +56,9 @@ module.exports.register = function (server, options, next) {
           }
 
           // We only want to reply the permissions within the requested scope
-          var Permissions = Object.assign({}, ticket.ext.private.Permissions[request.params.scope]);
+          var scopePermissions = Object.assign({}, ticket.ext.private.Permissions[request.params.scope]);
 
-          reply(Permissions);
+          reply(scopePermissions);
         }
       });
     }
@@ -81,7 +81,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      Users.queryPermissionsScope(
+      Permissions.queryPermissionsScope(
         { id: request.params.user },
         request.params.scope,
         reply
@@ -150,7 +150,37 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      Users.setPermissionsScope(
+      Permissions.setPermissionsScope(
+        { id: request.params.user },
+        request.params.scope,
+        request.payload,
+        reply
+      );
+    }
+  });
+
+
+  server.route({
+    method: 'PATCH',
+    path: '/{user}/{scope}',
+    config: {
+      auth: {
+        access: {
+          scope: ['{params.scope}', 'admin'],
+          entity: 'app' // <-- Important. Users must not be allowed to set permissions
+        }
+      },
+      cors: stdCors,
+      state: {
+        parse: true,
+        failAction: 'log'
+      },
+      validate: {
+        payload: Joi.object()
+      }
+    },
+    handler: function(request, reply) {
+      Permissions.updatePermissionsScope(
         { id: request.params.user },
         request.params.scope,
         request.payload,
@@ -191,7 +221,7 @@ module.exports.register = function (server, options, next) {
         deletedAt: { $exists: false }
       };
 
-      Users.queryPermissionsScope(
+      Permissions.queryPermissionsScope(
         selector,
         request.params.scope,
         reply
@@ -232,7 +262,7 @@ module.exports.register = function (server, options, next) {
         deletedAt: { $exists: false }
       };
 
-      Users.setPermissionsScope(
+      Permissions.setPermissionsScope(
         selector,
         request.params.scope,
         request.payload,

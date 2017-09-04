@@ -26,12 +26,13 @@ describe('permissions - functional tests', () => {
     var first = test_data.users.simple_first_user;
 
     // Getting the appTicket
-    before((done) => {
-      bpc_helper.request({ method: 'POST', url: '/ticket/app' }, {credentials: bt}, (response) => {
-        expect(response.statusCode).to.equal(200);
-        appTicket = {credentials: JSON.parse(response.payload), app: bt.id};
-        done();
-      });
+    before(done => {
+      bpc_helper.getAppTicket(bt)
+      .then(result => {
+        appTicket = result;
+      })
+      .then(done)
+      .catch(done);
     });
 
 

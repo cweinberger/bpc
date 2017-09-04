@@ -101,12 +101,10 @@ module.exports.updatePermissionsScope = function(selector, scope, payload, callb
   };
 
 
-  Object.assign(operators, payload);
-
-  Object.keys(operators).filter(disallowedUpdateOperators).forEach(operator => {
-    Object.keys(operators[operator]).forEach(field => {
-      operators[operator]['dataScopes.'.concat(scope,'.',field)] = operators[operator][field];
-      delete operators[operator][field];
+  Object.keys(payload).filter(disallowedUpdateOperators).forEach(operator => {
+    operators[operator] = {};
+    Object.keys(payload[operator]).forEach(field => {
+      operators[operator]['dataScopes.'.concat(scope,'.',field)] = payload[operator][field];
     });
   });
 

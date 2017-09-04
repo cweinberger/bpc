@@ -121,7 +121,10 @@ module.exports.updatePermissionsScope = function(selector, scope, payload, callb
   MongoDB.collection('users').findOneAndUpdate(
     selector,
     operators,
-    { projection: projection },
+    {
+      projection: projection,
+      returnOriginal: false
+    },
     function(err, result){
       if (err){
         console.error(err);

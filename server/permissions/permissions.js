@@ -103,7 +103,7 @@ module.exports.updatePermissionsScope = function(selector, scope, payload, callb
 
   Object.assign(operators, payload);
 
-  Object.keys(operators).forEach(operator => {
+  Object.keys(operators).filter(disallowedUpdateOperators).forEach(operator => {
     Object.keys(operators[operator]).forEach(field => {
       operators[operator]['dataScopes.'.concat(scope,'.',field)] = operators[operator][field];
       delete operators[operator][field];
@@ -137,4 +137,11 @@ module.exports.updatePermissionsScope = function(selector, scope, payload, callb
       }
     }
   );
+
+  function disallowedUpdateOperators(operator) {
+    return [
+      "$setOnInsert",
+      "$isolated"
+    ].indexOf(operator) === -1;
+  }
 };

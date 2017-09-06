@@ -14,14 +14,18 @@ part of the endpoint in question.
 
 ## Table of contents
 
-* [`GET /healthcheck`](#get-healthcheck)
-* [`GET /version`](#get-version)
 * [`GET /rsvp`](#get-rsvp)
 * [`POST /rsvp`](#post-rsvp)
 * [`POST /ticket/app`](#-post-ticketapp)
 * [`POST /ticket/user`](#-post-ticketuser)
 * [`POST /ticket/reissue`](#-post-ticketreissue)
 * [`GET /me`](#get-me)
+* [`GET /permissions/{scope}`](#get-permissionsscope)
+* [`GET /permissions/{user}/{scope}`](#get-permissionsuserscope)
+* [`POST /permissions/{user}/{scope}`](#post-permissionsuserscope)
+* [`PATCH /permissions/{user}/{scope}`](#patch-permissionsuserscope)
+* [`GET /permissions/{provider}/{email}/{scope}`](#get-permissionsprovideremailscope)
+* [`POST /permissions/{provider}/{email}/{scope}`](#post-permissionsprovideremailscope)
 * [`GET /users`](#get-users)
 * [`GET /users/{id}`](#get-usersid)
 * [`DELETE /users/{id}`](#delete-usersid)
@@ -32,17 +36,8 @@ part of the endpoint in question.
 * [`POST /users/update`](#post-usersupdate)
 * [`POST /users/resetpassword`](#post-usersresetpassword)
 * [`GET /users/search`](#get-userssearch)
-* [`GET /users/schema`](#get-usersschema)
-* [`PATCH /users/schema`](#patch-usersschema)
-* [`GET /gigya/schema`](#get-gigyaschema)
-* [`PATCH /gigya/schema`](#patch-gigyaschema)
 * [`GET /gigya/search`](#get-gigyasearch)
 * [`GET /gigya/exists`](#get-gigyaexists)
-* [`GET /permissions/{scope}`](#get-permissionsscope)
-* [`GET /permissions/{user}/{scope}`](#get-permissionsuserscope)
-* [`POST /permissions/{user}/{scope}`](#post-permissionsuserscope)
-* [`GET /permissions/{provider}/{email}/{scope}`](#get-permissionsprovideremailscope)
-* [`POST /permissions/{provider}/{email}/{scope}`](#post-permissionsprovideremailscope)
 * [`POST /validate`](#post-validate)
 * [`GET /applications`](#get-applications)
 * [`POST /applications`](#post-applications)
@@ -56,32 +51,8 @@ part of the endpoint in question.
 * [`GET /settings/{scope}`](#) TODO
 * [`GET /settings/{scope}/{key}`](#) TODO
 * [`PUT /settings/{scope}/{key}`](#) TODO
-
-
-## [GET /healthcheck]
-
-* Query parameters: _None_
-
-Check if the API is up and running. Mostly used by Pingdom and similar
-availability services. Returns 200 OK and a confirmation message.
-
-
-
-
-## [GET /version]
-
-* Query parameters: _None_
-
-Returns an object with information about the application:
-
-```
-{
-  "name": "bpc",
-  "version": "1.0.0",
-  "description": "Berlingske Media Oz-based SSO Permissions Center (BPC)",
-  "license": "ISC"
-}
-```
+* [`GET /healthcheck`](#get-healthcheck)
+* [`GET /version`](#get-version)
 
 
 
@@ -157,6 +128,125 @@ Returns user profile data.
 
 
 
+
+## [GET /permissions/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `user`
+* Required scope: `{params.scope}`
+
+Gets the user permissions. The user is the ticket, with which the request has been signed.
+
+
+
+
+
+
+## [GET /permissions/{user}/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `app`
+* Required scope: `{params.scope}`, `admin`
+
+
+Gets the user permissions. The users ID is in the request parameters.
+
+
+
+
+
+## [POST /permissions/{user}/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `app`
+* Required scope: `{params.scope}`, `admin`
+
+Sets the user permissions. The users ID is in the request parameters.
+
+
+
+
+## [PATCH /permissions/{user}/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `app`
+* Required scope: `{params.scope}`, `admin`
+
+Updates the user permissions. The users ID is in the request parameters.
+
+To update the permissions, the MongoDB update operator syntax can be used to change fields and arrays.
+See more about MongoDB Update Operators here: [https://docs.mongodb.com/manual/reference/operator/update/](https://docs.mongodb.com/manual/reference/operator/update/)
+
+The following operators are not allowed (will be ignored):
+
+* `$setOnInsert`
+* `$isolated`
+* `$pushAll`
+
+Lets assume a user has the following data in a scope:
+
+```
+{ "test_integer": 1, "test_float": 7, "test_object": { "test_array": [ 100 ] } }
+```
+
+To increase the _test_integer_ with the value 2, use the operator `$inc`. Works with positive and negative numbers.
+To multiply the _test_float_ with the value 0.5 (halve), use the operator `$mul`.
+
+Example payload:
+
+```
+{
+  $inc: { "test_integer": 2 },
+  $mul: { "test_float": 0.5 }
+}
+```
+
+The resulting data will be like:
+
+```
+{ "test_integer": 3, "test_float": 3.5, "test_object": { "test_array": [ 100 ] } }
+```
+
+Fields and arrays inside objects can also to used in operators. To do this, use the MongoDB _Embedded Document_ syntax style.
+
+Example:
+
+```
+{
+  $addToSet: { "test_object.test_array": 200 }
+}
+```
+
+The resulting data will be like:
+
+```
+{ "test_integer": 3, "test_float": 3.5, "test_object": { "test_array": [ 100, 200 ] } }
+```
+
+
+## [GET /permissions/{provider}/{email}/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `app`
+* Required scope: `{params.scope}`, `admin`
+
+
+Gets the user permissions. The parameter `provider` is either _gigya_ or _google_ and `email` must be an email address.
+
+
+## [POST /permissions/{provider}/{email}/{scope}]
+
+* Query parameters: _None_
+* Required ticket type: `app`
+* Required scope: `{params.scope}`, `admin`
+
+Sets the user permissions. The parameter `provider` is either _gigya_ or _google_ and `email` must be an email address.
+
+
+
+
+
+
 ## [GET /users]
 
 * Query parameters:
@@ -207,8 +297,6 @@ Instead, in the future, users are deleted directly in Gigya and webhooks will ca
 
 
 
-
-
 ## [POST /users/register]
 
 * Query parameters: _None_
@@ -245,6 +333,7 @@ allowed.
 Instead, in the future, user profile updates must be made using the Gigya Web SDK.
 
 
+
 ## POST /users/resetpassword
 
 **TEMPORARY**: This endpoint will eventually be removed.
@@ -259,6 +348,9 @@ Instead, in the future, user password reset must be made using the Gigya API.
 
 
 ## GET /gigya/search
+
+**TEMPORARY**: This endpoint will eventually be removed.
+Instead, in the future, to search must be made using the Gigya API.
 
 * Query parameters:
   * `query` - SQL-style Gigya query to search by
@@ -318,6 +410,9 @@ Example result:
 
 ## GET /gigya/exists
 
+**TEMPORARY**: This endpoint will eventually be removed.
+Instead, in the future, requests to check if emails exists must be made using the Gigya API.
+
 * Query parameters:
   * `email` - email address to check
 * Required ticket type: `any`
@@ -339,61 +434,6 @@ Example result:
 ```
 
 
-
-## [GET /permissions/{scope}]
-
-* Query parameters: _None_
-* Required ticket type: `user`
-* Required scope: `{params.scope}`
-
-Gets the user permissions. The user is the ticket, with which the request has been signed.
-
-
-
-
-
-
-## [GET /permissions/{user}/{scope}]
-
-* Query parameters: _None_
-* Required ticket type: `app`
-* Required scope: `{params.scope}`, `admin`
-
-
-Gets the user permissions. The users ID is in the request parameters.
-
-
-
-
-
-## [POST /permissions/{user}/{scope}]
-
-* Query parameters: _None_
-* Required ticket type: `app`
-* Required scope: `{params.scope}`, `admin`
-
-Sets the user permissions. The users ID is in the request parameters.
-
-
-
-
-## [GET /permissions/{provider}/{email}/{scope}]
-
-* Query parameters: _None_
-* Required ticket type: `app`
-* Required scope: `{params.scope}`, `admin`
-
-
-Gets the user permissions. The parameter `provider` is either _gigya_ or _google_ and `email` must be an email address.
-
-
-## [POST /permissions/{provider}/{email}/{scope}]
-
-* Query parameters: _None_
-* Required ticket type: `app`
-* Required scope: `{params.scope}`, `admin`
-
-Sets the user permissions. The parameter `provider` is either _gigya_ or _google_ and `email` must be an email address.
 
 
 ## [POST /validate]
@@ -551,3 +591,31 @@ This can only be done either by an application-admin or a super-admin.
 
 This endpoint is used to remove a specific grant.
 This can only be done either by an application-admin or a super-admin.
+
+
+
+
+## [GET /healthcheck]
+
+* Query parameters: _None_
+
+Check if the API is up and running. Mostly used by Pingdom and similar
+availability services. Returns 200 OK and a confirmation message.
+
+
+
+
+## [GET /version]
+
+* Query parameters: _None_
+
+Returns an object with information about the application:
+
+```
+{
+  "name": "bpc",
+  "version": "1.0.0",
+  "description": "Berlingske Media Oz-based SSO Permissions Center (BPC)",
+  "license": "ISC"
+}
+```

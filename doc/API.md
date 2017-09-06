@@ -299,12 +299,16 @@ Instead, in the future, users are deleted directly in Gigya and webhooks will ca
 
 ## [POST /users/register]
 
+**TEMPORARY**: This endpoint will eventually be removed.
+Only Drupal SSO is allowed to use this endpoint.
+To create a user, use the corresponding enpoint on Drupal SSO.
+Instead, in the future, users must be created using the Gigya API.
+
 * Query parameters: _None_
 * Required ticket type: `any`
 * Required scope: `admin`, `users`
 
-Registers a new Gigya account and creates a user in the local database which is
-a direct match to the corresponding Gigya account, but containing selected data.
+Registers a new Gigya user account.
 
 Example POST request:
 
@@ -315,11 +319,14 @@ Example POST request:
 	"profile": {
 		"firstName": "Camilla",
 		"lastName": "Julie Jensen"
-	}
+	},
+  "data": {
+    "terms": true
+  }
 }
 ```
 
-Returns the user object as stored in the database.
+Returns the user object as stored in Gigya.
 
 Profile fields are directly matched to their corresponding whitelisted fields in
 Gigya. Please note the restrictions here; only a limited set of fields are

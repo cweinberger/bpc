@@ -139,7 +139,8 @@ module.exports.updatePermissionsScope = function(selector, scope, payload, callb
   function disallowedUpdateOperators(operator) {
     return [
       "$setOnInsert",
-      "$isolated"
+      "$isolated",
+      "$pushAll"
     ].indexOf(operator) === -1;
   }
 };

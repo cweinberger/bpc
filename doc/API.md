@@ -277,15 +277,15 @@ Looks up the user with the given id (UID).
 
 ## [DELETE /users/{id}]
 
+**TEMPORARY**: This endpoint will eventually be removed.
+Instead, in the future, users are deleted directly in Gigya and webhooks will call BPC to mark them as deleted.
+
 * Query parameters: _None_
 * Required ticket type: `any`
 * Required scope: `admin`, `users`
 
 Deletes the user with the given id (UID). This call will attempt to delete the
 user from Gigya, and if successful, mark the local user as deleted.
-
-**TEMPORARY**: This endpoint will eventually be removed.
-Instead, in the future, users are deleted directly in Gigya and webhooks will call BPC to  mark them as deleted.
 
 
 

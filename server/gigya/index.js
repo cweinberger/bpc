@@ -42,7 +42,11 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: (request, reply) => {
-      return GigyaAccounts.searchAccount(request.query.query)
+      const payload = {
+        query: request.query.query
+      };
+
+      return Gigya.callApi('/accounts.search', payload)
         .then(res => reply(res.body), err => exposeError(reply, err));
     }
   });

@@ -515,7 +515,7 @@ When inserting a new application, the user, who performs the action will automat
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to get details on a specific application.
 This can only be done either by an application-admin or a super-admin.
@@ -528,7 +528,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to update a specific application.
 This can only be done either by an application-admin or a super-admin.
@@ -541,7 +541,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to remove a specific application.
 This can only be done either by an application-admin or a super-admin.
@@ -554,7 +554,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to list all grants for a specific application.
 This can only be done either by an application-admin or a super-admin.
@@ -567,7 +567,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to create a specific grant.
 This can only be done either by an application-admin or a super-admin.
@@ -580,7 +580,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to update a specific grant.
 This can only be done either by an application-admin or a super-admin.
@@ -594,7 +594,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to remove a specific grant.
 This can only be done either by an application-admin or a super-admin.

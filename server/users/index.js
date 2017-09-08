@@ -196,14 +196,11 @@ module.exports.register = function (server, options, next) {
     },
     handler: (request, reply) => {
 
-      const user = request.payload;
+      let user = request.payload;
       // Lowercase the email.
       user.email = user.email.toLowerCase();
 
-      // TODO: It's not obvious what Users.register does.
-      // Does is store in Gigya, MongoDB or both??
-      // Seperate it into more functions so it's obvious its both Gigya and MongoDB
-      Users.register(user).then(
+      register(user).then(
         data => reply(data.body ? data.body : data),
         err => {
           if (err.code === 400009 && Array.isArray(err.details) &&
@@ -218,6 +215,36 @@ module.exports.register = function (server, options, next) {
           }
         }
       );
+
+
+      function register(user) {
+
+        if (!user) {
+          return Promise.reject(new Error('"user" is required'));
+        }
+
+        return Gigya.callApi('/accounts.initRegistration').then(initRes => {
+          if (!initRes.body && !initRes.body.regToken) {
+            return Promise.reject(new Error('"regToken" is required'));
+          }
+
+          const _body = Object.assign({}, user, {
+            finalizeRegistration: true,
+            include: 'profile,data',
+            format: 'json',
+            regToken: initRes.body.regToken
+          });
+
+          return Gigya.callApi('/accounts.register', _body).then(data => {
+            EventLog.logUserEvent(data.body.UID, 'User registered');
+            return Promise.resolve(data);
+          }, err => {
+            EventLog.logUserEvent(null, 'User registration failed', {email: user.email});
+            return Promise.reject(err);
+          })
+
+        });
+      }
 
     }
   });
@@ -332,7 +359,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      // TODO: Move code to user.js
+
       MongoDB.collection('users').aggregate(
         [{
           $match: {
@@ -397,7 +424,7 @@ module.exports.register = function (server, options, next) {
       });
     }
   });
-  
+
 
   next();
 

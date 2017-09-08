@@ -8,46 +8,10 @@ const EventLog = require('./../audit/eventlog');
 
 
 module.exports = {
-  register,
   upsertUserId,
   deleteUserId
 };
 
-
-/**
- * Registers a new account with Gigya and stores the user in MongoDB
- *
- * @param {Object} user
- * @return {Promise} Receives the created user is the operation went well
- */
-function register(user) {
-
-  if (!user) {
-    return Promise.reject(new Error('"user" is required'));
-  }
-
-  return Gigya.callApi('/accounts.initRegistration').then(initRes => {
-    if (!initRes.body && !initRes.body.regToken) {
-      return Promise.reject(new Error('"regToken" is required'));
-    }
-
-    const _body = Object.assign({}, user, {
-      finalizeRegistration: true,
-      include: 'profile,data',
-      format: 'json',
-      regToken: initRes.body.regToken
-    });
-
-    return Gigya.callApi('/accounts.register', _body).then(data => {
-      EventLog.logUserEvent(data.body.UID, 'User registered');
-      return Promise.resolve(data);
-    }, err => {
-      EventLog.logUserEvent(null, 'User registration failed', {email: user.email});
-      return Promise.reject(err);
-    })
-
-  });
-}
 
 
 // Used by /rsvp (createRsvp)

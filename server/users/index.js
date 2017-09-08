@@ -113,6 +113,8 @@ module.exports.register = function (server, options, next) {
    * - query=<Gigya SQL-style query> eg.;
    *   SELECT * FROM accounts WHERE profile.email = "mkoc@berlingskemedia.dk"
    */
+   // TODO: this endpoint is temporary.
+   // Going forward the Gigya API should be used directly.
   server.route({
     method: 'GET',
     path: '/search',
@@ -143,6 +145,8 @@ module.exports.register = function (server, options, next) {
    * Query parameters:
    * - email=email to check
    */
+   // TODO: this endpoint is temporary.
+   // Going forward the Gigya API should be used directly.
   server.route({
     method: 'GET',
     path: '/exists',
@@ -167,8 +171,8 @@ module.exports.register = function (server, options, next) {
   });
 
 
-  // TODO: this endpoint must be moved to /gigya and re-written to only create user in Gigya.
-  // Then the webhook event accountCreated will be fired and the user created in Mongo
+  // TODO: this endpoint is temporary.
+  // Going forward the Gigya API should be used directly.
   server.route({
     method: 'POST',
     path: '/register',
@@ -182,9 +186,9 @@ module.exports.register = function (server, options, next) {
       cors: stdCors,
       validate: {
         payload: {
-          data: Joi.object().optional(),
           email: Joi.string().email().required(),
           password: Joi.string().required(),
+          data: Joi.object().optional(),
           profile: Joi.object().optional(),
           regSource: Joi.string().optional()
         }
@@ -219,8 +223,8 @@ module.exports.register = function (server, options, next) {
   });
 
 
-  // TODO: this endpoint must be moved to /gigya and re-written to only update user in Gigya.
-  // Then the webhook event accountUpdatedEventHandler will be fired and the user created in Mongo
+  // TODO: this endpoint is temporary.
+  // Going forward the Gigya API should be used directly.
   server.route({
     method: 'POST',
     path: '/update',
@@ -234,43 +238,34 @@ module.exports.register = function (server, options, next) {
       cors: stdCors,
       validate: {
         payload: {
-          data: Joi.object().optional(),
           email: Joi.string().email().required(),
+          data: Joi.object().optional(),
           profile: Joi.object().optional()
         }
       }
     },
     handler: (request, reply) => {
 
-      const user = request.payload;
-      const userQuery = {email: user.email};
-      MongoDB.collection('users').findOne(userQuery, function(err, result) {
-        if (err) {
-          reply(Boom.internal(err.message, userQuery, err.code));
-        } else {
-          if (!result) {
-            reply(Boom.notFound('User not found', userQuery))
-          } else {
+      let user = request.payload;
+      const userQuery = {
+        query: 'select UID from accounts where loginIDs.emails = "' + user.email + '" '
+      };
 
-            Users.updateUserId(result)
-            .catch((err) => {
-              return reply(Boom.notFound("User " + user.email + " not found", err));
-            })
-            .then((id) => {
-              delete user.email;
-              user.uid = id;
-
-              Gigya.callApi('/accounts.setAccountInfo', user).then(
-                data => reply(data.body ? data.body : {status: 'ok'}),
-                err => {
-                  EventLog.logUserEvent(null, 'User update failed', {email: user.email});
-                  // Reply with the usual Internal Server Error otherwise.
-                  return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
-                }
-              );
-            });
-          }
+      Gigya.callApi('/accounts.search', userQuery).then(data => {
+        if (data.body.results === undefined || data.body.results.length === 0) {
+          EventLog.logUserEvent(null, 'User not found', {email: email});
+          return reply(Boom.notFound("User " + user.email + " not found", err));
         }
+
+        delete user.email;
+        user.uid = data.body.results[0].UID;
+
+        Gigya.callApi('/accounts.setAccountInfo', user)
+        .then(data => reply(data.body ? data.body : {status: 'ok'}))
+        .catch((err) => {
+          EventLog.logUserEvent(null, 'User update failed', {email: user.email});
+          return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+        });
       });
     }
   });
@@ -322,7 +317,6 @@ module.exports.register = function (server, options, next) {
       });
     }
   });
-
 
 
   server.route({
@@ -388,6 +382,9 @@ module.exports.register = function (server, options, next) {
           return reply(Boom.badRequest('You cannot delete yourself'));
         }
 
+        // TODO:
+        // The "mark user as deletedAt" is handled through the gigya notifications.
+        // So this should be a real remove from MongoDB, since this is a more power-level request
         Users.deleteUserId(request.params.id)
         .then(() => {
           EventLog.logUserEvent(request.params.id, 'Deleting user');
@@ -400,111 +397,7 @@ module.exports.register = function (server, options, next) {
       });
     }
   });
-
-
-  server.route({
-    method: 'POST',
-    path: '/{id}/superadmin',
-    config: {
-      auth:  {
-        access: {
-          scope: ['+admin:*'],
-          entity: 'user' // Only superadmin users are allows to promote other superadmins
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket) {
-        // TODO: Move code to user.js
-        MongoDB.collection('grants').update(
-          {
-            app: ticket.app,
-            user: request.params.id
-          }, {
-            $addToSet: { scope: 'admin:*' }
-          }, function (err, result) {
-
-            if (err) {
-              EventLog.logUserEvent(
-                request.params.id,
-                'Scope Change Failed',
-                {scope: 'admin:*', byUser: ticket.user}
-              );
-              return reply(err);
-            }
-
-            EventLog.logUserEvent(
-              request.params.id,
-              'Add Scope to User',
-              {scope: 'admin:*', byUser: ticket.user}
-            );
-            reply({'status': 'ok'});
-
-          }
-        );
-      });
-    }
-  });
-
-
-  server.route({
-    method: 'DELETE',
-    path: '/{id}/superadmin',
-    config: {
-      auth:  {
-        access: {
-          scope: ['+admin:*'],
-          entity: 'user' // Only superadmin users are allows to demote other superadmins
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
-
-        if (err) {
-          console.error(err);
-          return reply(GigyaUtils.errorToResponse(err));
-        }
-
-        if (ticket.user === request.params.id){
-          return reply(Boom.badRequest('You cannot demote yourself'));
-        }
-
-        // TODO: Move code to user.js
-        MongoDB.collection('grants').update(
-          {
-            app: ticket.app,
-            user: request.params.id
-          }, {
-            $pull: { scope: 'admin:*' }
-          },
-          function(err, result) {
-
-            if (err) {
-              EventLog.logUserEvent(
-                request.params.id,
-                'Scope Change Failed',
-                {scope: 'admin:*', byUser: ticket.user}
-              );
-              return reply(err);
-            }
-
-            EventLog.logUserEvent(
-              request.params.id,
-              'Remove Scope from User',
-              {scope: 'admin:*', byUser: ticket.user}
-            );
-            reply();
-
-          }
-        );
-      });
-    }
-  });
-
-
+  
 
   next();
 

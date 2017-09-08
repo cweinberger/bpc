@@ -10,7 +10,6 @@ const EventLog = require('./../audit/eventlog');
 module.exports = {
   register,
   upsertUserId,
-  updateUserId,
   deleteUserId
 };
 
@@ -40,17 +39,7 @@ function register(user) {
     });
 
     return Gigya.callApi('/accounts.register', _body).then(data => {
-
       EventLog.logUserEvent(data.body.UID, 'User registered');
-
-      // const _user = assembleDbUser(data.body);
-      // // Create user and provide the user object to the resolved promise.
-      // return MongoDB.collection('users').insert(_user)
-      //   .then(res => res.ops[0])
-      //   .then(res => {
-      //     EventLog.logUserEvent(res.id, 'User registered');
-      //     return res;
-      //   });
       return Promise.resolve(data);
     }, err => {
       EventLog.logUserEvent(null, 'User registration failed', {email: user.email});
@@ -58,24 +47,6 @@ function register(user) {
     })
 
   });
-
-
-  /**
-   * Picks the data from a Gigya account that we have chosen to store in MongoDB
-   */
-  // function assembleDbUser(data) {
-  //   return {
-  //     email: data.profile.email,
-  //     id: data.UID,
-  //     provider: 'gigya',
-  //     lastUpdated: new Date(),
-  //     lastLogin: new Date(),
-  //     lastSynced: new Date(),
-  //     dataScopes: {}
-  //   };
-  //
-  // }
-
 }
 
 
@@ -144,36 +115,6 @@ function upsertUserId({id, email, provider}, callback) {
   });
 }
 
-
-/**
- * Updates user Id if it doesn't exist
- * @param user
- * @return Promise
- */
- // Used by POST /users - but should be removed
-function updateUserId({id, email}) {
-  if (id !== undefined) {
-    return Promise.resolve(id);
-  }
-
-  const payload = {
-    query: 'select UID from accounts where loginIDs.emails = "' + email + '" '
-  };
-
-  return Gigya.callApi('/accounts.search', payload).then(data => {
-    if (data.body.results === undefined || data.body.results.length === 0) {
-      EventLog.logUserEvent(null, 'User not found', {email: email});
-      return Promise.reject(err);
-    }
-
-    var id = data.body.results[0].UID;
-    MongoDB.collection('users').update({email}, {
-      $set: {id: id}
-    });
-
-    return id;
-  });
-}
 
 
 

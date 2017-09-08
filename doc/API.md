@@ -277,15 +277,15 @@ Looks up the user with the given id (UID).
 
 ## [DELETE /users/{id}]
 
+**TEMPORARY**: This endpoint will eventually be removed.
+Instead, in the future, users are deleted directly in Gigya and webhooks will call BPC to mark them as deleted.
+
 * Query parameters: _None_
 * Required ticket type: `any`
 * Required scope: `admin`, `users`
 
 Deletes the user with the given id (UID). This call will attempt to delete the
 user from Gigya, and if successful, mark the local user as deleted.
-
-**TEMPORARY**: This endpoint will eventually be removed.
-Instead, in the future, users are deleted directly in Gigya and webhooks will call BPC to  mark them as deleted.
 
 
 
@@ -299,12 +299,16 @@ Instead, in the future, users are deleted directly in Gigya and webhooks will ca
 
 ## [POST /users/register]
 
+**TEMPORARY**: This endpoint will eventually be removed.
+Only Drupal SSO is allowed to use this endpoint.
+To create a user, use the corresponding enpoint on Drupal SSO.
+Instead, in the future, users must be created using the Gigya API.
+
 * Query parameters: _None_
 * Required ticket type: `any`
 * Required scope: `admin`, `users`
 
-Registers a new Gigya account and creates a user in the local database which is
-a direct match to the corresponding Gigya account, but containing selected data.
+Registers a new Gigya user account.
 
 Example POST request:
 
@@ -315,11 +319,14 @@ Example POST request:
 	"profile": {
 		"firstName": "Camilla",
 		"lastName": "Julie Jensen"
-	}
+	},
+  "data": {
+    "terms": true
+  }
 }
 ```
 
-Returns the user object as stored in the database.
+Returns the user object as stored in Gigya.
 
 Profile fields are directly matched to their corresponding whitelisted fields in
 Gigya. Please note the restrictions here; only a limited set of fields are
@@ -508,7 +515,7 @@ When inserting a new application, the user, who performs the action will automat
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to get details on a specific application.
 This can only be done either by an application-admin or a super-admin.
@@ -521,7 +528,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to update a specific application.
 This can only be done either by an application-admin or a super-admin.
@@ -534,7 +541,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to remove a specific application.
 This can only be done either by an application-admin or a super-admin.
@@ -547,7 +554,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to list all grants for a specific application.
 This can only be done either by an application-admin or a super-admin.
@@ -560,7 +567,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to create a specific grant.
 This can only be done either by an application-admin or a super-admin.
@@ -573,7 +580,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to update a specific grant.
 This can only be done either by an application-admin or a super-admin.
@@ -587,7 +594,7 @@ This can only be done either by an application-admin or a super-admin.
 
 * Query parameters: _None_
 * Required ticket type: `user`
-* Required scope: `admin:{params.id}`, `admin:\*`
+* Required scope: `admin:{params.id}`, `admin:*`
 
 This endpoint is used to remove a specific grant.
 This can only be done either by an application-admin or a super-admin.

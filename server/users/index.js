@@ -58,54 +58,6 @@ module.exports.register = function (server, options, next) {
   });
 
 
-  // TODO: Remove GET /schema
-  server.route({
-    method: 'GET',
-    path: '/schema',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin', 'users'],
-          entity: 'any'
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      Gigya.callApi('/accounts.getSchema', {format: 'json'}).then(
-        res => reply(res.body),
-        err => exposeError(reply, err)
-      );
-    }
-  });
-
-
-  // TODO: Remove PATCH /schema
-  server.route({
-    method: 'PATCH',
-    path: '/schema',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin', 'users'],
-          entity: 'any'
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      const _body = Object.assign({}, request.payload, {
-        format: 'json'
-      });
-
-      Gigya.callApi('/accounts.setSchema', _body).then(
-        res => reply(res.body),
-        err => exposeError(reply, err)
-      );
-    }
-  });
-
-
   /**
    * GET /users/search
    *

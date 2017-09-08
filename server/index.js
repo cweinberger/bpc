@@ -9,6 +9,7 @@ const Health = require('./health');
 const Rsvp = require('./rsvp');
 const Applications = require('./applications');
 const Users = require('./users');
+const Superadmin = require('./superadmin');
 const Gigya = require('./gigya');
 const Permissions = require('./permissions');
 const Me = require('./me');
@@ -43,6 +44,7 @@ server.register(Scarecrow, function(err) {
   server.register(Rsvp, { routes: { prefix: '/rsvp' } }, cb);
   server.register(Applications, { routes: { prefix: '/applications' } }, cb);
   server.register(Users, { routes: { prefix: '/users' } }, cb);
+  server.register(Superadmin, { routes: { prefix: '/superadmin' } }, cb);
   server.register(Gigya, { routes: { prefix: '/gigya' } }, cb);
   server.register(Permissions, { routes: { prefix: '/permissions' } }, cb);
   server.register(Me, { routes: { prefix: '/me' } }, cb);

@@ -319,7 +319,6 @@ module.exports.register = function (server, options, next) {
   });
 
 
-
   server.route({
     method: 'GET',
     path: '/{id}',
@@ -398,111 +397,7 @@ module.exports.register = function (server, options, next) {
       });
     }
   });
-
-
-  server.route({
-    method: 'POST',
-    path: '/{id}/superadmin',
-    config: {
-      auth:  {
-        access: {
-          scope: ['+admin:*'],
-          entity: 'user' // Only superadmin users are allows to promote other superadmins
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket) {
-        // TODO: Move code to user.js
-        MongoDB.collection('grants').update(
-          {
-            app: ticket.app,
-            user: request.params.id
-          }, {
-            $addToSet: { scope: 'admin:*' }
-          }, function (err, result) {
-
-            if (err) {
-              EventLog.logUserEvent(
-                request.params.id,
-                'Scope Change Failed',
-                {scope: 'admin:*', byUser: ticket.user}
-              );
-              return reply(err);
-            }
-
-            EventLog.logUserEvent(
-              request.params.id,
-              'Add Scope to User',
-              {scope: 'admin:*', byUser: ticket.user}
-            );
-            reply({'status': 'ok'});
-
-          }
-        );
-      });
-    }
-  });
-
-
-  server.route({
-    method: 'DELETE',
-    path: '/{id}/superadmin',
-    config: {
-      auth:  {
-        access: {
-          scope: ['+admin:*'],
-          entity: 'user' // Only superadmin users are allows to demote other superadmins
-        }
-      },
-      cors: stdCors
-    },
-    handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
-
-        if (err) {
-          console.error(err);
-          return reply(GigyaUtils.errorToResponse(err));
-        }
-
-        if (ticket.user === request.params.id){
-          return reply(Boom.badRequest('You cannot demote yourself'));
-        }
-
-        // TODO: Move code to user.js
-        MongoDB.collection('grants').update(
-          {
-            app: ticket.app,
-            user: request.params.id
-          }, {
-            $pull: { scope: 'admin:*' }
-          },
-          function(err, result) {
-
-            if (err) {
-              EventLog.logUserEvent(
-                request.params.id,
-                'Scope Change Failed',
-                {scope: 'admin:*', byUser: ticket.user}
-              );
-              return reply(err);
-            }
-
-            EventLog.logUserEvent(
-              request.params.id,
-              'Remove Scope from User',
-              {scope: 'admin:*', byUser: ticket.user}
-            );
-            reply();
-
-          }
-        );
-      });
-    }
-  });
-
-
+  
 
   next();
 

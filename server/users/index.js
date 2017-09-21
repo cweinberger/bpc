@@ -232,8 +232,8 @@ module.exports.register = function (server, options, next) {
 
       Gigya.callApi('/accounts.search', userQuery).then(data => {
         if (data.body.results === undefined || data.body.results.length === 0) {
-          EventLog.logUserEvent(null, 'User not found', {email: email});
-          return reply(Boom.notFound("User " + user.email + " not found", err));
+          EventLog.logUserEvent(null, 'User not found', {email: user.email});
+          return reply(Boom.notFound("User " + user.email + " not found"));
         }
 
         delete user.email;
@@ -245,6 +245,9 @@ module.exports.register = function (server, options, next) {
           EventLog.logUserEvent(null, 'User update failed', {email: user.email});
           return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
         });
+      }).catch(err => {
+        console.error('err', err);
+        reply(err);
       });
     }
   });

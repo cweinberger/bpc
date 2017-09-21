@@ -1,6 +1,6 @@
 FROM ubuntu:16.04
 
-LABEL authors="Daniel Kokott <dako@berlingskemedia.dk>, Martin Kock <mkoc@berlingskemedia.dk>"
+LABEL authors="Daniel Kokott <dako@berlingskemedia.dk>"
 
 # Installing wget - needed to download node.js
 RUN apt-get update && apt-get install -y wget

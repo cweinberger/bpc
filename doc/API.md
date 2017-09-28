@@ -59,7 +59,7 @@ part of the endpoint in question.
 
 ## [GET /rsvp]
 
-* Query parameters: See [Joi validation object](server/rsvp/index.js#L21)
+* Query parameters: See [Joi validation object](../server/rsvp/index.js#L19)
 
 If the user is validated and have a grant to the application, an RSVP is returned.
 If `returnUrl` is specific, the user will be redirected to this URL with `rsvp` in the querystring.
@@ -69,7 +69,7 @@ If `returnUrl` is specific, the user will be redirected to this URL with `rsvp` 
 ## [POST /rsvp]
 
 * Query parameters: _None_
-* Payload: See [Joi validation object](server/rsvp/index.js#L21)
+* Payload: See [Joi validation object](../server/rsvp/index.js#L19)
 
 Same as the equivalent GET request (see above).
 The RSVP will be in the response body and `X-RSVP_TOKEN` header.

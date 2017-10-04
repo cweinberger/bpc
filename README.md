@@ -149,12 +149,14 @@ user receives an RSVP which must be returned to the application.
 
 ## Hawk
 
-To make authorized requests to the API, each request must be signed with a Hawk Authorization Header.
+To make authorized requests to the API, each request must be signed with a Hawk Authorization header.
 
 Hawk is natively implemented in JavaScript (Node.js and browser), but is ported
 to many different environments.
 
-See more about Hawk on [GitHub](https://github.com/hueniverse/hawk)
+See more about Hawk on [GitHub](https://github.com/hueniverse/hawk).
+
+To generate a Hawk Authorization header, see the [API Documentation](doc/API.md).
 
 
 ## BPC console
@@ -165,6 +167,7 @@ register other applications in BPC, set scopes and administer users.
 
 # Setup
 
+This section is only relevant for developing BPC.
 
 ## MongoDB
 
@@ -218,6 +221,50 @@ Insert `debugger;` statements into the code to make a breakpoint.
 See official documentation on more info on the [Debugger](https://nodejs.org/dist/latest-v6.x/docs/api/debugger.html)
 
 
+## Testing
+
+BPC comes prepackaged with unit tests. You'll also need to ensure that you have
+dev-dependencies installed (by running `npm install` without the `--production`
+flag).
+
+The test suite will run without a MongoDB database, and use a memory-based
+mockup database instead if a lab test script is exported by the modules parent.
+(This is a standard usage of `lab`. See [lab usage](https://github.com/hapijs/lab)).
+
+Once these minor prerequisites are in place, simply run this command from the
+command line, while in the BPC root directory;
+
+```
+npm run test
+```
+
+_Note: The mock database doesn't currently support features from MongoDB 3.2._
+_Please be aware of this when writing your own tests._
+
+
+## Environment Variable Reference
+
+BPC supports the following environment variables:
+
+  * `PORT` - port number that the application should listen on.
+  * `MONGODB_HOST` - host name or IP address of server running MongoDB. If
+    replica sets are used, this would be a comma-separated list of hostnames for
+    each server in the set.
+  * `MONGODB_PORT` - port number to connect to MongoDB on.
+  * `MONGODB_DB` - name of database to use on MongoDB.
+  * `MONGODB_REPLSET` - name of MongoDB replica set (optional).
+  * `MONGODB_READPREFERENCE` - type of MongoDB read preference if using replica
+    sets (optional). Refer to the MongoDB documentation for choices. The default
+    is `primaryPreferred`.
+  * `GIGYA_APP_KEY` - application key to the Gigya API.
+  * `GIGYA_USER_KEY` - user key to the Gigya API.
+  * `GIGYA_SECRET_KEY` - secret to the Gigya API.
+  * `ENCRYPTIONPASSWORD` - used by the Oz protocol for data encryption.
+
+If not using replica sets, `MONGODB_REPLSET` and `MONGODB_READPREFERENCE` can
+be ignored.
+
+
 ## Docker
 
 Build the Docker image using the following command;
@@ -240,59 +287,13 @@ docker run \
   --env=GIGYA_SECRET_KEY=<value> \
   --env=ENCRYPTIONPASSWORD=<value> \
   --publish=80:80 \
-  -d \
-  berlingskemedia/bpc
+  -d berlingskemedia/bpc
 ```
 
 Please see the environment variable reference below for complete details.
 
 A Docker container should now be running and providing an API on port 80
 (or otherwise, if you've reconfigured the `publish` parameter).
-
-
-
-# Testing
-
-BPC comes prepackaged with unit tests. You'll also need to ensure that you have
-dev-dependencies installed (by running `npm install` without the `--production`
-flag).
-
-The test suite will run without a MongoDB database, and use a memory-based
-mockup database instead if a lab test script is exported by the modules parent.
-(This is a standard usage of `lab`. See [lab usage](https://github.com/hapijs/lab)).
-
-Once these minor prerequisites are in place, simply run this command from the
-command line, while in the BPC root directory;
-
-```
-npm run test
-```
-
-_Note: The mock database doesn't currently support features from MongoDB 3.2._
-_Please be aware of this when writing your own tests._
-
-
-# Environment Variable Reference
-
-BPC supports the following environment variables:
-
-  * `PORT` - port number that the application should listen on.
-  * `MONGODB_HOST` - host name or IP address of server running MongoDB. If
-    replica sets are used, this would be a comma-separated list of hostnames for
-    each server in the set.
-  * `MONGODB_PORT` - port number to connect to MongoDB on.
-  * `MONGODB_DB` - name of database to use on MongoDB.
-  * `MONGODB_REPLSET` - name of MongoDB replica set (optional).
-  * `MONGODB_READPREFERENCE` - type of MongoDB read preference if using replica
-    sets (optional). Refer to the MongoDB documentation for choices. The default
-    is `primaryPreferred`.
-  * `GIGYA_APP_KEY` - application key to the Gigya API.
-  * `GIGYA_USER_KEY` - user key to the Gigya API.
-  * `GIGYA_SECRET_KEY` - secret to the Gigya API.
-  * `ENCRYPTIONPASSWORD` - used by the Oz protocol for data encryption.
-
-If not using replica sets, `MONGODB_REPLSET` and `MONGODB_READPREFERENCE` can
-be ignored.
 
 
 # Oz, OAuth and BPC

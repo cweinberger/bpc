@@ -149,7 +149,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
       Applications.updateApp(request.params.id, request.payload)
-        .then(app => reply(app ? app : Boom.notFound()))
+        .then(res => reply({'status':'ok'}))
         .catch(err => reply(Boom.wrap(err)));
     }
   });
@@ -232,9 +232,7 @@ module.exports.register = function (server, options, next) {
       grant.scope = makeArrayUnique(grant.scope);
 
       Applications.createAppGrant(request.params.id, grant)
-        .then(grant => {
-          reply(grant ? grant : Boom.notFound());
-        })
+        .then(grant => reply({'status':'ok'}))
         .catch(err => reply(Boom.wrap(err)));
 
     }
@@ -242,7 +240,7 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
-    method: 'POST', // TODO: Should this be a PUT operation?
+    method: 'POST',
     path: '/{id}/grants/{grantId}',
     config: {
       auth: {
@@ -258,7 +256,7 @@ module.exports.register = function (server, options, next) {
           id: Joi.strip(),
           app: Joi.strip(),
           user: Joi.strip(),
-          exp: Joi.date().timestamp('unix').raw().valid(null),
+          exp: Joi.date().timestamp('unix').raw().allow(null),
           scope: scopeValidation
         }
       }
@@ -270,7 +268,7 @@ module.exports.register = function (server, options, next) {
       grant.scope = makeArrayUnique(grant.scope);
 
       Applications.updateAppGrant(request.params.id, grant)
-        .then(grant => reply(grant ? grant : Boom.notFound()))
+        .then(grant => reply({'status':'ok'}))
         .catch(err => reply(err));
 
     }

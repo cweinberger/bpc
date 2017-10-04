@@ -72,8 +72,7 @@ function createApp(app) {
 function updateApp(id, payload) {
 
   return MongoDB.collection('applications')
-    .findOneAndUpdate({id}, {$set: payload}, {returnNewDocument: true})
-      .then(res => res.value);
+    .updateOne({id:id}, {$set: payload}, {returnNewDocument: true});
 
 }
 
@@ -133,11 +132,12 @@ function assignAdminScope(app, ticket) {
     )
   ];
 
-  return Promise.all(ops).then(res => Promise.resolve(res[0].n === 1))
-      .catch(err => {
-    console.error(err);
-    return Promise.reject(err);
-  });
+  return Promise.all(ops)
+    .then(res => Promise.resolve(res[0].n === 1))
+    .catch(err => {
+      console.error(err);
+      return Promise.reject(err);
+    });
 
 }
 
@@ -151,7 +151,9 @@ function assignAdminScope(app, ticket) {
  */
 function createAppGrant(id, grant) {
 
-  return findAppById(id).then(app => {
+  return MongoDB.collection('applications')
+  .findOne({id: id})
+  .then(app => {
 
     if (!app) {
       return;
@@ -162,8 +164,9 @@ function createAppGrant(id, grant) {
 
     // TODO: This could be moved to a "users" module. Then we'll have two lookup
     // functions (for app and user) that could neatly be done in parallel.
-    return MongoDB.collection('users').findOne({id: grant.user})
-        .then(user => {
+    return MongoDB.collection('users')
+    .findOne({id: grant.user})
+    .then(user => {
 
       if (!user) {
         return; // Resolved, but empty promise.
@@ -197,7 +200,9 @@ function createAppGrant(id, grant) {
  */
 function updateAppGrant(id, grant) {
 
-  return findAppById(id).then(app => {
+  return MongoDB.collection('applications')
+  .findOne({id: id})
+  .then(app => {
 
     if (!app) {
       return;

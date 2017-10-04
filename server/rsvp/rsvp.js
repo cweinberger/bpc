@@ -55,7 +55,7 @@ function createGigyaRsvp(data) {
 
     Users.upsertUserId({ id: data.UID, email: result.body.profile.email.toLowerCase(), provider: data.provider });
 
-    return findGrant({ user: data.UID, app: data.app, provider: data.provider });
+    return findGrant({ user: data.email, app: data.app, provider: data.provider });
 
   });
 }
@@ -73,7 +73,7 @@ function createGoogleRsvp(data, callback) {
 
       Users.upsertUserId({ id: data.ID, email: result.email.toLowerCase(), provider: data.provider });
 
-      findGrant({ user: data.ID, app: data.app, provider: data.provider }, callback);
+      return findGrant({ user: data.email, app: data.app, provider: data.provider }, callback);
 
     }
   });
@@ -181,8 +181,7 @@ function createNewCleanGrant(app, user) {
     app : app,
     user : user,
     scope : [],
-    exp : null,
-    createdAt: new Date()
+    exp : null
   };
 
   MongoDB.collection('grants').insertOne(grant);

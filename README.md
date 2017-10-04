@@ -189,7 +189,7 @@ db.applications.insert({
 db.grants.insert({
   id:'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
   app: 'console',
-  user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
+  user: 'dako@berlingskemedia.dk',
   scope: ['admin:*']
 })
 ```

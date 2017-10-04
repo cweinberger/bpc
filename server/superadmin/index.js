@@ -35,8 +35,8 @@ module.exports.register = function (server, options, next) {
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket) {
         MongoDB.collection('grants').update(
           {
-            app: ticket.app,
-            user: request.params.id
+            id: request.params.id,
+            app: ticket.app
           }, {
             $addToSet: { scope: 'admin:*' }
           }, function (err, result) {
@@ -90,8 +90,8 @@ module.exports.register = function (server, options, next) {
 
         MongoDB.collection('grants').update(
           {
-            app: ticket.app,
-            user: request.params.id
+            id: request.params.id,
+            app: ticket.app
           }, {
             $pull: { scope: 'admin:*' }
           },

@@ -166,12 +166,12 @@ register other applications in BPC, set scopes and administer users.
 
 # Setup
 
-This section is only relevant for developing BPC.
+This section is only relevant when developing BPC.
 
 ## MongoDB
 
 You can almost start with an empty database. However, it needs to be primed
-with an admin scope and corresponding admin user who can manage permissions etc.
+with an application with admin scope and corresponding admin user who can manage permissions etc.
 
 ```
 db.applications.insert({

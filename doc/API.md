@@ -12,13 +12,40 @@ Cases where other types of response headers must be handled, are described as
 part of the endpoint in question.
 
 
+## Making authorized requests
+
+If an API endpoint requires a ticket, this means that the request must be signed with a Hawk _Authorization_ header.
+
+To generate a Hawk _Authorization_ header, see the following code example:
+
+```
+const Hawk = require('hawk');
+var hawkHeader = Hawk.client.header(
+  https://<BPC_SERVER_URL>,
+  <METHOD GET|POST|etc.>,
+  {
+    credentials: {
+      id: <ID>,
+      key: <SECRET_KEY>,
+      algorithm: 'sha256'
+    },
+    app: <APP_ID>
+  }
+).field;
+```
+
+Now the `field` attribute can be inserted into the _Authorization_ header of the HTTP request.
+
+Some endpoints requires a ticket issued to an `app`. Some endpoints requires a `user` ticket. And others take both (`any`). In these cases use respective ticket to genereate the Hawk _Authorization_ header, by added the ticket in the `credentials` attribute.
+
+
 ## Table of contents
 
 * [`GET /rsvp`](#get-rsvp)
 * [`POST /rsvp`](#post-rsvp)
-* [`POST /ticket/app`](#-post-ticketapp)
-* [`POST /ticket/user`](#-post-ticketuser)
-* [`POST /ticket/reissue`](#-post-ticketreissue)
+* [`POST /ticket/app`](#post-ticketapp)
+* [`POST /ticket/user`](#post-ticketuser)
+* [`POST /ticket/reissue`](#post-ticketreissue)
 * [`GET /me`](#get-me)
 * [`GET /permissions/{scope}`](#get-permissionsscope)
 * [`GET /permissions/{user}/{scope}`](#get-permissionsuserscope)
@@ -100,14 +127,20 @@ Fe26.2**262b0f54c902bd8f8f1871462b716886533edc22fb7a280bf1e05e09c21949b3*NaIqNe-
 * Required ticket type: _None_
 * Required scope: _None_
 
-Returns an application ticket if the application is valid.
+Use this endpoint to get an `app` ticket, by making a request signed with the previously issued App ID and Secret. (I.e. the App ID and Secret you get from the BPC Console.)
 
-Example header request
+Returns an application ticket if the application is valid. The ticket must be reissued before the expiration.
+
+
+Example header request:
+
 ```
 Authorization: Hawk id="bt_test", ts="1507038775", nonce="UoqYeH", mac="ly3GbgNeQkpiZuFbeHbq0N7H9Lx/csfBrlPsCJ8OMrc=", app="bt_test"
 Content-Type: application/json
 ```
-Example body response
+
+Example body response:
+
 ```
 {
     "exp": 1507042153810,
@@ -144,13 +177,15 @@ This the request is valid, a user ticket is returned.
 
 The ticket used to sign the request will be renewed with a new expiration time.
 
-Example header request
+Example header request:
+
 ```
 Authorization: Hawk id="Fe26.2**a8e77f19e4bf53c0cf91aa0a0bd260b2bc1f8e58038a2fa3fb74c1983b682b1b*q58kU3GyjVeRgOK_BubnpA*ppOoKyzukvBpjaGISGxQx71CmrcINj6lFge7L1Hg86A73AAfgHtuDp-Rfy78GZl1qaiOLGJmw-zwpMpCPDW6vWeWgWyFY4JZcoXsYqya8luUvndJSz2vwoZSAAXMJcgF63zQ-doesv_k1AA0PZVH2LN4G6BsvABykVPPmYNTH78**74a69aba09a199933b2264e1d62f5182b0f8e34949fc36dab70de85e49456196*_vuEhEwl-Vlm2q-XMCGiVC0boZW8mKIFuMA2rFVTM4w", ts="1507038697", nonce="g1Vsvz", mac="jWWUrEWhYfji7x2NSCTe3DhDw4CPeVYJEx1P6HyhPD8=", app="bt_test"
 Content-Type: application/json
 ```
 
-Example body response
+Example body response:
+
 ```
 {
     "exp": 1507042297338,
@@ -201,16 +236,18 @@ Gets the user permissions. The user is the ticket, with which the request has be
 
 Gets the user permissions. The users ID is in the request parameters.
 
-Example request headers
+Example request headers:
+
 ```
 Authorization: Hawk id="Fe26.2**a8e77f19e4bf53c0cf91aa0a0bd260b2bc1f8e58038a2fa3fb74c1983b682b1b*q58kU3GyjVeRgOK_BubnpA*ppOoKyzukvBpjaGISGxQx71CmrcINj6lFge7L1Hg86A73AAfgHtuDp-Rfy78GZl1qaiOLGJmw-zwpMpCPDW6vWeWgWyFY4JZcoXsYqya8luUvndJSz2vwoZSAAXMJcgF63zQ-doesv_k1AA0PZVH2LN4G6BsvABykVPPmYNTH78**74a69aba09a199933b2264e1d62f5182b0f8e34949fc36dab70de85e49456196*_vuEhEwl-Vlm2q-XMCGiVC0boZW8mKIFuMA2rFVTM4w", ts="1507038697", nonce="g1Vsvz", mac="jWWUrEWhYfji7x2NSCTe3DhDw4CPeVYJEx1P6HyhPD8=", app="bt_test"
 Content-Type: application/json
 ```
 
-Example reponse
-`
+Example reponse_
+
+```
 {"sso_uid":"3050037","permission_113":false,"permission_130":false,"PAID_ARTILCE":true}
-`
+```
 
 ## [POST /permissions/{user}/{scope}]
 
@@ -242,43 +279,41 @@ The following operators are not allowed (will be ignored):
 
 Lets assume a user has the following data in a scope:
 
-`
+```
 { "test_integer": 1, "test_float": 7, "test_object": { "test_array": [ 100 ] } }
-`
+```
 
 To increase the _test_integer_ with the value 2, use the operator `$inc`. Works with positive and negative numbers.
 To multiply the _test_float_ with the value 0.5 (halve), use the operator `$mul`.
 
 Example payload:
 
-`
+```
 {
   $inc: { "test_integer": 2 },
   $mul: { "test_float": 0.5 }
 }
-`
+```
 
 The resulting data will be like:
 
-`
+```
 { "test_integer": 3, "test_float": 3.5, "test_object": { "test_array": [ 100 ] } }
-`
+```
 
 Fields and arrays inside objects can also to used in operators. To do this, use the MongoDB _Embedded Document_ syntax style.
 
 Example:
 
-`
-{
-  $addToSet: { "test_object.test_array": 200 }
-}
-`
+```
+{ $addToSet: { "test_object.test_array": 200 } }
+```
 
 The resulting data will be like:
 
-`
+```
 { "test_integer": 3, "test_float": 3.5, "test_object": { "test_array": [ 100, 200 ] } }
-`
+```
 
 
 ## [GET /permissions/{provider}/{email}/{scope}]
@@ -369,19 +404,19 @@ Registers a new Gigya user account.
 
 Example POST request:
 
-`
+```
 {
-	"email": "camj@berlingskemedia.dk",
-	"password": "my-secret-password",
-	"profile": {
-		"firstName": "Camilla",
-		"lastName": "Julie Jensen"
-	},
+  "email": "johndoe@berlingskemedia.dk",
+  "password": "my-secret-password",
+  "profile": {
+    "firstName": "John",
+    "lastName": "Doe"
+  },
   "data": {
     "terms": true
   }
 }
-`
+```
 
 Returns the user object as stored in Gigya.
 
@@ -424,11 +459,11 @@ Instead, in the future, to search must be made using the Gigya API.
 Returns all Gigya results matching the query. Note that Gigya has an upper limit
 of 5000 accounts in the result set, which also takes effect in the API.
 
-Example query: `SELECT * FROM accounts WHERE profile.email = "camj@berlingskemedia.dk"`
+Example query: `SELECT * FROM accounts WHERE profile.email = "johndoe@berlingskemedia.dk"`
 
 Example result:
 
-`
+```
 {
   "results": [
     {
@@ -469,7 +504,7 @@ Example result:
   "callId": "c940815ac3434663b9e82db99add5d74",
   "time": "2017-03-27T09:27:13.940Z"
 }
-`
+```
 
 
 ## GET /gigya/exists
@@ -486,7 +521,7 @@ Checks with Gigya if the given email address is taken or not.
 
 Example result:
 
-`
+```
 {
   "isAvailable": false,
   "statusCode": 200,
@@ -495,7 +530,7 @@ Example result:
   "callId": "ca9726cd04174c2c9e1a0686c9dd79f5",
   "time": "2017-03-27T10:44:47.274Z"
 }
-`
+```
 
 
 
@@ -520,7 +555,7 @@ When *ApiB* receives requests with the Hawk authentication header, these request
 
 Example payload:
 
-`
+```
 {
   method: 'get',
   url: '/resource/1234',
@@ -533,7 +568,7 @@ Example payload:
   app: 'application_a',
   user: '1234'
 }
-`
+```
 
 If the validation succeeds, BPC responds with a `200 OK`. If else a `401 Unauthorized`.
 
@@ -675,11 +710,11 @@ availability services. Returns 200 OK and a confirmation message.
 
 Returns an object with information about the application:
 
-`
+```
 {
   "name": "bpc",
   "version": "1.0.0",
   "description": "Berlingske Media Oz-based SSO Permissions Center (BPC)",
   "license": "ISC"
 }
-`
+```

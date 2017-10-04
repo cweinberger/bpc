@@ -62,12 +62,12 @@ Beyond storing user permissions, BPC has additional functionality:
 
 The workflow goes like this:
 
-  0. The website is registered with BPC and is issued a client ID and secret.
+  0. The website is registered with BPC and is issued a App ID and Secret.
      This is done once per website or app.
-  1. The website gets an app ticket from BPC used it's client ID and secret.
+  1. The website gets an app ticket from BPC used it's App ID and Secret.
   2. The user visits the website. The user is unauthenticated.
   3. The user signs in with Gigya on the website.
-  4. The applications sends the user to BPC with the client ID and Gigya ID.
+  4. The applications sends the user to BPC with the App ID and Gigya ID.
   5. BPC validates the user with Gigya, grant is automatically created and stored
      and a RSVP is issued.
   6. The user is sent back to the website with the RSVP.
@@ -82,7 +82,7 @@ The workflow goes like this:
 An application is a website or mobile app.
 
 Each application must be registered in BPC. By registering, the app is given an
-client ID and a secret. These must stored in the application itself.
+App ID and a Secret. These must stored in the application itself.
 
 
 ### User

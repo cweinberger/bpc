@@ -57,8 +57,6 @@ Some endpoints requires a ticket issued to an `app`. Some endpoints requires a `
 * [`GET /users`](#get-users)
 * [`GET /users/{id}`](#get-usersid)
 * [`DELETE /users/{id}`](#delete-usersid)
-* [`POST /users/{id}/superadmin`](#) TODO
-* [`DELETE /users/{id}/superadmin`](#) TODO
 * [`GET /users/exists`](#get-usersexists)
 * [`POST /users/register`](#post-usersregister)
 * [`POST /users/update`](#post-usersupdate)
@@ -76,6 +74,8 @@ Some endpoints requires a ticket issued to an `app`. Some endpoints requires a `
 * [`POST /applications/{id}/grants`](#post-applicationsidgrants)
 * [`POST /applications/{id}/grants/{grantId}`](#post-applicationsidgrantsgrantid)
 * [`DELETE /applications/{id}/grants/{grantId}`](#delete-applicationsidgrantsgrantid)
+* [`POST /superadmin/{id}`](#) TODO
+* [`DELETE /superadmin/{id}`](#) TODO
 * [`GET /settings/{scope}`](#) TODO
 * [`GET /settings/{scope}/{key}`](#) TODO
 * [`PUT /settings/{scope}/{key}`](#) TODO
@@ -113,7 +113,7 @@ Example body request
         "signatureTimestamp":"1507038287"
     }
  ```
- 
+
 Example body response
 ```
 Fe26.2**262b0f54c902bd8f8f1871462b716886533edc22fb7a280bf1e05e09c21949b3*NaIqNe-_Zi9HGzcVCVpn0w*YVoUM6EWLK9MrdhA1zeAAFK0Zi2jcSSaq28YnwR4QhQMwWSMuTXfgyEhSpNn5TlE8HDtdHyINqgLvpJll-XT63r_Py_bRASieSwB6EzTbimK403QW91u0R4Q6musw-cB**bf36148da5511f14ed1ee43bce74cb46743a177c4f9167a945aa71f569106092*jOoV6REn8tu88mfcV1Kmq00ui3uAO8A91zMFOPqk_eY

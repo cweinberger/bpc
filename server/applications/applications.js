@@ -165,7 +165,7 @@ function createAppGrant(id, grant) {
     // TODO: This could be moved to a "users" module. Then we'll have two lookup
     // functions (for app and user) that could neatly be done in parallel.
     return MongoDB.collection('users')
-    .findOne({id: grant.user})
+    .findOne({email: grant.user})
     .then(user => {
 
       if (!user) {
@@ -177,7 +177,7 @@ function createAppGrant(id, grant) {
         .then(result => {
 
           if(result.length === 0){
-            return MongoDB.collection('grants').insert(grant).then(res => grant);
+            return MongoDB.collection('grants').insert(grant);
           } else {
             return Promise.reject(Boom.conflict());
           }

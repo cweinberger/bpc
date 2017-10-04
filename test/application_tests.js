@@ -10,7 +10,7 @@ const crypto = require('crypto');
 // Test shortcuts.
 const { describe, it, before, after } = exports.lab = require('lab').script();
 // Assertion library
-const { expect } = require('code');
+const { expect, fail } = require('code');
 
 
 
@@ -199,7 +199,7 @@ describe('application unit tests', () => {
         }).catch(err => {
 
           console.error(err);
-          Code.fail(err.message);
+          fail(err.message);
 
         });
 
@@ -228,7 +228,7 @@ describe('application unit tests', () => {
 
       }).catch(err => {
 
-        Code.fail(err.message);
+        fail(err.message);
 
       });
 
@@ -249,7 +249,7 @@ describe('application unit tests', () => {
 
       }).catch(err => {
 
-        Code.fail(err.message);
+        fail(err.message);
 
       });
 
@@ -263,7 +263,8 @@ describe('application unit tests', () => {
     it('fails for nonexisting app id', done => {
 
       const grant = {
-        user: '117880216634946654515',
+        app: 'invalid-app',
+        user: 'mkoc@berlingskemedia.dk',
         scope: [
           'admin',
           'admin:*',
@@ -272,23 +273,23 @@ describe('application unit tests', () => {
         ]
       };
 
-      Applications.createAppGrant('invalid-app', grant).then(grant => {
+      Applications.createAppGrant(grant).then(grant => {
 
         expect(grant).to.be.undefined();
         done();
 
       }).catch(err => {
 
-        Code.fail(err.message);
+        fail(err.message);
 
       });
-
     });
 
     it('only keeps the app scopes', done => {
 
       const grant = {
-        user: '117880216634946654515',
+        app: 'valid-app',
+        user: 'mkoc@berlingskemedia.dk',
         scope: [
           'admin',
           'admin:*',
@@ -298,22 +299,22 @@ describe('application unit tests', () => {
         ]
       };
 
-      Applications.createAppGrant('valid-app', grant).then(grant => {
+      Applications.createAppGrant(grant)
+        .then(() => MongoDB.collection('grants').findOne({app:'valid-app', user: 'mkoc@berlingskemedia.dk'}))
+        .then(grant => {
 
-        expect(grant).to.be.an.object();
-        expect(grant.scope).to.be.an.array();
-        expect(grant.scope).to.have.length(4);
-        expect(grant.scope).not.to.contain('aok:all');
-        done();
+          expect(grant).to.be.an.object();
+          expect(grant.scope).to.be.an.array();
+          expect(grant.scope).to.have.length(4);
+          expect(grant.scope).not.to.contain('aok:all');
+          done();
 
-      }).catch(err => {
+        }).catch(err => {
 
-        Code.fail(err.message);
+          fail(err.message);
 
-      });
-
+        });
     });
-
   });
 
 
@@ -322,7 +323,8 @@ describe('application unit tests', () => {
     it('fails for nonexisting app id', done => {
 
       const grant = {
-        user: '117880216634946654515',
+        app: 'invalid-app',
+        user: 'mkoc@berlingskemedia.dk',
         scope: [
           'admin',
           'admin:*',
@@ -331,14 +333,14 @@ describe('application unit tests', () => {
         ]
       };
 
-      Applications.updateAppGrant('invalid-app', grant).then(grant => {
+      Applications.updateAppGrant(grant).then(grant => {
 
         expect(grant).to.be.undefined();
         done();
 
       }).catch(err => {
 
-        Code.fail(err.message);
+        fail(err.message);
 
       });
 
@@ -347,7 +349,8 @@ describe('application unit tests', () => {
     it('only keeps the app scopes', done => {
 
       const grant = {
-        user: '117880216634946654515',
+        app: 'valid-app',
+        user: 'mkoc@berlingskemedia.dk',
         scope: [
           'admin',
           'admin:*',
@@ -358,24 +361,24 @@ describe('application unit tests', () => {
         ]
       };
 
-      Applications.updateAppGrant('valid-app', grant).then(grant => {
+      Applications.updateAppGrant(grant)
+        .then(() => MongoDB.collection('grants').findOne({app:'valid-app', user: 'mkoc@berlingskemedia.dk'}))
+        .then(grant => {
 
-        expect(grant).to.be.an.object();
-        expect(grant.scope).to.be.an.array();
-        expect(grant.scope).to.have.length(4);
-        expect(grant.scope).not.to.contain('b:all');
-        expect(grant.scope).not.to.contain('aok:all');
-        done();
+          expect(grant).to.be.an.object();
+          expect(grant.scope).to.be.an.array();
+          expect(grant.scope).to.have.length(4);
+          expect(grant.scope).not.to.contain('b:all');
+          expect(grant.scope).not.to.contain('aok:all');
+          done();
 
-      }).catch(err => {
+        }).catch(err => {
 
-        Code.fail(err.message);
+          fail(err.message);
 
-      });
+        });
 
     });
-
   });
-
 
 });

@@ -231,7 +231,7 @@ module.exports.register = function (server, options, next) {
       });
       grant.scope = makeArrayUnique(grant.scope);
 
-      Applications.createAppGrant(request.params.id, grant)
+      Applications.createAppGrant(grant)
         .then(grant => reply({'status':'ok'}))
         .catch(err => reply(Boom.wrap(err)));
 
@@ -265,9 +265,10 @@ module.exports.register = function (server, options, next) {
 
       const grant = request.payload;
       grant.id = grant.id || request.params.grantId;
+      grant.app = request.params.id;
       grant.scope = makeArrayUnique(grant.scope);
 
-      Applications.updateAppGrant(request.params.id, grant)
+      Applications.updateAppGrant(grant)
         .then(grant => reply({'status':'ok'}))
         .catch(err => reply(err));
 

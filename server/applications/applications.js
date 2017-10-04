@@ -149,10 +149,10 @@ function assignAdminScope(app, ticket) {
  * @param {Object} Grant to create
  * @return {Promise} Promise providing the created grant
  */
-function createAppGrant(id, grant) {
+function createAppGrant(grant) {
 
   return MongoDB.collection('applications')
-  .findOne({id: id})
+  .findOne({id: grant.app})
   .then(app => {
 
     if (!app) {
@@ -173,7 +173,7 @@ function createAppGrant(id, grant) {
       }
 
       // Making sure the user does not already have a grant (expired or not) to that app.
-      return MongoDB.collection('grants').find({user: grant.user, app: id}).toArray()
+      return MongoDB.collection('grants').find({user: grant.user, app: grant.app}).toArray()
         .then(result => {
 
           if(result.length === 0){
@@ -198,10 +198,10 @@ function createAppGrant(id, grant) {
  * @param {Object} Grant
  * @return {Promise} Promise providing the updated grant
  */
-function updateAppGrant(id, grant) {
+function updateAppGrant( grant) {
 
   return MongoDB.collection('applications')
-  .findOne({id: id})
+  .findOne({id: grant.app})
   .then(app => {
 
     if (!app) {
@@ -212,8 +212,7 @@ function updateAppGrant(id, grant) {
     grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
 
     return MongoDB.collection('grants')
-      .update({id: grant.id}, {$set: grant})
-      .then(res => grant);
+      .update({id: grant.id}, {$set: grant});
 
   });
 

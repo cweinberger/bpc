@@ -193,7 +193,7 @@ describe('rsvp unit tests', () => {
         // Wating a second to make sure the grant is saved to MongoDB
         setTimeout(
           () => {
-            MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant', app: 'valid-app'}, (err, grant) => {
+            MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'valid-app'}, (err, grant) => {
               expect(grant).to.not.be.null();
               expect(grant.id).to.have.length(40);
               done();
@@ -215,7 +215,7 @@ describe('rsvp unit tests', () => {
         // Wating a second before make a query to Mongo
         setTimeout(
           () => {
-            MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant', app: 'app_with_disallowAutoCreationGrants'}, (err, grant) => {
+            MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'app_with_disallowAutoCreationGrants'}, (err, grant) => {
               expect(grant).to.be.null();
               done();
             });

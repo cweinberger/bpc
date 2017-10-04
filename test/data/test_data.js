@@ -130,7 +130,7 @@ module.exports = {
     console_superadmin_google_user__console_grant : {
       id : '7462ydu3jjj3u32uej3mmsi3',
       app : 'console',
-      user : '1111111111111111111111',
+      user : 'console_admin@berlingskemedia.dk',
       scope : ['admin:*'],
       exp : null,
       createdAt: new Date()
@@ -138,7 +138,7 @@ module.exports = {
     console_google_user__console_grant : {
       id : '7362ydu3kkk3u65uej3mmsi4',
       app : 'console',
-      user : '2222222222222222222222',
+      user : 'console_user@berlingskemedia.dk',
       scope : [],
       exp : null,
       createdAt: new Date()
@@ -146,13 +146,13 @@ module.exports = {
     valid_app_grant: {
       id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
       app: 'valid-app',
-      user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
+      user: 'xyx@berlingskemedia.dk',
       scope: []
     },
     delete_me_app_grant: {
       id: 'jhfgs294723ijsdhfsdfhskjh329423798animal',
       app: 'delete-me-app',
-      user: 'eu-west-1:dd8890ba-fe77-4ba6-8c9d-5ee0efeed605',
+      user: 'xyx@berlingskemedia.dk',
       scope: []
     }
   }

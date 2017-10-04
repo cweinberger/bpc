@@ -10,7 +10,7 @@ const bpc_helper = require('./helpers/bpc_helper');
 // Test shortcuts.
 const { describe, it, before, after } = exports.lab = require('lab').script();
 // Assertion library
-const { expect } = require('code');
+const { expect, fail } = require('code');
 
 
 describe('permissions - functional tests', () => {

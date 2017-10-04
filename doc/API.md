@@ -123,13 +123,13 @@ Fe26.2**262b0f54c902bd8f8f1871462b716886533edc22fb7a280bf1e05e09c21949b3*NaIqNe-
 
 * Query parameters: _None_
 * Payload: _None_
-* Required Hawk Authorization header: Generated using the App ID and Secret.
+* Required Hawk Authorization header: _Generated using the App ID and Secret_
 * Required ticket type: _None_
 * Required scope: _None_
 
-Use this endpoint to get an `app` ticket, by making a request signed with the previously issued App ID and Secret. (I.e. the App ID and Secret you get from the BPC Console.)
+Use this endpoint to get an `app` ticket, by making a request signed with the previously issued App ID and Secret. (I.e. the App ID and Secret you get from the BPC Console.) It is recommended to do this once when you application starts.
 
-Returns an application ticket if the application is valid. The ticket must be reissued before the expiration.
+Returns an application ticket if the application is valid. The ticket must be reissued before the expiration. This is usually one hour. It is recommended to set a timer to do this a few minuttes earlier.
 
 
 Example header request:

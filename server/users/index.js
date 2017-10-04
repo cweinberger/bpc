@@ -40,20 +40,48 @@ module.exports.register = function (server, options, next) {
       cors: stdCors,
       validate: {
         query: Joi.object().keys({
-          email: Joi.string().email().required(),
+          id: Joi.string(),
+          email: Joi.string(),
           provider: Joi.string().valid('gigya', 'google').default('gigya')
-        }).unknown(false)
+        }).unknown(false).or('id', 'email')
       }
     },
     handler: function(request, reply) {
       var query = {
-        deletedAt: {$exists: false},
-        email: request.query.email.toLowerCase(),
+        $or: [
+          { id: request.query.id },
+          { email: request.query.email.toLowerCase() }
+        ],
         provider: request.query.provider
       };
 
       MongoDB.collection('users').find(query)
         .toArray(reply);
+    }
+  });
+
+
+
+  server.route({
+    method: 'POST',
+    path: '/',
+    config: {
+      auth:  {
+        access: {
+          scope: ['admin', 'users'],
+          entity: 'any'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: Joi.object().keys({
+          email: Joi.string().required(),
+          provider: Joi.string().valid('gigya', 'google').required()
+        }).unknown(false)
+      }
+    },
+    handler: function(request, reply) {
+      reply(Boom.notImplemented());
     }
   });
 
@@ -253,6 +281,8 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  // TODO: this endpoint is temporary.
+  // Going forward the Gigya API should be used directly.
   server.route({
     method: 'POST',
     path: '/resetpassword',
@@ -299,6 +329,7 @@ module.exports.register = function (server, options, next) {
       });
     }
   });
+
 
 
   server.route({

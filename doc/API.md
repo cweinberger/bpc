@@ -12,13 +12,41 @@ Cases where other types of response headers must be handled, are described as
 part of the endpoint in question.
 
 
+## Making authorized requests
+
+If an API endpoint requires a ticket, this means that the request must be signed with a Hawk _Authorization_ header.
+
+To generate a Hawk _Authorization_ header, see the following code example:
+
+```
+const Hawk = require('hawk');
+
+var authorizationHeader = Hawk.client.header(
+  https://<BPC_SERVER_URL>,
+  <METHOD GET|POST|etc.>,
+  {
+    credentials: {
+      id: <ID>,
+      key: <SECRET_KEY>,
+      algorithm: 'sha256'
+    },
+    app: <APP_ID>
+  }
+).field;
+```
+
+Now the `field` attribute can be inserted into the _Authorization_ header of the HTTP request.
+
+Some endpoints requires a ticket issued to an `app`. Some endpoints requires a `user` ticket. And others take both (`any`). In these cases use respective ticket to genereate the Hawk _Authorization_ header, by added the ticket in the `credentials` attribute.
+
+
 ## Table of contents
 
 * [`GET /rsvp`](#get-rsvp)
 * [`POST /rsvp`](#post-rsvp)
-* [`POST /ticket/app`](#-post-ticketapp)
-* [`POST /ticket/user`](#-post-ticketuser)
-* [`POST /ticket/reissue`](#-post-ticketreissue)
+* [`POST /ticket/app`](#post-ticketapp)
+* [`POST /ticket/user`](#post-ticketuser)
+* [`POST /ticket/reissue`](#post-ticketreissue)
 * [`GET /me`](#get-me)
 * [`GET /permissions/{scope}`](#get-permissionsscope)
 * [`GET /permissions/{user}/{scope}`](#get-permissionsuserscope)
@@ -74,20 +102,58 @@ If `returnUrl` is specific, the user will be redirected to this URL with `rsvp` 
 Same as the equivalent GET request (see above).
 The RSVP will be in the response body and `X-RSVP_TOKEN` header.
 
-
+Example body request
+```
+    {
+        "app":"bt_test",
+        "provider":"gigya",
+        "email":"btdk-test+123123@berlingskemedia.dk",
+        "UID":"07f73e5305cc4db9ab8433e8ecf05ab2",
+        "UIDSignature":"E2wHxyDxS1sclDCtGjM846P83Wc=",
+        "signatureTimestamp":"1507038287"
+    }
+ ```
+ 
+Example body response
+```
+Fe26.2**262b0f54c902bd8f8f1871462b716886533edc22fb7a280bf1e05e09c21949b3*NaIqNe-_Zi9HGzcVCVpn0w*YVoUM6EWLK9MrdhA1zeAAFK0Zi2jcSSaq28YnwR4QhQMwWSMuTXfgyEhSpNn5TlE8HDtdHyINqgLvpJll-XT63r_Py_bRASieSwB6EzTbimK403QW91u0R4Q6musw-cB**bf36148da5511f14ed1ee43bce74cb46743a177c4f9167a945aa71f569106092*jOoV6REn8tu88mfcV1Kmq00ui3uAO8A91zMFOPqk_eY
+```
 
 
 ## [POST /ticket/app]
 
 * Query parameters: _None_
 * Payload: _None_
-* Required Hawk Authorization header: Generated using the App ID and Secret.
+* Required Hawk Authorization header: _Generated using the App ID and Secret_
 * Required ticket type: _None_
 * Required scope: _None_
 
-Returns an application ticket if the application is valid.
+Use this endpoint to get an `app` ticket, by making a request signed with the previously issued App ID and Secret. (I.e. the App ID and Secret you get from the BPC Console.) It is recommended to do this once when you application starts.
+
+Returns an application ticket if the application is valid. The ticket must be reissued before the expiration. This is usually one hour. It is recommended to set a timer to do this a few minuttes earlier.
 
 
+Example header request:
+
+```
+Authorization: Hawk id="bt_test", ts="1507038775", nonce="UoqYeH", mac="ly3GbgNeQkpiZuFbeHbq0N7H9Lx/csfBrlPsCJ8OMrc=", app="bt_test"
+Content-Type: application/json
+```
+
+Example body response:
+
+```
+{
+    "exp": 1507042153810,
+    "app": "bt_test",
+    "scope": [
+        "profile"
+    ],
+    "key": "Rx7u6lXCLPDky8_Zlk25nN_eWfNFT1EI",
+    "algorithm": "sha256",
+    "id": "Fe26.2**a8e77f19e4bf53c0cf91aa0a0bd260b2bc1f8e58038a2fa3fb74c1983b682b1b*q58kU3GyjVeRgOK_BubnpA*ppOoKyzukvBpjaGISGxQx71CmrcINj6lFge7L1Hg86A73AAfgHtuDp-Rfy78GZl1qaiOLGJmw-zwpMpCPDW6vWeWgWyFY4JZcoXsYqya8luUvndJSz2vwoZSAAXMJcgF63zQ-doesv_k1AA0PZVH2LN4G6BsvABykVPPmYNTH78**74a69aba09a199933b2264e1d62f5182b0f8e34949fc36dab70de85e49456196*_vuEhEwl-Vlm2q-XMCGiVC0boZW8mKIFuMA2rFVTM4w"
+}
+```
 
 
 
@@ -112,7 +178,27 @@ This the request is valid, a user ticket is returned.
 
 The ticket used to sign the request will be renewed with a new expiration time.
 
+Example header request:
 
+```
+Authorization: Hawk id="Fe26.2**a8e77f19e4bf53c0cf91aa0a0bd260b2bc1f8e58038a2fa3fb74c1983b682b1b*q58kU3GyjVeRgOK_BubnpA*ppOoKyzukvBpjaGISGxQx71CmrcINj6lFge7L1Hg86A73AAfgHtuDp-Rfy78GZl1qaiOLGJmw-zwpMpCPDW6vWeWgWyFY4JZcoXsYqya8luUvndJSz2vwoZSAAXMJcgF63zQ-doesv_k1AA0PZVH2LN4G6BsvABykVPPmYNTH78**74a69aba09a199933b2264e1d62f5182b0f8e34949fc36dab70de85e49456196*_vuEhEwl-Vlm2q-XMCGiVC0boZW8mKIFuMA2rFVTM4w", ts="1507038697", nonce="g1Vsvz", mac="jWWUrEWhYfji7x2NSCTe3DhDw4CPeVYJEx1P6HyhPD8=", app="bt_test"
+Content-Type: application/json
+```
+
+Example body response:
+
+```
+{
+    "exp": 1507042297338,
+    "app": "bt_test",
+    "scope": [
+        "profile"
+    ],
+    "key": "xtAaxFhTOb2ao24JWX_tbicU8Osjk6aH",
+    "algorithm": "sha256",
+    "id": "Fe26.2**11d5c3118ec8a57dc6f1c8e61dced1e45f1efb770ec611ec180ed1aa25d1227b*n9q6FmXBYK-yM3amSYe_pQ*jP4eFi_1GknPfIZi0Cd1dRSMTPzMUHyvgSQ63e6kZUfsgXTj-FoFqZiH5fNdKZtgO56tyKEJaXjJpMOSQ0bHakiPtBoD4MG4zFoeBiHN-uOM8nV1YIecxWIGEXQeWYnIfgx4Cb7UrPk20okB4CL-sxNXr6DsgKk0FJBhNqEmWnA**a67aef2f3ca63e4305e336addd85178da25138a5c82b0437e9b1f95df3c678e3*Ee3DUqfBVPRCBX86aMTaADzV1FdkO3hdj21qZAtjwVw"
+}
+```
 
 
 
@@ -151,9 +237,18 @@ Gets the user permissions. The user is the ticket, with which the request has be
 
 Gets the user permissions. The users ID is in the request parameters.
 
+Example request headers:
 
+```
+Authorization: Hawk id="Fe26.2**a8e77f19e4bf53c0cf91aa0a0bd260b2bc1f8e58038a2fa3fb74c1983b682b1b*q58kU3GyjVeRgOK_BubnpA*ppOoKyzukvBpjaGISGxQx71CmrcINj6lFge7L1Hg86A73AAfgHtuDp-Rfy78GZl1qaiOLGJmw-zwpMpCPDW6vWeWgWyFY4JZcoXsYqya8luUvndJSz2vwoZSAAXMJcgF63zQ-doesv_k1AA0PZVH2LN4G6BsvABykVPPmYNTH78**74a69aba09a199933b2264e1d62f5182b0f8e34949fc36dab70de85e49456196*_vuEhEwl-Vlm2q-XMCGiVC0boZW8mKIFuMA2rFVTM4w", ts="1507038697", nonce="g1Vsvz", mac="jWWUrEWhYfji7x2NSCTe3DhDw4CPeVYJEx1P6HyhPD8=", app="bt_test"
+Content-Type: application/json
+```
 
+Example reponse_
 
+```
+{"sso_uid":"3050037","permission_113":false,"permission_130":false,"PAID_ARTILCE":true}
+```
 
 ## [POST /permissions/{user}/{scope}]
 
@@ -212,9 +307,7 @@ Fields and arrays inside objects can also to used in operators. To do this, use 
 Example:
 
 ```
-{
-  $addToSet: { "test_object.test_array": 200 }
-}
+{ $addToSet: { "test_object.test_array": 200 } }
 ```
 
 The resulting data will be like:
@@ -314,12 +407,12 @@ Example POST request:
 
 ```
 {
-	"email": "camj@berlingskemedia.dk",
-	"password": "my-secret-password",
-	"profile": {
-		"firstName": "Camilla",
-		"lastName": "Julie Jensen"
-	},
+  "email": "johndoe@berlingskemedia.dk",
+  "password": "my-secret-password",
+  "profile": {
+    "firstName": "John",
+    "lastName": "Doe"
+  },
   "data": {
     "terms": true
   }
@@ -367,7 +460,7 @@ Instead, in the future, to search must be made using the Gigya API.
 Returns all Gigya results matching the query. Note that Gigya has an upper limit
 of 5000 accounts in the result set, which also takes effect in the API.
 
-Example query: `SELECT * FROM accounts WHERE profile.email = "camj@berlingskemedia.dk"`
+Example query: `SELECT * FROM accounts WHERE profile.email = "johndoe@berlingskemedia.dk"`
 
 Example result:
 

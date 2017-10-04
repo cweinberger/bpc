@@ -21,7 +21,7 @@ To generate a Hawk _Authorization_ header, see the following code example:
 ```
 const Hawk = require('hawk');
 
-var hawkHeader = Hawk.client.header(
+var authorizationHeader = Hawk.client.header(
   https://<BPC_SERVER_URL>,
   <METHOD GET|POST|etc.>,
   {

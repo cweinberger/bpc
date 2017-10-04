@@ -67,10 +67,9 @@ The workflow goes like this:
   1. The website gets an app ticket from BPC used it's App ID and Secret.
   2. The user visits the website. The user is unauthenticated.
   3. The user signs in with Gigya on the website.
-  4. The applications sends the user to BPC with the App ID and Gigya ID.
-  5. BPC validates the user with Gigya, grant is automatically created and stored
-     and a RSVP is issued.
-  6. The user is sent back to the website with the RSVP.
+  4. The applications sends the user to BPC with the App ID and Gigya login session information.
+  5. BPC validates the user with Gigya and a RSVP is issued.
+  6. The user returns to the website with the RSVP.
   7. The website uses it's app ticket and the RSVP to get an user ticket from BPC.
   8. The application stores the user ticket in e.g. a browser cookie.
   9. For each user action on the website can be validated for sufficient

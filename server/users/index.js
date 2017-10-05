@@ -76,7 +76,7 @@ module.exports.register = function (server, options, next) {
       validate: {
         payload: Joi.object().keys({
           email: Joi.string().required(),
-          provider: Joi.string().valid('gigya', 'google').required()
+          provider: Joi.string().valid('gigya', 'google').default('gigya')
         }).unknown(false)
       }
     },

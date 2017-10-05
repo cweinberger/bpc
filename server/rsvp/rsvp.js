@@ -136,7 +136,12 @@ function findGrant(input, callback) {
                 } else if (grant === null ) {
 
                   // Creating new clean grant
-                  grant = createNewCleanGrant(input.app, input.user);
+                  grant = {
+                    app: app,
+                    user: user,
+                    scope: []
+                  };
+                  Applications.createAppGrant(grant);
 
                 }
 
@@ -172,19 +177,4 @@ function grantIsExpired(grant) {
     grant.exp !== null &&
     grant.exp < Oz.hawk.utils.now()
   );
-}
-
-
-function createNewCleanGrant(app, user) {
-  var grant = {
-    id : crypto.randomBytes(20).toString('hex'), // (gives 40 characters)
-    app : app,
-    user : user,
-    scope : [],
-    exp : null
-  };
-
-  MongoDB.collection('grants').insertOne(grant);
-
-  return grant;
 }

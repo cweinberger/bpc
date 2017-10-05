@@ -17,7 +17,7 @@ const corsRules = {
 
 
 const rsvpValidation = Joi.object().keys({
-  provider: Joi.string().valid('gigya', 'google').required(),
+  provider: Joi.string().valid('gigya', 'google').default('gigya'),
   UID: Joi.string().when('provider', {
     is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden()
   }),

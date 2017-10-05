@@ -3,6 +3,7 @@
 
 const Boom = require('boom');
 const MongoDB = require('./../mongo/mongodb_client');
+const crypto = require('crypto');
 
 
 module.exports = {
@@ -47,17 +48,23 @@ function findAppById(id) {
  * @param {Object} Application object to create
  * @return {Promise} Promise providing the created app
  */
-function createApp(app) {
+function createApp(input) {
+
+  let app = {
+    id: input.id,
+    key: crypto.randomBytes(25).toString('hex'),
+    algorithm: 'sha256',
+    scope: makeArrayUnique(input.scope),
+    delegate: input.delegate ? input.delegate : false,
+    settings: input.settings || {}
+  };
 
     // Ensure that the id is unique before creating the application.
     return convertToUniqueid(app.id).then(uniqueId => {
       app.id = uniqueId;
       return app;
-    }).then(app => {
-      return MongoDB
-        .collection('applications')
-        .insertOne(app).then(res => res.ops[0]);
-    });
+    }).then(app => MongoDB.collection('applications').insertOne(app))
+      .then(res => app);
 
 }
 
@@ -69,10 +76,10 @@ function createApp(app) {
  * @param {Object} App object
  * @return {Promise} Promise providing the updated app
  */
-function updateApp(id, payload) {
+function updateApp(id, input) {
 
   return MongoDB.collection('applications')
-    .updateOne({id:id}, {$set: payload}, {returnNewDocument: true});
+    .updateOne({id:id}, {$set: input}, {returnNewDocument: true});
 
 }
 
@@ -133,11 +140,10 @@ function assignAdminScope(app, ticket) {
   ];
 
   return Promise.all(ops)
-    .then(res => Promise.resolve(res[0].n === 1))
-    .catch(err => {
-      console.error(err);
-      return Promise.reject(err);
-    });
+  .catch(err => {
+    console.error(err);
+    return Promise.reject(err);
+  });
 
 }
 
@@ -151,40 +157,45 @@ function assignAdminScope(app, ticket) {
  */
 function createAppGrant(grant) {
 
-  return MongoDB.collection('applications')
-  .findOne({id: grant.app})
-  .then(app => {
+  if(!grant.app || !grant.user){
+    return Promise.reject(Boom.badRequest('attribute app or user missing'));
+  }
 
-    if (!app) {
-      return;
+  grant.id = crypto.randomBytes(20).toString('hex');
+  grant.scope = makeArrayUnique(grant.scope);
+
+  const operations = [
+    MongoDB.collection('applications')
+    .findOne({id: grant.app}),
+
+    MongoDB.collection('users')
+    .findOne({email: grant.user}).
+
+    MongoDB.collection('grants')
+    .count({user: grant.user, app: grant.app}, {limit:1})
+  ];
+
+  return Promise.all(operations)
+  .then(results => {
+    let app = results[0];
+    let user = results[1];
+    let existingGrant = results[2];
+
+    if(existingGrant > 0){
+      return Promise.reject(Boom.conflict());
+    }
+
+    if (!app){
+      return Promise.reject(Boom.badRequest('invalid app'))
+    }
+
+    if (!user){
+      return Promise.reject(Boom.badRequest('invalid user'))
     }
 
     // Keep only the scopes allowed in the app scope.
     grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
-
-    // TODO: This could be moved to a "users" module. Then we'll have two lookup
-    // functions (for app and user) that could neatly be done in parallel.
-    return MongoDB.collection('users')
-    .findOne({email: grant.user})
-    .then(user => {
-
-      if (!user) {
-        return; // Resolved, but empty promise.
-      }
-
-      // Making sure the user does not already have a grant (expired or not) to that app.
-      return MongoDB.collection('grants').find({user: grant.user, app: grant.app}).toArray()
-        .then(result => {
-
-          if(result.length === 0){
-            return MongoDB.collection('grants').insert(grant);
-          } else {
-            return Promise.reject(Boom.conflict());
-          }
-
-        });
-
-    });
+    return MongoDB.collection('grants').insertOne(grant);
 
   });
 
@@ -205,14 +216,15 @@ function updateAppGrant( grant) {
   .then(app => {
 
     if (!app) {
-      return;
+      return Promise.reject(Boom.badRequest('invalid app'))
     }
 
+    grant.scope = makeArrayUnique(grant.scope);
     // Keep only the scopes allowed in the app scope.
     grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
 
     return MongoDB.collection('grants')
-      .update({id: grant.id}, {$set: grant});
+    .update({id: grant.id}, {$set: grant});
 
   });
 
@@ -241,8 +253,21 @@ function convertToUniqueid(id) {
       isUniqueId = !ids.includes(uniqueId);
     }
 
-    return uniqueId;
+    return uniqueId.replace(' ', '_');
 
   });
 
+}
+
+
+/**
+ * Removes duplicate values from the given array
+ *
+ * Notice that non-array values simply returns an empty array.
+ *
+ * @param {Array} input
+ * @return {Array} Array with unique values only
+ */
+function makeArrayUnique(input) {
+  return Array.isArray(input) ? [ ...new Set(input) ] : [ ]; // The ES6-way :-)
 }

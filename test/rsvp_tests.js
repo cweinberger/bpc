@@ -11,9 +11,7 @@ const MongoDB = require('./mocks/mongodb_mock');
 const Gigya = require('./mocks/gigya_mock');
 
 // Test shortcuts.
-const { describe, it, before, beforeEach, after } = exports.lab = require('lab').script();
-// Assertion library
-const { expect } = require('code');
+const { expect, describe, it, before, beforeEach, after } = exports.lab = require('lab').script();
 
 
 // Rewire rsvp.js in order to test internal functions.

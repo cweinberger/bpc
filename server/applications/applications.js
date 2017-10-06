@@ -2,11 +2,19 @@
 'use strict';
 
 const Boom = require('boom');
+const Joi = require('joi');
 const MongoDB = require('./../mongo/mongodb_client');
 const crypto = require('crypto');
 
 
 module.exports = {
+  scopeValidation: Joi.array().items(
+    // Scopes starting with 'admin' e.g. admin:app are not allowed because
+    // they are reserved.
+    Joi.string()
+      .regex(/^(?!admin).*$/, { name: 'admin', invert: false })
+      .invalid([])
+  ),
   findAll,
   findAppById,
   createApp,
@@ -16,6 +24,7 @@ module.exports = {
   createAppGrant,
   updateAppGrant
 };
+
 
 
 /**

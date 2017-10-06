@@ -10,18 +10,6 @@ const MongoDB = require('./../mongo/mongodb_client');
 const Applications = require('./applications');
 
 
-const invalid_scopes = [];
-
-
-const scopeValidation = Joi.array().items(
-  // Scopes starting with 'admin' e.g. admin:app are not allowed because
-  // they are reserved.
-  Joi.string()
-    .regex(/^(?!admin).*$/, { name: 'admin', invert: true })
-    .invalid(invalid_scopes)
-);
-
-
 module.exports.register = function (server, options, next) {
 
   const stdCors = {
@@ -68,7 +56,7 @@ module.exports.register = function (server, options, next) {
           _id: Joi.strip(),
           key: Joi.strip(),
           id: Joi.string().required(),
-          scope: scopeValidation,
+          scope: Applications.scopeValidation,
           algorithm: Joi.string(),
           delegate: Joi.boolean(),
           callbackurl: Joi.string().uri(),
@@ -129,7 +117,7 @@ module.exports.register = function (server, options, next) {
           _id: Joi.strip(),
           key: Joi.strip(),
           id: Joi.strip(),
-          scope: scopeValidation,
+          scope: Applications.scopeValidation,
           algorithm: Joi.string(),
           delegate: Joi.boolean(),
           callbackurl: Joi.string().uri(),
@@ -209,7 +197,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.string().required(),
           exp: Joi.date().timestamp('unix').raw(),
-          scope: scopeValidation
+          scope: Applications.scopeValidation
         }
       }
     },
@@ -245,7 +233,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.strip(),
           exp: Joi.date().timestamp('unix').raw().allow(null),
-          scope: scopeValidation
+          scope: Applications.scopeValidation
         }
       }
     },

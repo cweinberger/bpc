@@ -9,9 +9,7 @@ const MongoDB = require('./mocks/mongodb_mock');
 const Applications = require('./../server/applications/applications');
 
 // Test shortcuts.
-const { describe, it, before, after } = exports.lab = require('lab').script();
-// Assertion library
-const { expect, fail } = require('code');
+const { expect, describe, it, before, after } = exports.lab = require('lab').script();
 
 
 

@@ -16,14 +16,7 @@ module.exports = {
 
 // Used by /rsvp (createRsvp)
 // But should not be nessecary after going full webhooks
-function upsertUserId({id, email, provider}, callback) {
-  if (callback === undefined) {
-    callback = function(err, result) {
-      if (err) {
-        console.error(err);
-      }
-    };
-  }
+function upsertUserId({id, email, provider}) {
 
   const query = {
     $or: [
@@ -56,27 +49,19 @@ function upsertUserId({id, email, provider}, callback) {
   }
 
 
-  return new Promise((resolve, reject) => {
 
-    MongoDB.collection('users').update(
-      query,
-      {
-        $currentDate: { 'lastUpdated': { $type: "date" } },
-        $set: set,
-        $setOnInsert: setOnInsert
-        // We want to update id, email and provider in case we're missing one of the parameters
-      },
-      { upsert: true },
-      function(err, result) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-        callback(err, result);
-      }
-    );
-  });
+  return MongoDB.collection('users').update(
+    query,
+    {
+      $currentDate: { 'lastUpdated': { $type: "date" } },
+      $set: set,
+      $setOnInsert: setOnInsert
+      // We want to update id, email and provider in case we're missing one of the parameters
+    },
+    {
+      upsert: true
+    }
+  );
 }
 
 

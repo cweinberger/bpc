@@ -3,9 +3,10 @@
 
 // Bootstrap the testing harness.
 const sinon = require('sinon');
+const crypto = require('crypto');
+const Boom = require('boom');
 const MongoDB = require('./mocks/mongodb_mock');
 const Applications = require('./../server/applications/applications');
-const crypto = require('crypto');
 
 // Test shortcuts.
 const { describe, it, before, after } = exports.lab = require('lab').script();
@@ -79,15 +80,19 @@ describe('application unit tests', () => {
           'admin',
         ],
         delegate: false,
-        key: 'something_long_and_random',
         algorithm: 'sha256'
       };
 
-      Applications.createApp(newApp).then(app => {
+      Applications.createApp(newApp)
+      .then(app => {
 
-        expect(app).to.part.include(newApp); // Also testing the promise.
+        expect(app.id).to.equal(newApp.id);
+        expect(app.scope).to.equal(newApp.scope);
+        expect(app.delegate).to.equal(newApp.delegate);
+        expect(app.algorithm).to.equal(newApp.algorithm);
 
-        MongoDB.collection('applications').findOne({id: 'new-app'}).then(_app => {
+        MongoDB.collection('applications').findOne({id: 'new-app'})
+        .then(_app => {
 
           expect(_app).to.part.include(newApp); // There will be "_id" field etc.
           done();
@@ -168,7 +173,7 @@ describe('application unit tests', () => {
     it('fails for nonexisting app id', done => {
 
       Applications.deleteAppById('nonexisting-app', {app: 'nonexisting-app'})
-          .then(isRemoved => {
+      .then(isRemoved => {
 
         expect(isRemoved).to.be.a.boolean();
         expect(isRemoved).to.be.false();
@@ -273,14 +278,16 @@ describe('application unit tests', () => {
         ]
       };
 
-      Applications.createAppGrant(grant).then(grant => {
+      Applications.createAppGrant(grant)
+      .then(grant => {
 
         expect(grant).to.be.undefined();
-        done();
+        done(new Error('Grant must not be issued'))
 
       }).catch(err => {
 
-        fail(err.message);
+        expect(err).to.exist();
+        done();
 
       });
     });
@@ -333,17 +340,18 @@ describe('application unit tests', () => {
         ]
       };
 
-      Applications.updateAppGrant(grant).then(grant => {
+      Applications.updateAppGrant(grant)
+      .then(grant => {
 
         expect(grant).to.be.undefined();
-        done();
+        done(new Error('Grant must not be issued'));
 
       }).catch(err => {
 
-        fail(err.message);
+        expect(err).to.exist();
+        done();
 
       });
-
     });
 
     it('only keeps the app scopes', done => {
@@ -380,5 +388,4 @@ describe('application unit tests', () => {
 
     });
   });
-
 });

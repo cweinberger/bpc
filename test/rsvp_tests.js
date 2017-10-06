@@ -19,8 +19,6 @@ const { expect } = require('code');
 // Rewire rsvp.js in order to test internal functions.
 const Rsvp = rewire('./../server/rsvp/rsvp');
 const grantIsExpired = Rsvp.__get__('grantIsExpired');
-const createNewCleanGrant = Rsvp.__get__('createNewCleanGrant');
-const createUserRsvp = Rsvp.create;
 
 
 describe('rsvp unit tests', () => {
@@ -67,21 +65,8 @@ describe('rsvp unit tests', () => {
 
 
 
-  describe('createNewCleanGrant()', () => {
 
-    it('contains a 40-char id', done => {
-      const result = createNewCleanGrant();
-      expect(result).to.be.an.object();
-      expect(result).to.contain('id');
-      expect(result.id).to.have.length(40);
-      done();
-    });
-
-  });
-
-
-
-  describe('createUserRsvp()', () => {
+  describe('create user RSVPs', () => {
 
     before(done => {
       MongoDB.initate().then(done);
@@ -96,69 +81,95 @@ describe('rsvp unit tests', () => {
 
     before(done => {
       const tokeninfoStub = sinon.stub();
-      tokeninfoStub.callsArgWith(1, null, {email: 'different@email.com'});
+      tokeninfoStub.resolves({email: 'different@email.com'});
       Rsvp.__set__('Google.tokeninfo', tokeninfoStub);
       done();
     });
 
     it('throws an error for unsupported provider', done => {
-      createUserRsvp({
+      Rsvp.create({
         provider: 'illegal',
         UID: '123',
         email: 'some@email.com',
         app: 'valid-app'
-      }, (err, res) => {
-        expect(err).to.be.an.error();
+      })
+      .then(rsvp => {
+        expect(rsvp).to.be.undefined();
+        done(new Error('RSVP must not be issued'));
+      })
+      .catch(err => {
+        expect(err).to.exist();
         done();
       });
     });
 
     it('throws an error for mismatched emails (Gigya)', done => {
-      createUserRsvp({
+      Rsvp.create({
         provider: 'gigya',
         UID: '123',
         email: 'incorrect@domain.com'
-      }, (err, res) => {
-        expect(err).to.be.an.error();
+      })
+      .then(rsvp => {
+        expect(rsvp).to.be.undefined();
+        done(new Error('RSVP must not be issued'));
+      })
+      .catch(err => {
+        expect(err).to.exist();
         done();
       });
     });
 
 
     it('throws an error for mismatched emails (Google)', done => {
-      createUserRsvp({
+      Rsvp.create({
         provider: 'google',
         UID: '123',
         email: 'incorrect@domain.com'
-      }, (err, res) => {
-        expect(err).to.be.an.error();
+      })
+      .then(rsvp => {
+        expect(rsvp).to.be.undefined();
+        done(new Error('RSVP must not be issued'));
+      })
+      .catch(err => {
+        expect(err).to.exist();
         done();
       });
     });
 
+
     it('fails for invalid app id (Gigya)', done => {
-      createUserRsvp({
+      Rsvp.create({
         provider: 'gigya',
         UID: '123',
         email: 'some@email.com',
         app: 'invalid-app'
-      }, (err, res) => {
+      })
+      .then(rsvp => {
+        expect(rsvp).to.be.undefined();
+        done(new Error('RSVP must not be issued'));
+      })
+      .catch(err => {
+        expect(err).to.exist();
         expect(err).to.be.an.error('Unknown application');
         done();
       });
     });
 
-    it('returns a grant for a valid app id (Gigya)', done => {
-      createUserRsvp({
+    it('returns a RSVP for a valid app id (Gigya)', done => {
+      Rsvp.create({
         provider: 'gigya',
         UID: '123',
         email: 'some@email.com',
         app: 'valid-app'
-      }, (err, res) => {
-        expect(err).to.be.null();
-        expect(res).to.be.a.string();
-        expect(res).to.have.length(334);
+      })
+      .then(rsvp => {
+        expect(rsvp).to.be.a.string();
+        expect(rsvp).to.have.length(334);
         done();
+      })
+      .catch(err => {
+        expect(err).to.not.exist();
+        done(new Error('RSVP missing'));
       });
     });
   });
@@ -181,51 +192,66 @@ describe('rsvp unit tests', () => {
     });
 
     it('created a new clean grant when disallowAutoCreationGrants is not set', done => {
-      createUserRsvp({
+      Rsvp.create({
         provider: 'gigya',
         UID: 'userwithnopreviousgrant',
         email: 'userwithnopreviousgrant@email.com',
         app: 'valid-app'
-      }, (err, res) => {
-        expect(err).to.be.null();
-        expect(res).to.be.a.string();
-        expect(res).to.have.length(334);
+      })
+      .then(rsvp => {
+        expect(rsvp).to.be.a.string();
+        expect(rsvp).to.have.length(334);
+
         // Wating a second to make sure the grant is saved to MongoDB
         setTimeout(
           () => {
-            MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'valid-app'}, (err, grant) => {
+            MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'valid-app'})
+            .then(grant => {
               expect(grant).to.not.be.null();
               expect(grant.id).to.have.length(40);
               done();
             });
-          },
-          1000
+          }, 1000
         );
+
+      })
+      .catch(err => {
+        expect(err).to.not.exist();
+        done(new Error('RSVP missing'));
       });
     });
 
     it('does not create a new clean grant because of disallowAutoCreationGrants is set', done => {
-      createUserRsvp({
+      Rsvp.create({
         provider: 'gigya',
         UID: 'userwithnopreviousgrant',
         email: 'userwithnopreviousgrant@email.com',
         app: 'app_with_disallowAutoCreationGrants'
-      }, (err, res) => {
+      })
+      .then(rsvp => {
+        expect(rsvp).to.not.exist();
+        done(new Error('RSVP must not be issued to userwithnopreviousgrant'));
+      })
+      .catch(err => {
         expect(err).to.be.an.error('Forbidden');
-        // Wating a second before make a query to Mongo
+
+        // Wating a second to make sure the grant is saved to MongoDB
         setTimeout(
           () => {
-            MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'app_with_disallowAutoCreationGrants'}, (err, grant) => {
+            MongoDB.collection('grants')
+            .findOne({user:'userwithnopreviousgrant@email.com', app: 'app_with_disallowAutoCreationGrants'})
+            .then(grant => {
               expect(grant).to.be.null();
               done();
             });
-          },
-          1000
+          }, 1000
         );
+
       });
     });
   });
 });
+
 
 describe('rsvp integration test', () => {
 

@@ -140,6 +140,7 @@ function assignAdminScope(app, ticket) {
   ];
 
   return Promise.all(ops)
+  .then(res => Promise.resolve(res[0].n === 1))
   .catch(err => {
     console.error(err);
     return Promise.reject(err);
@@ -169,7 +170,7 @@ function createAppGrant(grant) {
     .findOne({id: grant.app}),
 
     MongoDB.collection('users')
-    .findOne({email: grant.user}).
+    .findOne({email: grant.user}),
 
     MongoDB.collection('grants')
     .count({user: grant.user, app: grant.app}, {limit:1})

@@ -61,7 +61,7 @@ module.exports.register = function (server, options, next) {
         if (request.query.returnUrl) {
           reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp));
         } else {
-          reply(rsvp).header('X-RSVP-TOKEN', rsvp);
+          reply({rsvp:rsvp}).header('X-RSVP-TOKEN', rsvp);
         }
       })
       .catch(err => {
@@ -88,7 +88,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
       Rsvp.create(request.payload)
-      .then(rsvp => reply(rsvp).header('X-RSVP-TOKEN', rsvp))
+      .then(rsvp => reply({rsvp:rsvp}).header('X-RSVP-TOKEN', rsvp))
       .catch(err => {
         if(err.statusCode >= 500) {
           // We want to hide the error from the end user.

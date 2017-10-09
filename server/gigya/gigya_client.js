@@ -16,10 +16,9 @@ const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY;
 
 
 // Dependencies.
+const Boom = require('boom');
 const qs = require('qs');
 const request = require('request');
-const GigyaUtils = require('./gigya_utils');
-const GigyaError = require('./gigya_error');
 const EventLog = require('./../audit/eventlog');
 
 
@@ -81,7 +80,7 @@ module.exports.callApi = function(path, payload = null, api = 'accounts') {
         return reject(exception);
       }
 
-      if(_body && (_body.errorCode > 0 || _body.statusCode > 300)) {
+      if(_body && (_body.errorCode > 0 || _body.statusCode >= 400)) {
         console.error(`  Gigya Error: ${_body.statusCode}, ${_body.errorCode} ${_body.errorMessage}\n  Details: ${_body.errorDetails}`);
         // Check if there are details present in a response.
         if (_body.validationErrors) {
@@ -89,20 +88,10 @@ module.exports.callApi = function(path, payload = null, api = 'accounts') {
             error => `${error.fieldName} -> ${error.errorCode} ${error.message}; `
           );
           console.log(`  Validation errors: ${errors}`);
+          _body.errorDetails = _body.errorDetails.concat(' ', errors);
         }
 
-        // Add some error details.
-        let details = {};
-        if (_body.errorDetails) {
-          details.error = _body.errorDetails;
-        }
-        if (_body.validationErrors) {
-          details.validationErrors = _body.validationErrors;
-        }
-
-        return reject(new GigyaError(
-          _body.errorMessage, _body.statusCode, _body.errorCode, details
-        ));
+        return reject(Boom.create(_body.statusCode, _body.errorDetails, _body))
       }
 
       return resolve({response, body: _body});

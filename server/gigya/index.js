@@ -7,8 +7,6 @@ const Boom = require('boom');
 const Gigya = require('./../gigya/gigya_client');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const Users = require('./../users/users');
-const exposeError = GigyaUtils.exposeError;
-
 
 
 module.exports.register = function (server, options, next) {
@@ -47,7 +45,8 @@ module.exports.register = function (server, options, next) {
       };
 
       return Gigya.callApi('/accounts.search', payload)
-        .then(res => reply(res.body), err => exposeError(reply, err));
+      .then(res => reply(res.body))
+      .catch(err => reply(err));
     }
   });
 
@@ -77,7 +76,8 @@ module.exports.register = function (server, options, next) {
     },
     handler: (request, reply) => {
       return Gigya.callApi('/accounts.isAvailableLoginID', {loginID: request.query.email})
-        .then(res => reply(res.body), err => exposeError(reply, err));
+      .then(res => reply(res.body))
+      .catch(err => reply(err));
     }
   });
 

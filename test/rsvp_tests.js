@@ -269,7 +269,7 @@ describe('rsvp integration test', () => {
   });
 
   it('get rsvp for a gigya user', done => {
-
+    
     let payload = {
       provider: 'gigya',
       UID: 'doensnotexists',
@@ -279,9 +279,10 @@ describe('rsvp integration test', () => {
       signatureTimestamp: 'ignored_in_this_test'
     };
 
-    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null, (response) => {
+    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
+    .then(response => {
       expect(response.statusCode).to.be.equal(200);
-      expect(response.payload).to.have.length(334);
+      expect(response.result.rsvp).to.have.length(334);
       done();
     });
 

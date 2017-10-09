@@ -154,7 +154,11 @@ function findGrant(input, callback) {
     });
   })
   .catch(err => {
-    return Promise.reject(Boom.unauthorized(err.message));
+    if(err.isBoom){
+      return Promise.reject(err);
+    } else {
+      return Promise.reject(Boom.unauthorized(err.message));
+    }
   });
 
 }

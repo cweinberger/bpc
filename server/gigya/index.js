@@ -175,7 +175,11 @@ function accountCreatedEventHandler(event) {
 
 function accountRegisteredEventHandler(event) {
   return Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid })
-  .then(result => Users.upsertUserId({ id: event.data.uid, email: result.body.profile.email.toLowerCase(), provider: 'gigya' }));
+  .then(result => Users.upsertUserId({
+    id: event.data.uid,
+    email: result.body.profile.email.toLowerCase(),
+    provider: 'gigya' })
+  );
 }
 
 

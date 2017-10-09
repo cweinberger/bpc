@@ -11,9 +11,7 @@ const gigya_helper = require('./helpers/gigya_helper');
 
 
 // Test shortcuts.
-const { describe, it, before, after } = exports.lab = require('lab').script();
-// Assertion library
-const { expect } = require('code');
+const { expect, describe, it, before, after } = exports.lab = require('lab').script();
 
 
 describe('gigya notifications after permissions - integration tests', () => {

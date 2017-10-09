@@ -10,9 +10,7 @@ const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 const Users = require('./users');
 const Gigya = require('./../gigya/gigya_client');
-const GigyaUtils = require('./../gigya/gigya_utils');
 const EventLog = require('./../audit/eventlog');
-const exposeError = GigyaUtils.exposeError;
 
 
 
@@ -76,7 +74,7 @@ module.exports.register = function (server, options, next) {
       validate: {
         payload: Joi.object().keys({
           email: Joi.string().required(),
-          provider: Joi.string().valid('gigya', 'google').required()
+          provider: Joi.string().valid('gigya', 'google').default('gigya')
         }).unknown(false)
       }
     },
@@ -114,7 +112,8 @@ module.exports.register = function (server, options, next) {
       };
 
       return Gigya.callApi('/accounts.search', payload)
-        .then(res => reply(res.body), err => exposeError(reply, err));
+      .then(res => reply(res.body))
+      .catch(err => reply(err));
     }
   });
 
@@ -146,7 +145,8 @@ module.exports.register = function (server, options, next) {
     },
     handler: (request, reply) => {
       return Gigya.callApi('/accounts.isAvailableLoginID', {loginID: request.query.email})
-        .then(res => reply(res.body), err => exposeError(reply, err));
+      .then(res => reply(res.body))
+      .catch(err => reply(err));
     }
   });
 
@@ -180,32 +180,31 @@ module.exports.register = function (server, options, next) {
       // Lowercase the email.
       user.email = user.email.toLowerCase();
 
-      register(user).then(
-        data => reply(data.body ? data.body : data),
-        err => {
-          if (err.code === 400009 && Array.isArray(err.details) &&
-              err.details.length && err.details[0].errorCode === 400003) {
-            // Reply with a conflict if the email address exists.
-            return reply(Boom.conflict(
-              `[${err.details[0].errorCode}] ${err.details[0].message}`
-            ));
-          } else {
-            // Reply with the usual Internal Server Error otherwise.
-            return exposeError(reply, err);
-          }
+      register(user)
+      .then(data => reply(data.body ? data.body : data))
+      .catch(err => {
+        if (err.code === 400009 && Array.isArray(err.details) &&
+            err.details.length && err.details[0].errorCode === 400003) {
+          // Reply with a conflict if the email address exists.
+          return reply(Boom.conflict(
+            `[${err.details[0].errorCode}] ${err.details[0].message}`
+          ));
+        } else {
+          return reply(err);
         }
-      );
+      });
 
 
       function register(user) {
 
         if (!user) {
-          return Promise.reject(new Error('"user" is required'));
+          return Promise.reject(Boom.badRequest('"user" is required'));
         }
 
-        return Gigya.callApi('/accounts.initRegistration').then(initRes => {
+        return Gigya.callApi('/accounts.initRegistration')
+        .then(initRes => {
           if (!initRes.body && !initRes.body.regToken) {
-            return Promise.reject(new Error('"regToken" is required'));
+            return Promise.reject(Boom.badRequest('"regToken" is required'));
           }
 
           const _body = Object.assign({}, user, {
@@ -215,13 +214,15 @@ module.exports.register = function (server, options, next) {
             regToken: initRes.body.regToken
           });
 
-          return Gigya.callApi('/accounts.register', _body).then(data => {
+          return Gigya.callApi('/accounts.register', _body)
+          .then(data => {
             EventLog.logUserEvent(data.body.UID, 'User registered');
             return Promise.resolve(data);
-          }, err => {
+          })
+          .catch(err => {
             EventLog.logUserEvent(null, 'User registration failed', {email: user.email});
             return Promise.reject(err);
-          })
+          });
 
         });
       }
@@ -269,9 +270,9 @@ module.exports.register = function (server, options, next) {
 
         Gigya.callApi('/accounts.setAccountInfo', user)
         .then(data => reply(data.body ? data.body : {status: 'ok'}))
-        .catch((err) => {
+        .catch(err => {
           EventLog.logUserEvent(null, 'User update failed', {email: user.email});
-          return reply(GigyaUtils.errorToResponse(err, err.validationErrors));
+          return reply(err);
         });
       }).catch(err => {
         console.error('err', err);
@@ -308,25 +309,16 @@ module.exports.register = function (server, options, next) {
       Gigya.callApi('/accounts.resetPassword', {
         loginID: request.payload.email,
         sendEmail: false
-      }).then(function (response) {
-
+      })
+      .then(response =>
         Gigya.callApi('/accounts.resetPassword', {
           passwordResetToken: response.body.passwordResetToken,
           newPassword: newPassword,
           sendEmail: false
-        }).then(function(response) {
-          reply({'status': 'ok'});
-        }).catch(function(err){
-          console.error(err);
-          return exposeError(reply, err);
-        });
-
-      }).catch(function(err) {
-
-        console.error(err);
-        return exposeError(reply, err);
-
-      });
+        })
+      )
+      .then(() => reply({'status': 'ok'}))
+      .catch(err => reply(err));
     }
   });
 
@@ -388,7 +380,7 @@ module.exports.register = function (server, options, next) {
 
         if (err) {
           console.error(err);
-          return reply(GigyaUtils.errorToResponse(err));
+          return reply(Boom.wrap(err));
         }
 
         if (ticket.user === request.params.id){

@@ -31,26 +31,27 @@ module.exports.getPeople = function(userId, callback){
 };
 
 
-module.exports.tokeninfo = function(data, callback) {
-  if (callback === undefined || typeof callback !== 'function'){
-    callback = function(err, result){
-      console.log('Result:', (err ? err.message : result));
-    };
-  }
+module.exports.tokeninfo = function(data) {
 
-  oauth2.tokeninfo(
-    {
-      id_token: data.id_token,
-      access_token: data.access_token
-    },
-    (err, result) => {
-      if (err) {
-        EventLog.logSystemEvent(
-          'Google Request Failed',
-          `Request failed: oauth2.tokeninfo Error: ${err.message}`
-        );
+  return new Promise((resolve, reject) => {
+
+    oauth2.tokeninfo(
+      {
+        id_token: data.id_token,
+        access_token: data.access_token
+      },
+      (err, result) => {
+        if (err) {
+          EventLog.logSystemEvent(
+            'Google Request Failed',
+            `Request failed: oauth2.tokeninfo Error: ${err.message}`
+          );
+          reject(err)
+        } else {
+          resolve(result);
+        }
       }
-      return callback(err, result);
-    }
-  );
+    );
+  });
+
 };

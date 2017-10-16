@@ -94,14 +94,15 @@ module.exports.register = function (server, options, next) {
 
         handleEvents(request.payload.events)
         .then(() => {
-          reply();
+          // reply();
         })
         .catch((err) => {
           console.error(err);
           console.error('  when getting gigya notifications events', request.payload.events);
           // reply(Boom.badRequest());
-          reply();
         });
+
+        reply();
 
       } else {
 

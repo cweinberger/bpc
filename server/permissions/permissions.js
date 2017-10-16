@@ -11,15 +11,25 @@ module.exports.getScope = function({user, scope}) {
     return Promise.reject('user or scope missing');
   }
 
+  let selector = {
+    email: user,
+    deletedAt: { $exists: false }
+  };
+
   let projection = {
     _id: 0,
   };
-  // The details must only be the dataScopes that are allowed for the application.
-  scope.forEach(scopeName => {
-    projection['dataScopes.'.concat(scopeName)] = 1;
-  });
 
-  return MongoDB.collection('users').findOne({email: user}, projection);
+  // The details must only be the dataScopes that are allowed for the application.
+  if (scope instanceof Array) {
+    scope.forEach(scopeName => {
+      projection['dataScopes.'.concat(scopeName)] = 1;
+    });
+  } else if(typeof scope === 'string'){
+    projection['dataScopes.'.concat(scope)] = 1;
+  }
+
+  return MongoDB.collection('users').findOne(selector, projection);
 };
 
 
@@ -49,7 +59,7 @@ module.exports.queryPermissionsScope = function(selector, scope, callback) {
 };
 
 
-module.exports.setPermissionsScope = function(selector, scope, payload, callback) {
+module.exports.setScope = function(selector, scope, payload, callback) {
 
   let set = {};
 
@@ -112,7 +122,7 @@ module.exports.setPermissionsScope = function(selector, scope, payload, callback
 };
 
 
-module.exports.updatePermissionsScope = function(selector, scope, payload, callback) {
+module.exports.updateScope = function(selector, scope, payload, callback) {
 
   let operators = {
     '$currentDate': {}

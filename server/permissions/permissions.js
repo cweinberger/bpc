@@ -33,33 +33,12 @@ module.exports.getScope = function({user, scope}) {
 };
 
 
-module.exports.queryPermissionsScope = function(selector, scope, callback) {
-  var projection = {
-    _id: 0
+module.exports.setScope = function({user, scope, payload}) {
+
+  let selector = {
+    email: user,
+    deletedAt: { $exists: false }
   };
-  projection['dataScopes.'.concat(scope)] = 1;
-
-  MongoDB.collection('users').findOne(
-    selector,
-    projection
-    , function (err, result){
-      if (err) {
-        console.error(err);
-        return callback(err);
-      }
-
-      if (!result) {
-        callback(Boom.notFound());
-      }
-      else {
-        callback(null, result.dataScopes[scope]);
-      }
-    }
-  );
-};
-
-
-module.exports.setScope = function(selector, scope, payload, callback) {
 
   let set = {};
 
@@ -96,7 +75,7 @@ module.exports.setScope = function(selector, scope, payload, callback) {
   };
 
 
-  MongoDB.collection('users').update(
+  return MongoDB.collection('users').update(
     selector,
     operators,
     {
@@ -107,27 +86,21 @@ module.exports.setScope = function(selector, scope, payload, callback) {
       multi: true
       //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
       //  collation: <document>
-    },
-    function(err, result){
-      if (err){
-        console.error(err);
-        callback(Boom.badImplementation(err.message));
-      } else if (result === null) {
-        callback(Boom.notFound());
-      } else {
-        callback({'status': 'ok'});
-      }
     }
   );
 };
 
 
-module.exports.updateScope = function(selector, scope, payload, callback) {
+module.exports.updateScope = function({user, scope, payload}) {
+
+  let selector = {
+    email: user,
+    deletedAt: { $exists: false }
+  };
 
   let operators = {
     '$currentDate': {}
   };
-
 
   Object.keys(payload).filter(disallowedUpdateOperators).forEach(operator => {
     operators[operator] = {};
@@ -144,23 +117,12 @@ module.exports.updateScope = function(selector, scope, payload, callback) {
   };
   projection['dataScopes.'.concat(scope)] = 1;
 
-  MongoDB.collection('users').findOneAndUpdate(
+  return MongoDB.collection('users').findOneAndUpdate(
     selector,
     operators,
     {
       projection: projection,
       returnOriginal: false
-    },
-    function(err, result){
-      if (err){
-        console.error(err);
-        // We are replying with badRequest here, because it's propably and error in the operators in the request.
-        callback(Boom.badRequest(err.message));
-      } else if (result === null) {
-        callback(Boom.notFound());
-      } else {
-        callback(result.value.dataScopes[scope]);
-      }
     }
   );
 

@@ -7,8 +7,6 @@ const MongoDB = require('./../mongo/mongodb_client');
 const EventLog = require('./../audit/eventlog');
 
 
-// Used by /rsvp (createRsvp)
-// But should not be nessecary after going full webhooks
 module.exports.upsertUserId = function({id, email, provider}) {
 
   const query = {

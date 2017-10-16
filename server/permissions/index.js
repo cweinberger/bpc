@@ -17,6 +17,7 @@ module.exports.register = function (server, options, next) {
     maxAge: 86400
   };
 
+
   server.route({
     method: 'GET',
     path: '/{scope}',
@@ -64,6 +65,7 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+
   server.route({
     method: 'GET',
     path: '/{user}/{scope}',
@@ -89,46 +91,6 @@ module.exports.register = function (server, options, next) {
     }
   });
 
-  // server.route({
-  //   method: 'GET',
-  //   path: '/{user}/{scope}/{key}',
-  //   config: {
-  //     auth: {
-  //       access: {
-  //         scope: ['{params.scope}', 'admin'],
-  //         entity: 'app' // <-- Important. Users must not be allowed to query permissions
-  //       }
-  //     },
-  //     cors: stdCors,
-  //     state: {
-  //       parse: true,
-  //       failAction: 'log'
-  //     }
-  //   },
-  //   handler: function(request, reply) {
-  //     console.log('GET permissions key', request.params.scope, request.params.key);
-  //
-  //     var queryProject = {
-  //       _id: 0
-  //     };
-  //     queryProject['Permissions.'.concat(request.params.scope, '.', request.params.key)] = 1;
-  //
-  //     MongoDB.collection('users').findOne(
-  //       {
-  //         UID: request.query.UID,
-  //         email: request.query.email
-  //       },
-  //       queryProject
-  //       , function (err, result){
-  //         if (err) {
-  //           console.error(err);
-  //         }
-  //
-  //         reply(err, result);
-  //       }
-  //     );
-  //   }
-  // });
 
   server.route({
     method: 'POST',

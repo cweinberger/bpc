@@ -7,16 +7,7 @@ const MongoDB = require('./../mongo/mongodb_client');
 const EventLog = require('./../audit/eventlog');
 
 
-module.exports = {
-  upsertUserId,
-  deleteUserId
-};
-
-
-
-// Used by /rsvp (createRsvp)
-// But should not be nessecary after going full webhooks
-function upsertUserId({id, email, provider}) {
+module.exports.upsertUserId = function({id, email, provider}) {
 
   const query = {
     $or: [
@@ -62,25 +53,12 @@ function upsertUserId({id, email, provider}) {
       upsert: true
     }
   );
-}
-
+};
 
 
 
 // TODO: Set deletedAt timestamp enough? Or should we do more? Eg. expire grants?
-function deleteUserId(id){
-  return new Promise((resolve, reject) => {
-    MongoDB.collection('users').update(
-      { id: id },
-      { $set: { deletedAt: new Date() } },
-      function(err, result) {
-        if (err) {
-          console.error(err);
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      }
-    );
-  });
-}
+module.exports.deleteUserId = function({id}){
+  return MongoDB.collection('users')
+  .update({ id: id },{ $set: { deletedAt: new Date() } });
+};

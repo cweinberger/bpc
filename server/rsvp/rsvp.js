@@ -47,12 +47,7 @@ function createGigyaRsvp(data) {
   .then(result => Gigya.callApi('/accounts.getAccountInfo', { UID: data.UID }))
   .then(result => validateEmail(data, result.body.profile.email))
   .then(() => toLowerCaseEmail(data))
-  .then(data => {
-
-    return Users.upsertUserId({ id: data.UID, email: data.email, provider: data.provider })
-    .then(() => findGrant({ user: data.email, app: data.app, provider: data.provider }));
-
-  });
+  .then(() => findGrant({ user: data.email, app: data.app, provider: data.provider }));
 }
 
 
@@ -61,12 +56,7 @@ function createGoogleRsvp(data) {
   return Google.tokeninfo(data)
   .then(result => validateEmail(data, result.email))
   .then(() => toLowerCaseEmail(data))
-  .then(data => {
-
-    return Users.upsertUserId({ id: data.ID, email: data.email, provider: data.provider })
-    .then(() => findGrant({ user: data.email, app: data.app, provider: data.provider }));
-
-  });
+  .then(() => findGrant({ user: data.email, app: data.app, provider: data.provider }));
 }
 
 
@@ -87,7 +77,8 @@ function toLowerCaseEmail(data) {
 
 function findGrant(input, callback) {
 
-  return MongoDB.collection('applications').findOne(
+  return MongoDB.collection('applications')
+  .findOne(
     { id: input.app },
     { fields: { _id: 0 } })
   .then (app => {

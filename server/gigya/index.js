@@ -196,5 +196,8 @@ function accountLoggedInEventHandler(event) {
 
 
 function accountDeletedEventHandler(event) {
-  return Users.deleteUserId(event.data.uid);
+  return Users.deleteUserId({ id: event.data.uid })
+  .catch(err => {
+    console.error(err);
+  });
 }

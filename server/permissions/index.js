@@ -17,6 +17,7 @@ module.exports.register = function (server, options, next) {
     maxAge: 86400
   };
 
+
   server.route({
     method: 'GET',
     path: '/{scope}',
@@ -43,11 +44,8 @@ module.exports.register = function (server, options, next) {
         // Should we query the database or look in the private part of the ticket?
         if (true) {
 
-          Permissions.queryPermissionsScope(
-            { id: ticket.user },
-            request.params.scope,
-            reply
-          );
+          Permissions.getScope(ticket)
+          .then(user => reply(user.dataScopes[request.params.scope]));
 
         } else {
 
@@ -63,6 +61,7 @@ module.exports.register = function (server, options, next) {
       });
     }
   });
+
 
   server.route({
     method: 'GET',
@@ -81,54 +80,16 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      Permissions.queryPermissionsScope(
-        { id: request.params.user },
-        request.params.scope,
-        reply
-      );
+
+      Permissions.getScope({
+        user: request.params.user,
+        scope: request.params.scope
+      })
+      .then(user => reply(user.dataScopes[request.params.scope]));
+
     }
   });
 
-  // server.route({
-  //   method: 'GET',
-  //   path: '/{user}/{scope}/{key}',
-  //   config: {
-  //     auth: {
-  //       access: {
-  //         scope: ['{params.scope}', 'admin'],
-  //         entity: 'app' // <-- Important. Users must not be allowed to query permissions
-  //       }
-  //     },
-  //     cors: stdCors,
-  //     state: {
-  //       parse: true,
-  //       failAction: 'log'
-  //     }
-  //   },
-  //   handler: function(request, reply) {
-  //     console.log('GET permissions key', request.params.scope, request.params.key);
-  //
-  //     var queryProject = {
-  //       _id: 0
-  //     };
-  //     queryProject['Permissions.'.concat(request.params.scope, '.', request.params.key)] = 1;
-  //
-  //     MongoDB.collection('users').findOne(
-  //       {
-  //         UID: request.query.UID,
-  //         email: request.query.email
-  //       },
-  //       queryProject
-  //       , function (err, result){
-  //         if (err) {
-  //           console.error(err);
-  //         }
-  //
-  //         reply(err, result);
-  //       }
-  //     );
-  //   }
-  // });
 
   server.route({
     method: 'POST',
@@ -150,7 +111,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      Permissions.setPermissionsScope(
+      Permissions.setScope(
         { id: request.params.user },
         request.params.scope,
         request.payload,
@@ -180,7 +141,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      Permissions.updatePermissionsScope(
+      Permissions.updateScope(
         { id: request.params.user },
         request.params.scope,
         request.payload,
@@ -215,17 +176,12 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      var selector = {
-        provider: request.params.provider,
-        email: request.params.email.toLowerCase(),
-        deletedAt: { $exists: false }
-      };
+      Permissions.getScope({
+        user: request.params.email.toLowerCase(),
+        scope: request.params.scope
+      })
+      .then(user => reply(user.dataScopes[request.params.scope]));
 
-      Permissions.queryPermissionsScope(
-        selector,
-        request.params.scope,
-        reply
-      );
     }
   });
 
@@ -262,7 +218,7 @@ module.exports.register = function (server, options, next) {
         deletedAt: { $exists: false }
       };
 
-      Permissions.setPermissionsScope(
+      Permissions.setScope(
         selector,
         request.params.scope,
         request.payload,

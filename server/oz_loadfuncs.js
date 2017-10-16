@@ -60,16 +60,30 @@ function loadGrantFunc(id, next) {
 
         grant.scope = grant.scope.concat(missingScopes);
 
-        // // Finding private details to encrypt in the ticket for later usage.
-        MongoDB.collection('users').findOne({id: grant.user}, {fields: {_id: 0, email: 1, id: 1, dataScopes: 1}}, function(err, user){
-          if (err) {
-            return next(err);
-          } else if (user === null) {
-            // return next(new Error('Unknown user'));
+
+        // TODO: The code below, where we include the dataScoped in the ticket, should be an app-setting.
+        // Then the corresponding code the GET /permissions/{scope} can be completed as well
+
+        // Finding private details to encrypt in the ticket for later usage.
+        let projection = {
+          _id: 0,
+        };
+        // The details must only be the dataScopes that are allowed for the application.
+        grant.scope.forEach(scopeName => {
+          projection['dataScopes.'.concat(scopeName)] = 1;
+        });
+
+        MongoDB.collection('users').findOne({email: grant.user}, projection)
+        .then(user => {
+          if (user === null) {
+            // next(new Error('Unknown user'));
             next(null, grant);
           } else {
-            next(null, grant, {public: {}, private: user});
+            next(null, grant, {public: {}, private: user.dataScopes});
           }
+        })
+        .catch(err => {
+          next(err);
         });
       });
     }

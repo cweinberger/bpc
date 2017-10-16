@@ -49,7 +49,7 @@ function createGigyaRsvp(data) {
   .then(() => toLowerCaseEmail(data))
   .then(data => {
 
-    return Users.upsertUserId({ id: data.ID, email: data.email, provider: data.provider })
+    return Users.upsertUserId({ id: data.UID, email: data.email, provider: data.provider })
     .then(() => findGrant({ user: data.email, app: data.app, provider: data.provider }));
 
   });

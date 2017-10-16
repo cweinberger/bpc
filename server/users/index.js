@@ -390,7 +390,7 @@ module.exports.register = function (server, options, next) {
         // TODO:
         // The "mark user as deletedAt" is handled through the gigya notifications.
         // So this should be a real remove from MongoDB, since this is a more power-level request
-        Users.deleteUserId(request.params.id)
+        Users.deleteUserId({ id: request.params.id })
         .then(() => {
           EventLog.logUserEvent(request.params.id, 'Deleting user');
           reply({'status': 'ok'});

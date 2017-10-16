@@ -13,6 +13,7 @@ const BPC_PUB_PORT = process.env.BPC_PUB_PORT;
 const Boom = require('boom');
 const Oz = require('oz');
 const MongoDB = require('./mongo/mongodb_client');
+const Users = require('./users/users');
 
 
 // Here we are creating the app ticket
@@ -63,17 +64,9 @@ function loadGrantFunc(id, next) {
 
         // TODO: The code below, where we include the dataScoped in the ticket, should be an app-setting.
         // Then the corresponding code the GET /permissions/{scope} can be completed as well
-
         // Finding private details to encrypt in the ticket for later usage.
-        let projection = {
-          _id: 0,
-        };
-        // The details must only be the dataScopes that are allowed for the application.
-        grant.scope.forEach(scopeName => {
-          projection['dataScopes.'.concat(scopeName)] = 1;
-        });
 
-        MongoDB.collection('users').findOne({email: grant.user}, projection)
+        Users.getDataScopes(grant)
         .then(user => {
           if (user === null) {
             // next(new Error('Unknown user'));

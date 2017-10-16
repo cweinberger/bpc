@@ -13,7 +13,7 @@ const BPC_PUB_PORT = process.env.BPC_PUB_PORT;
 const Boom = require('boom');
 const Oz = require('oz');
 const MongoDB = require('./mongo/mongodb_client');
-const Users = require('./users/users');
+const Permissions = require('./permissions/permissions');
 
 
 // Here we are creating the app ticket
@@ -66,7 +66,7 @@ function loadGrantFunc(id, next) {
         // Then the corresponding code the GET /permissions/{scope} can be completed as well
         // Finding private details to encrypt in the ticket for later usage.
 
-        Users.getDataScopes(grant)
+        Permissions.getScope(grant)
         .then(user => {
           if (user === null) {
             // next(new Error('Unknown user'));

@@ -5,6 +5,24 @@ const Boom = require('boom');
 const MongoDB = require('./../mongo/mongodb_client');
 
 
+module.exports.getScope = function({user, scope}) {
+
+  if (!user || !scope) {
+    return Promise.reject('user or scope missing');
+  }
+
+  let projection = {
+    _id: 0,
+  };
+  // The details must only be the dataScopes that are allowed for the application.
+  scope.forEach(scopeName => {
+    projection['dataScopes.'.concat(scopeName)] = 1;
+  });
+
+  return MongoDB.collection('users').findOne({email: user}, projection);
+};
+
+
 module.exports.queryPermissionsScope = function(selector, scope, callback) {
   var projection = {
     _id: 0

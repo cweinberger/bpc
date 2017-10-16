@@ -8,7 +8,7 @@ const OzLoadFuncs = require('./../oz_loadfuncs');
 const MongoDB = require('./../mongo/mongodb_client');
 const Gigya = require('./../gigya/gigya_client');
 const EventLog = require('./../audit/eventlog');
-const Users = require('./../users/users');
+const Permissions = require('./../permissions/permissions');
 
 
 module.exports.register = function (server, options, next) {
@@ -52,7 +52,7 @@ module.exports.register = function (server, options, next) {
           return reply(err)
         }
 
-        Users.getDataScopes(ticket)
+        Permissions.getScope(ticket)
         .then(user => reply(user.dataScopes))
       });
     }

@@ -64,21 +64,3 @@ module.exports.deleteUserId = function({id}){
   return MongoDB.collection('users')
   .update({ id: id },{ $set: { deletedAt: new Date() } });
 };
-
-
-module.exports.getDataScopes = function({user, scope}) {
-
-  if (!user || !scope) {
-    return Promise.reject('user or scope missing');
-  }
-
-  let projection = {
-    _id: 0,
-  };
-  // The details must only be the dataScopes that are allowed for the application.
-  scope.forEach(scopeName => {
-    projection['dataScopes.'.concat(scopeName)] = 1;
-  });
-
-  return MongoDB.collection('users').findOne({email: user}, projection);
-};

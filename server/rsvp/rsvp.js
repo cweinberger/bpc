@@ -113,8 +113,8 @@ function findGrant(data) {
         // The setting disallowAutoCreationGrants makes sure that no grants
         // are created automatically.
       if (grant === null &&
-        (app.disallowAutoCreationGrants ||
-          (app.settings && app.settings.disallowAutoCreationGrants))) {
+          app.settings &&
+          app.settings.disallowAutoCreationGrants) {
 
             return Promise.reject(Boom.forbidden());
 

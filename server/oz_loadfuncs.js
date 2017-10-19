@@ -42,19 +42,31 @@ function loadGrantFunc(id, next) {
       next(Boom.unauthorized());
     } else {
 
-      // TODO: Perhaps the app should define the default ticket expiration. See below.
-      if (grant.exp === undefined || grant.exp === null) {
-        grant.exp = Oz.hawk.utils.now() + (60000 * 60 * 24); // 60000 = 1 minute
-      }
+      // // TODO: Perhaps the app should define the default ticket expiration. See below.
+      // if (grant.exp === undefined || grant.exp === null) {
+      //   grant.exp = Oz.hawk.utils.now() + (60000 * 60 * 24); // 60000 = 1 minute
+      // }
 
-      // We're adding the application scope to the ticket.
 
       MongoDB.collection('applications').findOne({ id: grant.app }, { fields: { _id: 0, scope: 1 } }, function(err, app){
         if (err) {
           return next(err);
         }
 
-        // TODO: Perhaps the app should override the default ticket expiration, if the grant has not expiration. See above.
+        let ticketDuration = app.settings && app.settings.ticketDuration
+          // The app can set the default ticket duration.
+          ? app.settings.ticketDuration
+          // Default ticket expiration (60000 = 1 minute)
+          : (60000 * 60); // = One hour
+
+        let ticketExpiration = Oz.hawk.utils.now() + ticketDuration;
+
+        // If the users grant does not have an expiration
+        //   or if grant expires later than the calculated ticket expiration
+        // Else we can just keep the grant/ticket expiration as-is
+        if (!grant.exp || ticketExpiration < grant.exp) {
+          grant.exp = ticketExpiration;
+        }
 
         // Adding all the missing app scopes to the ticket - unless they are and admin:scope
         // Note: We want the scope "admin" (reserved scope of the console app) to be added to the ticket.

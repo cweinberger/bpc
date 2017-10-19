@@ -42,6 +42,8 @@ module.exports.register = function (server, options, next) {
         }
 
         // Should we query the database or look in the private part of the ticket?
+        // When the app setting includeScopeInPrivatExt is set to true, we can validate the users scope by looking in ticket.ext.private.
+        // But we need to find out how we should handle any changes to the scope (by POST/PATCH). Should we then reissue the ticket with new ticket.ext.private?
         if (true) {
 
           Permissions.getScope(ticket)

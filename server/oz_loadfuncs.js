@@ -42,20 +42,12 @@ function loadGrantFunc(id, next) {
       next(Boom.unauthorized());
     } else {
 
-      // // TODO: Perhaps the app should define the default ticket expiration. See below.
-      // if (grant.exp === undefined || grant.exp === null) {
-      //   grant.exp = Oz.hawk.utils.now() + (60000 * 60 * 24); // 60000 = 1 minute
-      // }
-
-
-      MongoDB.collection('applications').findOne({ id: grant.app }, { fields: { _id: 0, scope: 1 } }, function(err, app){
-        if (err) {
-          return next(err);
-        }
+      MongoDB.collection('applications').findOne({ id: grant.app }, { fields: { _id: 0, scope: 1, settings: 1 } })
+      .then(app => {
 
         let ticketDuration = app.settings && app.settings.ticketDuration
           // The app can set the default ticket duration.
-          ? app.settings.ticketDuration
+          ? (60000 * app.settings.ticketDuration)
           // Default ticket expiration (60000 = 1 minute)
           : (60000 * 60); // = One hour
 
@@ -77,15 +69,8 @@ function loadGrantFunc(id, next) {
         grant.scope = grant.scope.concat(missingScopes);
 
 
-        // TODO: The code below, where we include the dataScoped in the ticket, should be an app-setting.
-        // Then the corresponding code the GET /permissions/{scope} can be completed as well
-        // Finding private details to encrypt in the ticket for later usage.
-
-        if (true) {
-
-          next(null, grant);
-
-        } else {
+        // Finding scope data to encrypt in the ticket for later usage.
+        if (app.settings && app.settings.includeScopeInPrivatExt) {
 
           Permissions.getScope(grant)
           .then(user => {
@@ -101,7 +86,14 @@ function loadGrantFunc(id, next) {
             next(err);
           });
 
+        } else {
+
+          next(null, grant);
+
         }
+      })
+      .catch(err => {
+        next(err);
       });
     }
   });

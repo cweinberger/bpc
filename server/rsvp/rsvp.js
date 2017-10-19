@@ -96,6 +96,8 @@ function findGrant(data) {
       return Promise.reject(Boom.unauthorized('Unknown application'));
     } else if (app.settings && app.settings.provider && app.settings.provider !== data.provider){
       return Promise.reject(Boom.unauthorized('Invalid provider'));
+    } else if (app.settings && app.settings.disallowGrants){
+      return Promise.reject(Boom.unauthorized('App disallow users'));
     } else {
       return Promise.resolve(app);
     }
@@ -110,15 +112,15 @@ function findGrant(data) {
       { fields: { _id: 0 } })
     .then(grant => {
 
-        // The setting disallowAutoCreationGrants makes sure that no grants
-        // are created automatically.
-      if (grant === null &&
+      if (grantIsExpired(grant)) {
+
+        return Promise.reject(Boom.forbidden());
+
+      } else if (grant === null &&
           app.settings &&
           app.settings.disallowAutoCreationGrants) {
-
-            return Promise.reject(Boom.forbidden());
-
-      } else if (grantIsExpired(grant)) {
+          // The setting disallowAutoCreationGrants makes sure that no grants
+          // are created automatically.
 
         return Promise.reject(Boom.forbidden());
 
@@ -133,12 +135,6 @@ function findGrant(data) {
 
         Applications.createAppGrant(grant);
 
-      }
-
-      // This exp is only the expiration of the rsvp - not the expiration of
-      // the grant/ticket.
-      if (grant.exp === undefined || grant.exp === null) {
-        grant.exp = Oz.hawk.utils.now() + (60000 * 60); // 60000 = 1 minute
       }
 
       return new Promise((resolve, reject) => {

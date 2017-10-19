@@ -57,7 +57,7 @@ function createGigyaRsvp(data) {
   .then(result => Gigya.callApi('/accounts.getAccountInfo', { UID: data.UID }))
   .then(result => validateEmail(data, result.body.profile.email))
   .then(() => toLowerCaseEmail(data))
-  .then(() => findGrant({ user: data.email, app: data.app, provider: data.provider }));
+  .then(data => findGrant({ user: data.email, app: data.app, provider: data.provider }));
 }
 
 
@@ -66,7 +66,7 @@ function createGoogleRsvp(data) {
   return Google.tokeninfo(data)
   .then(result => validateEmail(data, result.email))
   .then(() => toLowerCaseEmail(data))
-  .then(() => findGrant({ user: data.email, app: data.app, provider: data.provider }));
+  .then(data => findGrant({ user: data.email, app: data.app, provider: data.provider }));
 }
 
 
@@ -85,16 +85,16 @@ function toLowerCaseEmail(data) {
 }
 
 
-function findGrant(input, callback) {
+function findGrant(data) {
 
   return MongoDB.collection('applications')
   .findOne(
-    { id: input.app },
+    { id: data.app },
     { fields: { _id: 0 } })
   .then (app => {
     if (app === null){
       return Promise.reject(Boom.unauthorized('Unknown application'));
-    } else if (app.settings && app.settings.provider && app.settings.provider !== input.provider){
+    } else if (app.settings && app.settings.provider && app.settings.provider !== data.provider){
       return Promise.reject(Boom.unauthorized('Invalid provider'));
     } else {
       return Promise.resolve(app);
@@ -106,7 +106,7 @@ function findGrant(input, callback) {
     // We only insert a new one if none is found, the app allows it creation of now blank grants.
     // If the existing grant is expired, the user should be denied access.
     return MongoDB.collection('grants').findOne(
-      { user: input.user, app: input.app },
+      { user: data.user, app: data.app },
       { fields: { _id: 0 } })
     .then(grant => {
 
@@ -126,8 +126,8 @@ function findGrant(input, callback) {
 
         // Creating new clean grant
         grant = {
-          app: input.app,
-          user: input.user,
+          app: data.app,
+          user: data.user,
           scope: []
         };
 

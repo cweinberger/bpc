@@ -6,7 +6,6 @@ const Boom = require('boom');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 const Applications = require('./../applications/applications');
-const Users = require('./../users/users');
 const Gigya = require('./../gigya/gigya_client');
 const Google = require('./../google/google_client');
 

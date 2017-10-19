@@ -14,6 +14,7 @@ const Boom = require('boom');
 const Oz = require('oz');
 const MongoDB = require('./mongo/mongodb_client');
 const Permissions = require('./permissions/permissions');
+const Rsvp = require('./rsvp/rsvp');
 
 
 // Here we are creating the app ticket
@@ -35,7 +36,9 @@ function loadGrantFunc(id, next) {
   MongoDB.collection('grants').findOne({id: id}, {fields: {_id: 0}}, function(err, grant) {
     if (err) {
       return next(err);
-    } else if (grantIsMissingOrExpired(grant)) {
+    } else if (grant === undefined || grant === null) {
+      next(Boom.unauthorized());
+    } else if (Rsvp.grantIsExpired(grant)) {
       next(Boom.unauthorized());
     } else {
 
@@ -120,10 +123,4 @@ module.exports.parseAuthorizationHeader = function (requestHeaderAuthorization, 
   }
 
   Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
-}
-
-
-function grantIsMissingOrExpired(grant){
-  // var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
-  return grant === undefined || grant === null || (grant.exp !== undefined && grant.exp !== null && grant.exp < Oz.hawk.utils.now());
 }

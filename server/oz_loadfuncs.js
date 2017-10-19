@@ -66,18 +66,27 @@ function loadGrantFunc(id, next) {
         // Then the corresponding code the GET /permissions/{scope} can be completed as well
         // Finding private details to encrypt in the ticket for later usage.
 
-        Permissions.getScope(grant)
-        .then(user => {
-          if (user === null) {
-            // next(new Error('Unknown user'));
-            next(null, grant);
-          } else {
-            next(null, grant, {public: {}, private: user.dataScopes});
-          }
-        })
-        .catch(err => {
-          next(err);
-        });
+        if (true) {
+
+          next(null, grant);
+
+        } else {
+
+          Permissions.getScope(grant)
+          .then(user => {
+            if (user === null) {
+              // next(new Error('Unknown user'));
+              next(null, grant);
+            } else {
+              let ext = { public: {}, private: user.dataScopes };
+              next(null, grant, ext);
+            }
+          })
+          .catch(err => {
+            next(err);
+          });
+
+        }
       });
     }
   });

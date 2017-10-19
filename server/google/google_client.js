@@ -1,6 +1,10 @@
 /*jshint node: true */
 'use strict';
 
+if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
+  module.exports = require('../../test/mocks/google_mock.js');
+  return;
+}
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 

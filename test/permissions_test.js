@@ -35,28 +35,34 @@ describe('permissions - functional tests', () => {
 
 
     it('getting first user bt permissions', (done) => {
-      bpc_helper.request({ method: 'GET', url: '/permissions/' + first.id + '/bt'}, appTicket, (response) => {
+      bpc_helper.request({ method: 'GET', url: '/permissions/' + first.id + '/bt'}, appTicket)
+      .then(response => {
         expect(response.statusCode).to.equal(200);
         var payload = JSON.parse(response.payload);
         expect(payload.bt_paywall).to.true();
         done();
-      });
+      })
+      .catch(done);
     });
 
     it('getting first user bt permissions by provider and uppercase email', (done) => {
-      bpc_helper.request({ method: 'GET', url: '/permissions/gigya/FIRST_USER@berlingskemedia.dk/bt'}, appTicket, (response) => {
+      bpc_helper.request({ method: 'GET', url: '/permissions/gigya/FIRST_USER@berlingskemedia.dk/bt'}, appTicket)
+      .then(response => {
         expect(response.statusCode).to.equal(200);
         var payload = JSON.parse(response.payload);
         expect(payload.bt_subscription_tier).to.equal('free');
         done();
-      });
+      })
+      .catch(done);
     });
 
     it('denied first user berlingske permissions', (done) => {
-      bpc_helper.request({ method: 'GET', url: '/permissions/' + first.id + '/berlingske'}, appTicket, (response) => {
+      bpc_helper.request({ method: 'GET', url: '/permissions/' + first.id + '/berlingske'}, appTicket)
+      .then(response => {
         expect(response.statusCode).to.equal(403);
         done();
-      });
+      })
+      .catch(done);
     });
   });
 

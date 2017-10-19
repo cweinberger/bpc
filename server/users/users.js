@@ -9,20 +9,15 @@ const EventLog = require('./../audit/eventlog');
 
 module.exports.upsertUserId = function({id, email, provider}) {
 
-  const query = {
+  let selector = {
     $or: [
-      {
-        id: id
-      },
-      {
-        email: email,
-        provider: provider,
-        deletedAt: { $exists: false }
-      }
-    ]
+      { id: id },
+      { email: email }
+    ],
+    deletedAt: { $exists: false }
   };
 
-  const set = {
+  let set = {
     id: id,
     email: email.toLowerCase(),
     provider: provider
@@ -39,16 +34,15 @@ module.exports.upsertUserId = function({id, email, provider}) {
     setOnInsert = Object.assign(setOnInsert, set);
   }
 
-
+  let operators = {
+    $currentDate: { 'lastUpdated': { $type: "date" } },
+    $set: set,
+    $setOnInsert: setOnInsert
+  };
 
   return MongoDB.collection('users').update(
-    query,
-    {
-      $currentDate: { 'lastUpdated': { $type: "date" } },
-      $set: set,
-      $setOnInsert: setOnInsert
-      // We want to update id, email and provider in case we're missing one of the parameters
-    },
+    selector,
+    operators,
     {
       upsert: true
     }

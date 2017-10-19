@@ -23,9 +23,19 @@ module.exports = {
     } else {
       return Promise.reject(Boom.badRequest('Unsupported provider'));
     }
+  },
+  grantIsExpired: function (grant) {
+    return (
+      grant !== undefined &&
+      grant !== null &&
+      grant.exp !== undefined &&
+      grant.exp !== null &&
+      grant.exp < Oz.hawk.utils.now()
+    );
   }
 };
 
+var grantIsExpired = module.exports.grantIsExpired;
 
 // Here we are creating the user->app rsvp.
 
@@ -152,16 +162,4 @@ function findGrant(input, callback) {
     }
   });
 
-}
-
-
-
-function grantIsExpired(grant) {
-  return (
-    grant !== undefined &&
-    grant !== null &&
-    grant.exp !== undefined &&
-    grant.exp !== null &&
-    grant.exp < Oz.hawk.utils.now()
-  );
 }

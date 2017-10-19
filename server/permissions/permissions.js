@@ -12,7 +12,10 @@ module.exports.getScope = function({user, scope}) {
   }
 
   let selector = {
-    email: user,
+    $or: [
+      { id: user },
+      { email: user }
+    ],
     deletedAt: { $exists: false }
   };
 
@@ -36,28 +39,32 @@ module.exports.getScope = function({user, scope}) {
 module.exports.setScope = function({user, scope, payload}) {
 
   let selector = {
-    email: user,
+    $or: [
+      { id: user },
+      { email: user }
+    ],
     deletedAt: { $exists: false }
   };
 
+
   let set = {};
 
+  // We are setting both 'id' and 'email' to the 'user'.
+  // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
   let setOnInsert = {
+    id: user,
+    email: user,
     createdAt: new Date()
   };
 
 
   if (MongoDB.isMock) {
 
-    // We're adding the selector data to the set data from selector.
-    // This is needed when we're inserting (upsert), so we have the values
-    var dataScopes = {};
-    dataScopes[scope] = payload;
-    set = Object.assign({}, selector, {
-      dataScopes: dataScopes
-    });
+    set.dataScopes = {};
+    set.dataScopes[scope] = payload;
 
-    delete set.deletedAt;
+    // We are adding the $set onto $setOnInsert
+    //   because apparently mongo-mock does not use $set when inserting (upsert=true)
     Object.assign(setOnInsert, set);
 
   } else {
@@ -94,7 +101,10 @@ module.exports.setScope = function({user, scope, payload}) {
 module.exports.updateScope = function({user, scope, payload}) {
 
   let selector = {
-    email: user,
+    $or: [
+      { id: user },
+      { email: user }
+    ],
     deletedAt: { $exists: false }
   };
 

@@ -9,14 +9,11 @@ const sinon = require('sinon');
 const bpc_helper = require('./helpers/bpc_helper');
 const MongoDB = require('./mocks/mongodb_mock');
 const Gigya = require('./mocks/gigya_mock');
+const Google = require('./mocks/google_mock');
+const Rsvp = require('./../server/rsvp/rsvp');
 
 // Test shortcuts.
 const { expect, describe, it, before, beforeEach, after } = exports.lab = require('lab').script();
-
-
-// Rewire rsvp.js in order to test internal functions.
-const Rsvp = rewire('./../server/rsvp/rsvp');
-const grantIsExpired = Rsvp.__get__('grantIsExpired');
 
 
 describe('rsvp unit tests', () => {
@@ -24,37 +21,37 @@ describe('rsvp unit tests', () => {
   describe('grant', () => {
 
     it('is not expired when grant is undefined', done => {
-      const result = grantIsExpired();
+      const result = Rsvp.grantIsExpired();
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant is null', done => {
-      const result = grantIsExpired(null);
+      const result = Rsvp.grantIsExpired(null);
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant.exp is undefined', done => {
-      const result = grantIsExpired({});
+      const result = Rsvp.grantIsExpired({});
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant.exp is null', done => {
-      const result = grantIsExpired({ exp: null });
+      const result = Rsvp.grantIsExpired({ exp: null });
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant.exp is now() + 20000', done => {
-      const result = grantIsExpired({ exp: Oz.hawk.utils.now() + 20000 });
+      const result = Rsvp.grantIsExpired({ exp: Oz.hawk.utils.now() + 20000 });
       expect(result).to.be.false();
       done();
     });
 
     it('expired when grant.exp is now() - 20000', done => {
-      const result = grantIsExpired({ exp: Oz.hawk.utils.now() - 20000 });
+      const result = Rsvp.grantIsExpired({ exp: Oz.hawk.utils.now() - 20000 });
       expect(result).to.be.true();
       done();
     });
@@ -71,16 +68,12 @@ describe('rsvp unit tests', () => {
     });
 
     before(done => {
-      const getAccountInfoStub = sinon.stub();
-      getAccountInfoStub.resolves({body: {profile: {email: 'some@email.com'}}});
-      Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
+      Gigya.callApi.resolves({body: {profile: {email: 'some@email.com'}}});
       done();
     });
 
     before(done => {
-      const tokeninfoStub = sinon.stub();
-      tokeninfoStub.resolves({email: 'different@email.com'});
-      Rsvp.__set__('Google.tokeninfo', tokeninfoStub);
+      Google.tokeninfo.resolves({body: {profile: {email: 'some@email.com'}}});
       done();
     });
 
@@ -121,7 +114,7 @@ describe('rsvp unit tests', () => {
     it('throws an error for mismatched emails (Google)', done => {
       Rsvp.create({
         provider: 'google',
-        UID: '123',
+        ID: '123',
         email: 'incorrect@domain.com'
       })
       .then(rsvp => {
@@ -176,9 +169,7 @@ describe('rsvp unit tests', () => {
   describe('creating new clean grant', () => {
 
     before(done => {
-      const getAccountInfoStub = sinon.stub();
-      getAccountInfoStub.resolves({body: {profile: {email: 'userwithnopreviousgrant@email.com'}}});
-      Rsvp.__set__('Gigya.callApi', getAccountInfoStub);
+      Gigya.callApi.resolves({body: {profile: {email: 'userwithnopreviousgrant@email.com'}}});
       done();
     });
 
@@ -269,7 +260,7 @@ describe('rsvp integration test', () => {
   });
 
   it('get rsvp for a gigya user', done => {
-    
+
     let payload = {
       provider: 'gigya',
       UID: 'doensnotexists',

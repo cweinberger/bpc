@@ -73,25 +73,34 @@ describe('gigya notifications - functional tests', () => {
 
       notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null, (response) => {
+      bpc_helper.request(notifications_request, null)
+      .then(response => {
         expect(response.statusCode).to.equal(200);
+        return Promise.resolve();
+      })
+      .then(() => {
+        return new Promise(resolve => setTimeout(resolve, 1000));
+      })
+      .then(() => MongoDB.collection('users').find({id: '1'}).toArray())
+      .then(result => {
+        expect(result.length).to.equal(1);
+        expect(result[0]).not.to.be.null();
+        expect(result[0].email).to.equal('1@test.nl');
+        expect(result[0].provider).to.equal('gigya');
+        expect(result[0].createdAt).to.be.a.date();
+        return Promise.resolve();
+      })
+      .then(() => MongoDB.collection('users').find({id: '2'}).toArray())
+      .then(result => {
+        expect(result.length).to.equal(1);
+        expect(result[0]).not.to.be.null();
+        expect(result[0].email).to.equal('2@test.nl');
+        expect(result[0].provider).to.equal('gigya');
+        expect(result[0].createdAt).to.be.a.date();
 
-        MongoDB.collection('users').findOne({id: '1'}, (err, result) => {
-          expect(result).not.to.be.null();
-          expect(result.email).to.equal('1@test.nl')
-          expect(result.provider).to.equal('gigya');
-          expect(result.createdAt).to.be.a.date();
-
-          MongoDB.collection('users').findOne({id: '2'}, (err, result) => {
-            expect(result).not.to.be.null();
-            expect(result.email).to.equal('2@test.nl')
-            expect(result.provider).to.equal('gigya');
-            expect(result.createdAt).to.be.a.date();
-
-            done();
-          });
-        });
-      });
+        done();
+      })
+      .catch(done);
     });
 
 
@@ -130,18 +139,22 @@ describe('gigya notifications - functional tests', () => {
 
       notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null, (response) => {
-
+      bpc_helper.request(notifications_request, null)
+      .then(response => {
         expect(response.statusCode).to.equal(200);
+        return Promise.resolve();
+      })
+      .then(() => {
+        return new Promise(resolve => setTimeout(resolve, 1000));
+      })
+      .then(() => MongoDB.collection('users').find({id: '3218736128736123215732'}).toArray())
+      .then(result => {
+        expect(result.length).to.equal(1);
+        expect(result[0].deletedAt).to.be.a.date();
 
-        MongoDB.collection('users').find({id: '3218736128736123215732'}).toArray(function(err, result){
-          expect(result.length).to.equal(1);
-          expect(result[0].deletedAt).to.be.a.date();
-
-          done();
-
-        });
-      });
+        done();
+      })
+      .catch(done);
     });
 
 
@@ -178,16 +191,22 @@ describe('gigya notifications - functional tests', () => {
 
       notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null, (response) => {
+      bpc_helper.request(notifications_request, null)
+      .then(response => {
         expect(response.statusCode).to.equal(200);
+        return Promise.resolve();
+      })
+      .then(() => {
+        return new Promise(resolve => setTimeout(resolve, 1000));
+      })
+      .then(() => MongoDB.collection('users').find({id: '3'}).toArray())
+      .then(result => {
+        expect(result.length).to.equal(1);
+        expect(result[0].email).to.equal('3@test.nl');
 
-        MongoDB.collection('users').find({id: '3'}).toArray((err, result) => {
-          expect(result.length).to.equal(1)
-          expect(result[0].email).to.equal('3@test.nl');
-
-          done();
-        });
-      });
+        done();
+      })
+      .catch(done);
     });
 
   });

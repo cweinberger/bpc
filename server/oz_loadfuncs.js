@@ -14,6 +14,7 @@ const Boom = require('boom');
 const Oz = require('oz');
 const MongoDB = require('./mongo/mongodb_client');
 const Permissions = require('./permissions/permissions');
+const Rsvp = require('./rsvp/rsvp');
 
 
 // Here we are creating the app ticket
@@ -35,23 +36,29 @@ function loadGrantFunc(id, next) {
   MongoDB.collection('grants').findOne({id: id}, {fields: {_id: 0}}, function(err, grant) {
     if (err) {
       return next(err);
-    } else if (grantIsMissingOrExpired(grant)) {
+    } else if (grant === undefined || grant === null) {
+      next(Boom.unauthorized());
+    } else if (Rsvp.grantIsExpired(grant)) {
       next(Boom.unauthorized());
     } else {
 
-      // TODO: Perhaps the app should define the default ticket expiration. See below.
-      if (grant.exp === undefined || grant.exp === null) {
-        grant.exp = Oz.hawk.utils.now() + (60000 * 60 * 24); // 60000 = 1 minute
-      }
+      MongoDB.collection('applications').findOne({ id: grant.app }, { fields: { _id: 0, scope: 1, settings: 1 } })
+      .then(app => {
 
-      // We're adding the application scope to the ticket.
+        let ticketDuration = app.settings && app.settings.ticketDuration
+          // The app can set the default ticket duration.
+          ? (60000 * app.settings.ticketDuration)
+          // Default ticket expiration (60000 = 1 minute)
+          : (60000 * 60); // = One hour
 
-      MongoDB.collection('applications').findOne({ id: grant.app }, { fields: { _id: 0, scope: 1 } }, function(err, app){
-        if (err) {
-          return next(err);
+        let ticketExpiration = Oz.hawk.utils.now() + ticketDuration;
+
+        // If the users grant does not have an expiration
+        //   or if grant expires later than the calculated ticket expiration
+        // Else we can just keep the grant/ticket expiration as-is
+        if (!grant.exp || ticketExpiration < grant.exp) {
+          grant.exp = ticketExpiration;
         }
-
-        // TODO: Perhaps the app should override the default ticket expiration, if the grant has not expiration. See above.
 
         // Adding all the missing app scopes to the ticket - unless they are and admin:scope
         // Note: We want the scope "admin" (reserved scope of the console app) to be added to the ticket.
@@ -62,22 +69,31 @@ function loadGrantFunc(id, next) {
         grant.scope = grant.scope.concat(missingScopes);
 
 
-        // TODO: The code below, where we include the dataScoped in the ticket, should be an app-setting.
-        // Then the corresponding code the GET /permissions/{scope} can be completed as well
-        // Finding private details to encrypt in the ticket for later usage.
+        // Finding scope data to encrypt in the ticket for later usage.
+        if (app.settings && app.settings.includeScopeInPrivatExt) {
 
-        Permissions.getScope(grant)
-        .then(user => {
-          if (user === null) {
-            // next(new Error('Unknown user'));
-            next(null, grant);
-          } else {
-            next(null, grant, {public: {}, private: user.dataScopes});
-          }
-        })
-        .catch(err => {
-          next(err);
-        });
+          Permissions.getScope(grant)
+          .then(user => {
+            if (user === null) {
+              // next(new Error('Unknown user'));
+              next(null, grant);
+            } else {
+              let ext = { public: {}, private: user.dataScopes };
+              next(null, grant, ext);
+            }
+          })
+          .catch(err => {
+            next(err);
+          });
+
+        } else {
+
+          next(null, grant);
+
+        }
+      })
+      .catch(err => {
+        next(err);
       });
     }
   });
@@ -111,10 +127,4 @@ module.exports.parseAuthorizationHeader = function (requestHeaderAuthorization, 
   }
 
   Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
-}
-
-
-function grantIsMissingOrExpired(grant){
-  // var exp_conditions =  [{exp: { $exists: false }}, { exp: null },{ exp: {$lt: Oz.hawk.utils.now() }}];
-  return grant === undefined || grant === null || (grant.exp !== undefined && grant.exp !== null && grant.exp < Oz.hawk.utils.now());
 }

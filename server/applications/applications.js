@@ -178,9 +178,6 @@ function createAppGrant(grant) {
     MongoDB.collection('applications')
     .findOne({id: grant.app}),
 
-    MongoDB.collection('users')
-    .findOne({email: grant.user}),
-
     MongoDB.collection('grants')
     .count({user: grant.user, app: grant.app}, {limit:1})
   ];
@@ -188,8 +185,7 @@ function createAppGrant(grant) {
   return Promise.all(operations)
   .then(results => {
     let app = results[0];
-    let user = results[1];
-    let existingGrant = results[2];
+    let existingGrant = results[1];
 
     if(existingGrant > 0){
       return Promise.reject(Boom.conflict());
@@ -197,10 +193,6 @@ function createAppGrant(grant) {
 
     if (!app){
       return Promise.reject(Boom.badRequest('invalid app'))
-    }
-
-    if (!user){
-      return Promise.reject(Boom.badRequest('invalid user'))
     }
 
     // Keep only the scopes allowed in the app scope.

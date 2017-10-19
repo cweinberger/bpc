@@ -25,16 +25,17 @@ describe('application unit tests', () => {
 
     it('returns at least one app', done => {
 
-      Applications.findAll().then(apps => {
+      Applications.findAll()
+      .then(apps => {
 
         expect(apps).to.be.an.array();
         expect(apps).not.to.be.empty();
+
         done();
 
-      });
-
+      })
+      .catch(done);
     });
-
   });
 
 
@@ -42,26 +43,32 @@ describe('application unit tests', () => {
 
     it('returns the correct app', done => {
 
-      Applications.findAppById('valid-app').then(app => {
+      Applications.findAppById('valid-app')
+      .then(app => {
 
         expect(app).to.be.an.object();
         expect(app).to.part.include({
           id: 'valid-app', key: 'something_long_and_random'
         });
+
         done();
 
-      });
-
+      })
+      .catch(done);
     });
+
 
     it('returns empty response for invalid app ids', done => {
 
-      Applications.findAppById('invalid-app').then(app => {
+      Applications.findAppById('invalid-app')
+      .then(app => {
 
         expect(app).to.be.null();
+
         done();
 
-      });
+      })
+      .catch(done);
 
     });
 
@@ -89,17 +96,19 @@ describe('application unit tests', () => {
         expect(app.delegate).to.equal(newApp.delegate);
         expect(app.algorithm).to.equal(newApp.algorithm);
 
-        MongoDB.collection('applications').findOne({id: 'new-app'})
-        .then(_app => {
+        return Promise.resolve();
+      })
+      .then(() => MongoDB.collection('applications').find({id: 'new-app'}).toArray())
+      .then(result => {
+        expect(result.length).to.equal(1);
+        expect(result[0]).to.part.include(newApp); // There will be "_id" field etc.
 
-          expect(_app).to.part.include(newApp); // There will be "_id" field etc.
-          done();
+        done();
 
-        });
-
-      });
-
+      })
+      .catch(done);
     });
+
 
     it('creates a new id when app id is taken', done => {
 
@@ -118,12 +127,12 @@ describe('application unit tests', () => {
         expect(app).to.be.an.object();
         expect(app.id).to.not.be.empty();
         expect(app.id).to.not.equal('valid-app'); // Different id's.
+
         done();
 
-      });
-
+      })
+      .catch(done);
     });
-
   });
 
 
@@ -165,7 +174,6 @@ describe('application unit tests', () => {
   });
 
 
-  // TODO: Test is currently skipped due to lacking support in mongo-mock.
   describe('deleteAppById()', () => {
 
     it('fails for nonexisting app id', done => {
@@ -177,14 +185,17 @@ describe('application unit tests', () => {
         expect(isRemoved).to.be.false();
         done();
 
-      });
+      })
+      .catch(done);
 
     });
+
+
 
     it('removes all traces of the app', done => {
 
       Applications.deleteAppById('delete-me-app', {app: 'delete-me-app'})
-          .then(isRemoved => {
+      .then(isRemoved => {
 
         Promise.all([
           MongoDB.collection('applications').findOne({id: 'delete-me-app'}),
@@ -199,21 +210,15 @@ describe('application unit tests', () => {
           expect(res[1]).to.be.null();
           done();
 
-        }).catch(err => {
-
-          console.error(err);
-          fail(err.message);
-
-        });
+        })
+        .catch(done);
 
       });
-
     });
-
   });
 
 
-  // TODO: Test is currently skipped due to lacking support in mongo-mock.
+
   describe('assignAdminScope()', () => {
 
     it('fails for nonexisting app id', done => {
@@ -223,18 +228,15 @@ describe('application unit tests', () => {
         grant: crypto.randomBytes(20).toString('hex')
       }
 
-      Applications.assignAdminScope('invalid-app', ticket).then(isUpdated => {
+      Applications.assignAdminScope('invalid-app', ticket)
+      .then(isUpdated => {
 
         expect(isUpdated).to.be.a.boolean();
         expect(isUpdated).to.be.false();
         done();
 
-      }).catch(err => {
-
-        fail(err.message);
-
-      });
-
+      })
+      .catch(done);
     });
 
     it('succeeds for existing app id', done => {
@@ -244,20 +246,16 @@ describe('application unit tests', () => {
         grant: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre'
       }
 
-      Applications.assignAdminScope('valid-app', ticket).then(isUpdated => {
+      Applications.assignAdminScope('valid-app', ticket)
+      .then(isUpdated => {
 
         expect(isUpdated).to.be.a.boolean();
         expect(isUpdated).to.be.true();
         done();
 
-      }).catch(err => {
-
-        fail(err.message);
-
-      });
-
+      })
+      .catch(done);
     });
-
   });
 
 
@@ -305,20 +303,18 @@ describe('application unit tests', () => {
       };
 
       Applications.createAppGrant(grant)
-        .then(() => MongoDB.collection('grants').findOne({app:'valid-app', user: 'mkoc@berlingskemedia.dk'}))
-        .then(grant => {
+      .then(() => MongoDB.collection('grants').findOne({app:'valid-app', user: 'mkoc@berlingskemedia.dk'}))
+      .then(grant => {
 
-          expect(grant).to.be.an.object();
-          expect(grant.scope).to.be.an.array();
-          expect(grant.scope).to.have.length(4);
-          expect(grant.scope).not.to.contain('aok:all');
-          done();
+        expect(grant).to.be.an.object();
+        expect(grant.scope).to.be.an.array();
+        expect(grant.scope).to.have.length(4);
+        expect(grant.scope).not.to.contain('aok:all');
 
-        }).catch(err => {
+        done();
 
-          fail(err.message);
-
-        });
+      })
+      .catch(done);
     });
   });
 
@@ -368,22 +364,19 @@ describe('application unit tests', () => {
       };
 
       Applications.updateAppGrant(grant)
-        .then(() => MongoDB.collection('grants').findOne({app:'valid-app', user: 'mkoc@berlingskemedia.dk'}))
-        .then(grant => {
+      .then(() => MongoDB.collection('grants').findOne({app:'valid-app', user: 'mkoc@berlingskemedia.dk'}))
+      .then(grant => {
 
-          expect(grant).to.be.an.object();
-          expect(grant.scope).to.be.an.array();
-          expect(grant.scope).to.have.length(4);
-          expect(grant.scope).not.to.contain('b:all');
-          expect(grant.scope).not.to.contain('aok:all');
-          done();
+        expect(grant).to.be.an.object();
+        expect(grant.scope).to.be.an.array();
+        expect(grant.scope).to.have.length(4);
+        expect(grant.scope).not.to.contain('b:all');
+        expect(grant.scope).not.to.contain('aok:all');
 
-        }).catch(err => {
+        done();
 
-          fail(err.message);
-
-        });
-
+      })
+      .catch(done);
     });
   });
 });

@@ -42,6 +42,8 @@ module.exports.register = function (server, options, next) {
         }
 
         // Should we query the database or look in the private part of the ticket?
+        // When the app setting includeScopeInPrivatExt is set to true, we can validate the users scope by looking in ticket.ext.private.
+        // But we need to find out how we should handle any changes to the scope (by POST/PATCH). Should we then reissue the ticket with new ticket.ext.private?
         if (true) {
 
           Permissions.getScope(ticket)
@@ -111,12 +113,20 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      Permissions.setScope(
-        { id: request.params.user },
-        request.params.scope,
-        request.payload,
-        reply
-      );
+
+      Permissions.setScope({
+        user: request.params.user,
+        scope: request.params.scope,
+        payload: request.payload
+      })
+      .then(result => {
+        if (result === null) {
+          reply(Boom.notFound());
+        } else {
+          reply({'status': 'ok'});
+        }
+      })
+      .catch(err => reply(Boom.badImplementation(err.message)));
     }
   });
 
@@ -141,12 +151,20 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      Permissions.updateScope(
-        { id: request.params.user },
-        request.params.scope,
-        request.payload,
-        reply
-      );
+      Permissions.updateScope({
+        user: request.params.user,
+        scope: request.params.scope,
+        payload: request.payload
+      })
+      .then(result => {
+        if (result === null) {
+          reply(Boom.notFound());
+        } else {
+          reply(result.value.dataScopes[request.params.scope]);
+        }
+      })
+      // We are replying with badRequest here, because it's propably an error in the operators in the request.
+      .catch(err => reply(Boom.badRequest(err.message)));
     }
   });
 
@@ -212,18 +230,20 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      var selector = {
-        provider: request.params.provider,
-        email: request.params.email.toLowerCase(),
-        deletedAt: { $exists: false }
-      };
 
-      Permissions.setScope(
-        selector,
-        request.params.scope,
-        request.payload,
-        reply
-      );
+      Permissions.setScope({
+        user: request.params.email.toLowerCase(),
+        scope: request.params.scope,
+        payload: request.payload
+      })
+      .then(result => {
+        if (result === null) {
+          reply(Boom.notFound());
+        } else {
+          reply({'status': 'ok'});
+        }
+      })
+      .catch(err => reply(Boom.badImplementation(err.message)));
     }
   });
 

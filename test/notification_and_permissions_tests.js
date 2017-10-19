@@ -44,7 +44,7 @@ describe('gigya notifications after permissions - integration tests', () => {
     done();
   });
 
-  it('setting permissions', done => {
+  it('setting permissions for a new user', done => {
     const permissions_request = {
       method: 'POST',
       url: '/permissions/gigya/4@test.nl/profile',
@@ -60,18 +60,23 @@ describe('gigya notifications after permissions - integration tests', () => {
       // expect(response.payload.status).to.equal('ok');
       return Promise.resolve();
     })
-    .then(() => MongoDB.collection('users').find({email: '4@test.nl', provider: 'gigya'}).toArray())
+    .then(() => {
+      return new Promise(resolve => setTimeout(resolve, 1000));
+    })
+    .then(() => MongoDB.collection('users').find({email: '4@test.nl'}).toArray())
     .then(result => {
       expect(result).not.to.be.null();
       expect(result.length).to.equal(1);
-      expect(result[0].id).to.be.undefined();
+      expect(result[0].id).to.equal('4@test.nl');
+      expect(result[0].email).to.equal('4@test.nl');
       expect(result[0].createdAt).to.be.a.date();
       // expect(result[0].lastUpdated).to.be.a.date();
-
+      expect(result[0].dataScopes.profile['sso-id']).to.be.equal('12345');
+      done();
     })
-    .then(done)
     .catch(done);
   });
+
 
   it('getting accountRegistered', (done) => {
 
@@ -102,7 +107,10 @@ describe('gigya notifications after permissions - integration tests', () => {
     .then(response => {
       expect(response.statusCode).to.equal(200);
     })
-    .then(() => MongoDB.collection('users').find({email: '4@test.nl', provider: 'gigya'}).toArray())
+    .then(() => {
+      return new Promise(resolve => setTimeout(resolve, 1000));
+    })
+    .then(() => MongoDB.collection('users').find({email: '4@test.nl'}).toArray())
     .then(result => {
       expect(result).not.to.be.null();
       expect(result.length).to.equal(1);

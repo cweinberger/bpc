@@ -12,7 +12,10 @@ module.exports.getScope = function({user, scope}) {
   }
 
   let selector = {
-    email: user,
+    $or: [
+      { id: user },
+      { email: user }
+    ],
     deletedAt: { $exists: false }
   };
 
@@ -33,52 +36,35 @@ module.exports.getScope = function({user, scope}) {
 };
 
 
-module.exports.queryPermissionsScope = function(selector, scope, callback) {
-  var projection = {
-    _id: 0
+module.exports.setScope = function({user, scope, payload}) {
+
+  let selector = {
+    $or: [
+      { id: user },
+      { email: user }
+    ],
+    deletedAt: { $exists: false }
   };
-  projection['dataScopes.'.concat(scope)] = 1;
 
-  MongoDB.collection('users').findOne(
-    selector,
-    projection
-    , function (err, result){
-      if (err) {
-        console.error(err);
-        return callback(err);
-      }
-
-      if (!result) {
-        callback(Boom.notFound());
-      }
-      else {
-        callback(null, result.dataScopes[scope]);
-      }
-    }
-  );
-};
-
-
-module.exports.setScope = function(selector, scope, payload, callback) {
 
   let set = {};
 
+  // We are setting both 'id' and 'email' to the 'user'.
+  // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
   let setOnInsert = {
+    id: user,
+    email: user,
     createdAt: new Date()
   };
 
 
   if (MongoDB.isMock) {
 
-    // We're adding the selector data to the set data from selector.
-    // This is needed when we're inserting (upsert), so we have the values
-    var dataScopes = {};
-    dataScopes[scope] = payload;
-    set = Object.assign({}, selector, {
-      dataScopes: dataScopes
-    });
+    set.dataScopes = {};
+    set.dataScopes[scope] = payload;
 
-    delete set.deletedAt;
+    // We are adding the $set onto $setOnInsert
+    //   because apparently mongo-mock does not use $set when inserting (upsert=true)
     Object.assign(setOnInsert, set);
 
   } else {
@@ -96,7 +82,7 @@ module.exports.setScope = function(selector, scope, payload, callback) {
   };
 
 
-  MongoDB.collection('users').update(
+  return MongoDB.collection('users').update(
     selector,
     operators,
     {
@@ -107,27 +93,24 @@ module.exports.setScope = function(selector, scope, payload, callback) {
       multi: true
       //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
       //  collation: <document>
-    },
-    function(err, result){
-      if (err){
-        console.error(err);
-        callback(Boom.badImplementation(err.message));
-      } else if (result === null) {
-        callback(Boom.notFound());
-      } else {
-        callback({'status': 'ok'});
-      }
     }
   );
 };
 
 
-module.exports.updateScope = function(selector, scope, payload, callback) {
+module.exports.updateScope = function({user, scope, payload}) {
+
+  let selector = {
+    $or: [
+      { id: user },
+      { email: user }
+    ],
+    deletedAt: { $exists: false }
+  };
 
   let operators = {
     '$currentDate': {}
   };
-
 
   Object.keys(payload).filter(disallowedUpdateOperators).forEach(operator => {
     operators[operator] = {};
@@ -144,23 +127,12 @@ module.exports.updateScope = function(selector, scope, payload, callback) {
   };
   projection['dataScopes.'.concat(scope)] = 1;
 
-  MongoDB.collection('users').findOneAndUpdate(
+  return MongoDB.collection('users').findOneAndUpdate(
     selector,
     operators,
     {
       projection: projection,
       returnOriginal: false
-    },
-    function(err, result){
-      if (err){
-        console.error(err);
-        // We are replying with badRequest here, because it's propably and error in the operators in the request.
-        callback(Boom.badRequest(err.message));
-      } else if (result === null) {
-        callback(Boom.notFound());
-      } else {
-        callback(result.value.dataScopes[scope]);
-      }
     }
   );
 

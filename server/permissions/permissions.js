@@ -13,8 +13,8 @@ module.exports.getScope = function({user, scope}) {
 
   let selector = {
     $or: [
-      { id: user },
-      { email: user }
+      { email: user },
+      { id: user }
     ],
     deletedAt: { $exists: false }
   };
@@ -32,7 +32,17 @@ module.exports.getScope = function({user, scope}) {
     projection['dataScopes.'.concat(scope)] = 1;
   }
 
-  return MongoDB.collection('users').findOne(selector, projection);
+  return MongoDB.collection('users').findOne(selector, projection)
+  .then(user => {
+
+    if (user === null){
+      return Promise.resolve(Boom.notFound());
+    }
+
+    return Promise.resolve(user.dataScopes);
+
+  })
+  .catch(err => Boom.badRequest());
 };
 
 
@@ -40,10 +50,9 @@ module.exports.setScope = function({user, scope, payload}) {
 
   let selector = {
     $or: [
-      { id: user },
-      { email: user }
-    ],
-    deletedAt: { $exists: false }
+      { email: user },
+      { id: user }
+    ]
   };
 
 
@@ -82,7 +91,8 @@ module.exports.setScope = function({user, scope, payload}) {
   };
 
 
-  return MongoDB.collection('users').update(
+  return MongoDB.collection('users')
+  .update(
     selector,
     operators,
     {
@@ -94,7 +104,8 @@ module.exports.setScope = function({user, scope, payload}) {
       //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
       //  collation: <document>
     }
-  );
+  )
+  .catch(err => Boom.badRequest());
 };
 
 
@@ -102,10 +113,9 @@ module.exports.updateScope = function({user, scope, payload}) {
 
   let selector = {
     $or: [
-      { id: user },
-      { email: user }
-    ],
-    deletedAt: { $exists: false }
+      { email: user },
+      { id: user }
+    ]
   };
 
   let operators = {
@@ -127,14 +137,16 @@ module.exports.updateScope = function({user, scope, payload}) {
   };
   projection['dataScopes.'.concat(scope)] = 1;
 
-  return MongoDB.collection('users').findOneAndUpdate(
+  return MongoDB.collection('users')
+  .findOneAndUpdate(
     selector,
     operators,
     {
       projection: projection,
       returnOriginal: false
     }
-  );
+  )
+  .catch(err => Boom.badRequest());
 
   function disallowedUpdateOperators(operator) {
     return [

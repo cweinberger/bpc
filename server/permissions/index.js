@@ -35,7 +35,6 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
         if (err) {
           return reply(err)
@@ -47,7 +46,12 @@ module.exports.register = function (server, options, next) {
         if (true) {
 
           Permissions.getScope(ticket)
-          .then(user => reply(user.dataScopes[request.params.scope]));
+          .then(result => {
+            if (result.isBoom){
+              return reply(result);
+            }
+            reply(result[request.params.scope] ? result[request.params.scope] : {});
+          });
 
         } else {
 
@@ -87,7 +91,12 @@ module.exports.register = function (server, options, next) {
         user: request.params.user,
         scope: request.params.scope
       })
-      .then(user => reply(user.dataScopes[request.params.scope]));
+      .then(result => {
+        if (result.isBoom){
+          return reply(result);
+        }
+        reply(result[request.params.scope] ? result[request.params.scope] : {});
+      });
 
     }
   });
@@ -198,7 +207,12 @@ module.exports.register = function (server, options, next) {
         user: request.params.email.toLowerCase(),
         scope: request.params.scope
       })
-      .then(user => reply(user.dataScopes[request.params.scope]));
+      .then(result => {
+        if (result.isBoom){
+          return reply(result);
+        }
+        reply(result[request.params.scope] ? result[request.params.scope] : {});
+      });
 
     }
   });

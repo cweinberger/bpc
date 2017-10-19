@@ -207,10 +207,9 @@ function upsertUserId ({id, email, provider}) {
 
   let selector = {
     $or: [
-      { id: id },
-      { email: email }
-    ],
-    deletedAt: { $exists: false }
+      { email: email },
+      { id: id }
+    ]
   };
 
   let set = {

@@ -58,6 +58,8 @@ module.exports.register = function (server, options, next) {
       Rsvp.create(request.query)
       .then(rsvp => {
         // After granting app access, the user returns to the app with the rsvp.
+        // TODO: the returnUrl must be a setting on the App, and not part of the URL.
+        //   And the reponse must always be a redirect on a GET /rsvp
         if (request.query.returnUrl) {
           reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp));
         } else {

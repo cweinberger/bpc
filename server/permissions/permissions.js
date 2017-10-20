@@ -5,7 +5,7 @@ const Boom = require('boom');
 const MongoDB = require('./../mongo/mongodb_client');
 
 
-module.exports.getScope = function({user, scope}) {
+module.exports.get = function({user, scope}) {
 
   if (!user || !scope) {
     return Promise.reject('user or scope missing');
@@ -46,7 +46,7 @@ module.exports.getScope = function({user, scope}) {
 };
 
 
-module.exports.setScope = function({user, scope, payload}) {
+module.exports.set = function({user, scope, payload}) {
 
   let selector = {
     $or: [
@@ -109,7 +109,7 @@ module.exports.setScope = function({user, scope, payload}) {
 };
 
 
-module.exports.updateScope = function({user, scope, payload}) {
+module.exports.update = function({user, scope, payload}) {
 
   let selector = {
     $or: [

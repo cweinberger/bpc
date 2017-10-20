@@ -72,7 +72,7 @@ function loadGrantFunc(id, next) {
         // Finding scope data to encrypt in the ticket for later usage.
         if (app.settings && app.settings.includeScopeInPrivatExt) {
 
-          Permissions.getScope(grant)
+          Permissions.get(grant)
           .then(user => {
             if (user === null) {
               // next(new Error('Unknown user'));

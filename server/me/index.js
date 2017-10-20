@@ -52,7 +52,7 @@ module.exports.register = function (server, options, next) {
           return reply(err)
         }
 
-        Permissions.getScope(ticket)
+        Permissions.get(ticket)
         .then(result => reply(result));
       });
     }

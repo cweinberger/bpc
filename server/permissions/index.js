@@ -45,7 +45,7 @@ module.exports.register = function (server, options, next) {
         // But we need to find out how we should handle any changes to the scope (by POST/PATCH). Should we then reissue the ticket with new ticket.ext.private?
         if (true) {
 
-          Permissions.getScope(ticket)
+          Permissions.get(ticket)
           .then(result => {
             if (result.isBoom){
               return reply(result);
@@ -87,7 +87,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.getScope({
+      Permissions.get({
         user: request.params.user,
         scope: request.params.scope
       })
@@ -123,7 +123,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.setScope({
+      Permissions.set({
         user: request.params.user,
         scope: request.params.scope,
         payload: request.payload
@@ -160,7 +160,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      Permissions.updateScope({
+      Permissions.update({
         user: request.params.user,
         scope: request.params.scope,
         payload: request.payload
@@ -203,7 +203,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.getScope({
+      Permissions.get({
         user: request.params.email.toLowerCase(),
         scope: request.params.scope
       })
@@ -245,7 +245,7 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
 
 
-      Permissions.setScope({
+      Permissions.set({
         user: request.params.email.toLowerCase(),
         scope: request.params.scope,
         payload: request.payload

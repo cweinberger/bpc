@@ -11,6 +11,7 @@ const MongoDB = require('./mocks/mongodb_mock');
 const Gigya = require('./mocks/gigya_mock');
 const Google = require('./mocks/google_mock');
 const Rsvp = require('./../server/rsvp/rsvp');
+const OzLoadFuncs = require('./../server/oz_loadfuncs');
 
 // Test shortcuts.
 const { expect, describe, it, before, beforeEach, after } = exports.lab = require('lab').script();
@@ -21,37 +22,37 @@ describe('rsvp unit tests', () => {
   describe('grant', () => {
 
     it('is not expired when grant is undefined', done => {
-      const result = Rsvp.grantIsExpired();
+      const result = OzLoadFuncs.grantIsExpired();
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant is null', done => {
-      const result = Rsvp.grantIsExpired(null);
+      const result = OzLoadFuncs.grantIsExpired(null);
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant.exp is undefined', done => {
-      const result = Rsvp.grantIsExpired({});
+      const result = OzLoadFuncs.grantIsExpired({});
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant.exp is null', done => {
-      const result = Rsvp.grantIsExpired({ exp: null });
+      const result = OzLoadFuncs.grantIsExpired({ exp: null });
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant.exp is now() + 20000', done => {
-      const result = Rsvp.grantIsExpired({ exp: Oz.hawk.utils.now() + 20000 });
+      const result = OzLoadFuncs.grantIsExpired({ exp: Oz.hawk.utils.now() + 20000 });
       expect(result).to.be.false();
       done();
     });
 
     it('expired when grant.exp is now() - 20000', done => {
-      const result = Rsvp.grantIsExpired({ exp: Oz.hawk.utils.now() - 20000 });
+      const result = OzLoadFuncs.grantIsExpired({ exp: Oz.hawk.utils.now() - 20000 });
       expect(result).to.be.true();
       done();
     });

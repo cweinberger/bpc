@@ -8,6 +8,7 @@ const MongoDB = require('./../mongo/mongodb_client');
 const Applications = require('./../applications/applications');
 const Gigya = require('./../gigya/gigya_client');
 const Google = require('./../google/google_client');
+const OzLoadFuncs = require('./../oz_loadfuncs');
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
@@ -22,19 +23,9 @@ module.exports = {
     } else {
       return Promise.reject(Boom.badRequest('Unsupported provider'));
     }
-  },
-  grantIsExpired: function (grant) {
-    return (
-      grant !== undefined &&
-      grant !== null &&
-      grant.exp !== undefined &&
-      grant.exp !== null &&
-      grant.exp < Oz.hawk.utils.now()
-    );
   }
 };
 
-var grantIsExpired = module.exports.grantIsExpired;
 
 // Here we are creating the user->app rsvp.
 
@@ -111,7 +102,7 @@ function findGrant(data) {
       { fields: { _id: 0 } })
     .then(grant => {
 
-      if (grantIsExpired(grant)) {
+      if (OzLoadFuncs.grantIsExpired(grant)) {
 
         return Promise.reject(Boom.forbidden());
 

@@ -120,8 +120,7 @@ describe('users - integration tests', () => {
       expect(response.statusCode).to.equal(200);
 
       MongoDB.collection('users').find({id: '5347895384975934842757'}).toArray(function(err, result){
-        expect(result.length).to.equal(1);
-        expect(result[0].deletedAt).to.be.a.date();
+        expect(result.length).to.equal(0);
 
         done();
       });

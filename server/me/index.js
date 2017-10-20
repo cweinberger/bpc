@@ -53,7 +53,7 @@ module.exports.register = function (server, options, next) {
         }
 
         Permissions.getScope(ticket)
-        .then(user => reply(user.dataScopes))
+        .then(result => reply(result));
       });
     }
   });

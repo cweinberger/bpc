@@ -52,7 +52,7 @@ module.exports.register = function (server, options, next) {
 
             let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
 
-            if (request.query) {
+            if (Object.keys(request.query).length > 1) {
 
               validateScopeWithQuery(requestedScope, request.query)
               .then(result => reply(result));
@@ -109,7 +109,7 @@ module.exports.register = function (server, options, next) {
 
         let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
 
-        if (request.query) {
+        if (Object.keys(request.query).length > 1) {
 
           validateScopeWithQuery(requestedScope, request.query)
           .then(result => reply(result));
@@ -236,7 +236,7 @@ module.exports.register = function (server, options, next) {
 
         let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
 
-        if (request.query) {
+        if (Object.keys(request.query).length > 1) {
 
           validateScopeWithQuery(requestedScope, request.query)
           .then(result => reply(result));

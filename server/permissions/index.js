@@ -106,9 +106,20 @@ module.exports.register = function (server, options, next) {
         if (result.isBoom){
           return reply(result);
         }
-        reply(result[request.params.scope] ? result[request.params.scope] : {});
-      });
 
+        let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+
+        if (request.query) {
+
+          validateScopeWithQuery(requestedScope, request.query)
+          .then(result => reply(result));
+
+        } else {
+
+          reply(requestedScope);
+
+        }
+      });
     }
   });
 
@@ -222,9 +233,20 @@ module.exports.register = function (server, options, next) {
         if (result.isBoom){
           return reply(result);
         }
-        reply(result[request.params.scope] ? result[request.params.scope] : {});
-      });
 
+        let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+
+        if (request.query) {
+
+          validateScopeWithQuery(requestedScope, request.query)
+          .then(result => reply(result));
+
+        } else {
+
+          reply(requestedScope);
+
+        }
+      });
     }
   });
 

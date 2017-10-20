@@ -246,8 +246,14 @@ function upsertUserId ({id, email, provider}) {
 
 
 
-// TODO: Set deletedAt timestamp enough? Or should we do more? Eg. expire grants?
+// TODO: Should we do more? Eg. expire grants?
 function deleteUserId ({id}){
   return MongoDB.collection('users')
-  .update({ id: id },{ $set: { deletedAt: new Date() } });
+  // .findOneAndDelete({ id: id }) // findOneAndDelete Not implemented in mongo-mock
+  .findOne({ id: id })
+  .then(user => {
+    user.deletedAt = new Date();
+    return MongoDB.collection('deleted_users').insert(user);
+  })
+  .then(() => MongoDB.collection('users').remove({ id: id }))
 };

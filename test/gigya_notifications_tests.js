@@ -120,7 +120,7 @@ describe('gigya notifications - functional tests', () => {
               "id": "b3e95b42-5788-49a7-842a-90c0f183d653",
               "timestamp": 1450011478,
               "data": {
-                "uid": "3218736128736123215732"
+                "uid": "1"
               }
             // },
             // {
@@ -147,7 +147,12 @@ describe('gigya notifications - functional tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({id: '3218736128736123215732'}).toArray())
+      .then(() => MongoDB.collection('users').find({id: '1'}).toArray())
+      .then(result => {
+        expect(result.length).to.equal(0);
+        return Promise.resolve();
+      })
+      .then(() => MongoDB.collection('deleted_users').find({id: '1'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0].deletedAt).to.be.a.date();

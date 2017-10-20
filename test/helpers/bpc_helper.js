@@ -25,7 +25,7 @@ module.exports.request = function (options, ticket, callback) {
     }
 
     const req = {
-      method: options.method,
+      method: options.method ? options.method : 'GET',
       url: options.url,
       payload: options.payload,
       headers: Object.assign(options.headers || {},
@@ -36,8 +36,17 @@ module.exports.request = function (options, ticket, callback) {
     };
 
     if (ticket !== undefined && ticket !== null && ticket !== {}) {
-      const hawkHeader = Hawk.client.header('http://'.concat(req.headers.host, options.url), options.method, ticket);
+
+      const hawkHeader = Hawk.client.header(
+        'http://'.concat(req.headers.host, req.url),
+        req.method, {
+          credentials: ticket,
+          app: ticket.app
+        }
+      );
+
       if (!hawkHeader.field){
+        console.error('Error when generating Hawk field:', hawkHeader.err);
         callback(hawkHeader);
       }
 
@@ -50,22 +59,20 @@ module.exports.request = function (options, ticket, callback) {
 
 
 module.exports.generateRsvp = function(app, grant, callback) {
-  Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, callback);
-};
 
-
-module.exports.getAppTicket = function(app){
   return new Promise((resolve, reject) => {
-    module.exports.request({ method: 'POST', url: '/ticket/app' }, {credentials: app})
-    .then((response) => {
-      if (response.statusCode !== 200) {
-        return reject(response);
-      } else {
-        appTicket = {credentials: JSON.parse(response.payload), app: app.id};
-        resolve(appTicket);
+    // Generating the RSVP based on the grant
+    Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
+      if(typeof callback === 'function'){
+        callback(err, rsvp);
       }
-    })
-    .catch(reject);
+
+      if (err) {
+        return reject(err);
+      } else {
+        return resolve(rsvp);
+      }
+    });
   });
 };
 

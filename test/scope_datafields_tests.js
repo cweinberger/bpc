@@ -24,9 +24,9 @@ describe('scope datafields - integration tests', () => {
 
   // Getting the appTicket
   before((done) => {
-    bpc_helper.getAppTicket(bt)
-    .then(result => {
-      appTicket = result;
+    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, bt)
+    .then(response => {
+      appTicket = JSON.parse(response.payload);
     })
     .then(done)
     .catch(done);

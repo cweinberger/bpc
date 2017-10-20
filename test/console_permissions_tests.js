@@ -23,9 +23,9 @@ describe('console - functional tests:', () => {
 
   // Getting the console_app_ticket
   before(done => {
-    bpc_helper.getAppTicket(console_app)
-    .then(result => {
-      console_app_ticket = result;
+    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, console_app)
+    .then(response => {
+      console_app_ticket = JSON.parse(response.payload);
     })
     .then(done)
     .catch(done);
@@ -37,19 +37,12 @@ describe('console - functional tests:', () => {
 
     var console_superadmin_google_user = test_data.users.console_superadmin_google_user;
     var console_superadmin_google_user__console_grant = test_data.grants.console_superadmin_google_user__console_grant;
-    var console_superadmin_google_user__console_rsvp;
     var console_superadmin_google_user__console_ticket;
 
-    // User Getting the rsvp
-    before((done) => {
-      bpc_helper.generateRsvp(console_app, console_superadmin_google_user__console_grant, function(err, rsvp) {
-        console_superadmin_google_user__console_rsvp = rsvp;
-        done();
-      });
-    });
-
     it('getting superadmin user ticket', (done) => {
-      bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: console_superadmin_google_user__console_rsvp } }, console_app_ticket, (response) => {
+      bpc_helper.generateRsvp(console_app, console_superadmin_google_user__console_grant)
+      .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, console_app_ticket))
+      .then(response => {
         expect(response.statusCode).to.equal(200);
         console_superadmin_google_user__console_ticket = JSON.parse(response.payload);
         var scope = console_superadmin_google_user__console_ticket.scope;
@@ -72,19 +65,12 @@ describe('console - functional tests:', () => {
   describe('non superadmin', () => {
     var console_google_user = test_data.users.console_google_user;
     var console_google_user__console_grant = test_data.grants.console_google_user__console_grant;
-    var console_google_user_rsvp;
     var console_google_user_ticket;
 
-    // User Getting the rsvp
-    before((done) => {
-      bpc_helper.generateRsvp(console_app, console_google_user__console_grant, function(err, rsvp) {
-        console_google_user_rsvp = rsvp;
-        done();
-      });
-    });
-
     it('getting user ticket', (done) => {
-      bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: console_google_user_rsvp } }, console_app_ticket, (response) => {
+      bpc_helper.generateRsvp(console_app, console_google_user__console_grant)
+      .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, console_app_ticket))
+      .then(response => {
         expect(response.statusCode).to.equal(200);
         console_google_user_ticket = JSON.parse(response.payload);
         var scope = console_google_user_ticket.scope;

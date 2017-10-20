@@ -154,6 +154,12 @@ module.exports = {
       app: 'delete-me-app',
       user: 'xyx@berlingskemedia.dk',
       scope: []
+    },
+    simple_first_user_bt_grant: {
+      id: 'somerandomsdhjfkjlhsdfkjhsd',
+      app: 'bt',
+      user: 'first_user@berlingskemedia.dk',
+      scope: []
     }
   }
 };

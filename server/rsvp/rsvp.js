@@ -133,9 +133,10 @@ function findGrant(data) {
           if (err) {
             console.error(err);
             return reject(err);
+          } else {
+            // After granting app access, the user returns to the app with the rsvp.
+            return resolve(rsvp);
           }
-          // After granting app access, the user returns to the app with the rsvp.
-          return resolve(rsvp);
         });
       });
     });

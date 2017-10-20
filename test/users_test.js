@@ -27,9 +27,9 @@ describe('users - functional tests', () => {
 
     // Getting the appTicket
     before(done => {
-      bpc_helper.getAppTicket(bt)
-      .then(result => {
-        appTicket = result;
+      bpc_helper.request({ method: 'POST', url: '/ticket/app' }, bt)
+      .then(response => {
+        appTicket = JSON.parse(response.payload);
       })
       .then(done)
       .catch(done);
@@ -60,9 +60,9 @@ describe('users - integration tests', () => {
 
   // Getting the appTicket
   before(done => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, {credentials: app}, (response) => {
+    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app, (response) => {
       expect(response.statusCode).to.equal(200);
-      appTicket = {credentials: JSON.parse(response.payload), app: app.id};
+      appTicket = JSON.parse(response.payload);
       done();
     });
   });

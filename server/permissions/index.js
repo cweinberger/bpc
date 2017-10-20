@@ -17,7 +17,6 @@ module.exports.register = function (server, options, next) {
     maxAge: 86400
   };
 
-
   server.route({
     method: 'GET',
     path: '/{scope}',
@@ -47,10 +46,22 @@ module.exports.register = function (server, options, next) {
 
           Permissions.get(ticket)
           .then(result => {
-            if (result.isBoom){
+            if (result.isBoom) {
               return reply(result);
             }
-            reply(result[request.params.scope] ? result[request.params.scope] : {});
+
+            let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+
+            if (request.query) {
+
+              validateScopeWithQuery(requestedScope, request.query)
+              .then(result => reply(result));
+
+            } else {
+
+              reply(requestedScope);
+
+            }
           });
 
         } else {
@@ -268,4 +279,28 @@ module.exports.register = function (server, options, next) {
 module.exports.register.attributes = {
   name: 'permissions',
   version: '1.0.0'
+};
+
+
+const validateScopeWithQuery = function(scope, query) {
+
+  let allCorrect = Object.keys(query).every(key => {
+
+    if (typeof scope[key] === 'boolean') {
+      return scope[key].toString() === query[key];
+    } else if (typeof scope[key] === 'string') {
+      return scope[key] === query[key];
+    } else if (typeof scope[key] === 'object') {
+      return JSON.stringify(scope[key]) === JSON.stringify(query[key]);
+    } else {
+      return false;
+    }
+
+  });
+
+  if (allCorrect){
+    return Promise.resolve();
+  } else {
+    return Promise.resolve(Boom.forbidden());
+  }
 };

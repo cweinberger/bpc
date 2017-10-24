@@ -14,7 +14,6 @@ const Boom = require('boom');
 const Oz = require('oz');
 const MongoDB = require('./mongo/mongodb_client');
 const Permissions = require('./permissions/permissions');
-const Rsvp = require('./rsvp/rsvp');
 
 
 // Here we are creating the app ticket

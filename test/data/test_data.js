@@ -67,7 +67,14 @@ module.exports = {
       scope: ['profile'],
       key: '908345kojte9kgjef08934j5lkjgfed890435lkjglz',
       algorithm: 'sha256'
-    }
+    },
+    app_with_gigya_provider: {
+      id: 'app_with_gigya_provider',
+      scope: [],
+      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
+      algorithm: 'sha256',
+      settings: { provider: 'gigya'}
+    },
   },
 
   users: {

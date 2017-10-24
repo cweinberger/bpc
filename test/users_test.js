@@ -29,7 +29,7 @@ describe('users - functional tests', () => {
     before(done => {
       bpc_helper.request({ method: 'POST', url: '/ticket/app' }, bt)
       .then(response => {
-        appTicket = JSON.parse(response.payload);
+        appTicket = response.result;
       })
       .then(done)
       .catch(done);
@@ -38,8 +38,7 @@ describe('users - functional tests', () => {
     it('getting first user bt permissions', (done) => {
       bpc_helper.request({ method: 'GET', url: '/permissions/' + first.id + '/bt'}, appTicket, (response) => {
         expect(response.statusCode).to.equal(200);
-        var payload = JSON.parse(response.payload);
-        expect(payload.bt_paywall).to.true();
+        expect(response.result.bt_paywall).to.true();
         done();
       });
     });
@@ -62,7 +61,7 @@ describe('users - integration tests', () => {
   before(done => {
     bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app, (response) => {
       expect(response.statusCode).to.equal(200);
-      appTicket = JSON.parse(response.payload);
+      appTicket = response.result;
       done();
     });
   });

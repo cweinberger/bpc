@@ -25,7 +25,7 @@ describe('console - functional tests:', () => {
   before(done => {
     bpc_helper.request({ method: 'POST', url: '/ticket/app' }, console_app)
     .then(response => {
-      console_app_ticket = JSON.parse(response.payload);
+      console_app_ticket = response.result;
     })
     .then(done)
     .catch(done);
@@ -44,11 +44,10 @@ describe('console - functional tests:', () => {
       .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, console_app_ticket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        console_superadmin_google_user__console_ticket = JSON.parse(response.payload);
-        var scope = console_superadmin_google_user__console_ticket.scope;
-        expect(scope).to.be.an.array();
-        expect(scope).to.include('admin');
-        expect(scope).to.include('admin:*');
+        console_superadmin_google_user__console_ticket = response.result;
+        expect(console_superadmin_google_user__console_ticket.scope).to.be.an.array();
+        expect(console_superadmin_google_user__console_ticket.scope).to.include('admin');
+        expect(console_superadmin_google_user__console_ticket.scope).to.include('admin:*');
         done();
       });
     });
@@ -72,11 +71,10 @@ describe('console - functional tests:', () => {
       .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, console_app_ticket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        console_google_user_ticket = JSON.parse(response.payload);
-        var scope = console_google_user_ticket.scope;
-        expect(scope).to.be.an.array();
-        expect(scope).to.include('admin');
-        expect(scope).to.not.include('admin:*');
+        console_google_user_ticket = response.result;
+        expect(console_google_user_ticket.scope).to.be.an.array();
+        expect(console_google_user_ticket.scope).to.include('admin');
+        expect(console_google_user_ticket.scope).to.not.include('admin:*');
         done();
       });
     });

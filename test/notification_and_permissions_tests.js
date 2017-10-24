@@ -26,7 +26,7 @@ describe('gigya notifications after permissions - integration tests', () => {
   before(done => {
     bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app)
     .then(response => {
-      appTicket = JSON.parse(response.payload);
+      appTicket = response.result;
     })
     .then(done)
     .catch(done);

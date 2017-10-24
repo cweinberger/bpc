@@ -30,7 +30,7 @@ describe('permissions - functional tests', () => {
     before(done => {
       bpc_helper.request({ method: 'POST', url: '/ticket/app' }, bt)
       .then(response => {
-        appTicket = JSON.parse(response.payload);
+        appTicket = response.result;
       })
       .then(done)
       .catch(done);
@@ -41,7 +41,7 @@ describe('permissions - functional tests', () => {
       .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        simple_first_user_ticket = JSON.parse(response.payload);
+        simple_first_user_ticket = response.result;
         done();
       });
     });
@@ -51,8 +51,7 @@ describe('permissions - functional tests', () => {
       bpc_helper.request({ url: '/permissions/' + simple_first_user.id + '/bt' }, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        var payload = JSON.parse(response.payload);
-        expect(payload.bt_paywall).to.true();
+        expect(response.result.bt_paywall).to.true();
         done();
       })
       .catch(done);
@@ -62,8 +61,7 @@ describe('permissions - functional tests', () => {
       bpc_helper.request({ url: '/permissions/gigya/FIRST_USER@berlingskemedia.dk/bt' }, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        var payload = JSON.parse(response.payload);
-        expect(payload.bt_subscription_tier).to.equal('free');
+        expect(response.result.bt_subscription_tier).to.equal('free');
         done();
       })
       .catch(done);

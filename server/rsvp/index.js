@@ -17,7 +17,7 @@ const corsRules = {
 
 
 const rsvpValidation = Joi.object().keys({
-  provider: Joi.string().valid('gigya', 'google').default('gigya'),
+  provider: Joi.string().valid('gigya', 'google', 'anonymous').default('gigya'),
   UID: Joi.string().when('provider', {
     is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden()
   }),
@@ -36,7 +36,10 @@ const rsvpValidation = Joi.object().keys({
   access_token: Joi.string().when('provider', {
     is: 'google', then: Joi.required(), otherwise: Joi.forbidden()
   }),
-  email: Joi.string().email().required(),
+  email: Joi.strip(),
+  fingerprint: Joi.string().when('provider', {
+    is: 'anonymous', then: Joi.required(), otherwise: Joi.forbidden()
+  }),
   app: Joi.string().required(),
   returnUrl: Joi.string().uri().optional()
 });
@@ -66,15 +69,16 @@ module.exports.register = function (server, options, next) {
           reply({rsvp:rsvp}).header('X-RSVP-TOKEN', rsvp);
         }
       })
-      .catch(err => {
-        if(err.statusCode >= 500) {
-          // We want to hide the error from the end user.
-          // Boom.badImplementation() logs the error
-          return reply(Boom.badImplementation())
-        } else {
-          return reply(err);
-        }
-      });
+      .catch(err => reply(err));
+      // .catch(err => {
+      //   if(err.statusCode >= 500) {
+      //     // We want to hide the error from the end user.
+      //     // Boom.badImplementation() logs the error
+      //     return reply(Boom.badImplementation())
+      //   } else {
+      //     return reply(err);
+      //   }
+      // });
     }
   });
 
@@ -91,15 +95,16 @@ module.exports.register = function (server, options, next) {
     handler: function (request, reply) {
       Rsvp.create(request.payload)
       .then(rsvp => reply({rsvp:rsvp}).header('X-RSVP-TOKEN', rsvp))
-      .catch(err => {
-        if(err.statusCode >= 500) {
-          // We want to hide the error from the end user.
-          // Boom.badImplementation() logs the error
-          return reply(Boom.badImplementation())
-        } else {
-          return reply(err);
-        }
-      });
+      .catch(err => reply(err));
+      // .catch(err => {
+      //   if(err.statusCode >= 500) {
+      //     // We want to hide the error from the end user.
+      //     // Boom.badImplementation() logs the error
+      //     return reply(Boom.badImplementation())
+      //   } else {
+      //     return reply(err);
+      //   }
+      // });
     }
   });
 

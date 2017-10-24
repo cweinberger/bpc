@@ -6,7 +6,7 @@ const Joi = require('joi');
 const Boom = require('boom');
 const Gigya = require('./../gigya/gigya_client');
 const GigyaUtils = require('./../gigya/gigya_utils');
-const Users = require('./../users/users');
+const MongoDB = require('./../mongo/mongodb_client');
 
 
 module.exports.register = function (server, options, next) {
@@ -176,7 +176,7 @@ function accountCreatedEventHandler(event) {
 
 function accountRegisteredEventHandler(event) {
   return Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid })
-  .then(result => Users.upsertUserId({
+  .then(result => upsertUserId({
     id: event.data.uid,
     email: result.body.profile.email.toLowerCase(),
     provider: 'gigya' })
@@ -197,8 +197,63 @@ function accountLoggedInEventHandler(event) {
 
 
 function accountDeletedEventHandler(event) {
-  return Users.deleteUserId({ id: event.data.uid })
+  return deleteUserId({ id: event.data.uid })
   .catch(err => {
     console.error(err);
   });
 }
+
+function upsertUserId ({id, email, provider}) {
+
+  let selector = {
+    $or: [
+      { email: email },
+      { id: id }
+    ]
+  };
+
+  let set = {
+    id: id,
+    email: email.toLowerCase(),
+    provider: provider
+  };
+
+  let setOnInsert = {
+    createdAt: new Date(),
+    dataScopes: {}
+  };
+
+  // mongo-mock does not do upset the same way as MongoDB.
+  // $set is ignored when doing upsert in mongo-mock
+  if (MongoDB.isMock) {
+    setOnInsert = Object.assign(setOnInsert, set);
+  }
+
+  let operators = {
+    $currentDate: { 'lastUpdated': { $type: "date" } },
+    $set: set,
+    $setOnInsert: setOnInsert
+  };
+
+  return MongoDB.collection('users').update(
+    selector,
+    operators,
+    {
+      upsert: true
+    }
+  );
+};
+
+
+
+// TODO: Should we do more? Eg. expire grants?
+function deleteUserId ({id}){
+  return MongoDB.collection('users')
+  // .findOneAndDelete({ id: id }) // findOneAndDelete Not implemented in mongo-mock
+  .findOne({ id: id })
+  .then(user => {
+    user.deletedAt = new Date();
+    return MongoDB.collection('deleted_users').insert(user);
+  })
+  .then(() => MongoDB.collection('users').remove({ id: id }))
+};

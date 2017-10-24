@@ -23,7 +23,7 @@
   "devDependencies": {
     "gulp": "^3.9.1",
     "lab": "^14.3.1",
-    "mongo-mock": "^2.4.1",
+    "mongo-mock": "^2.6.0",
     "rewire": "^2.5.2",
     "sinon": "^4.0.1"
   },

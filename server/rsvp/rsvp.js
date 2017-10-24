@@ -6,9 +6,9 @@ const Boom = require('boom');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 const Applications = require('./../applications/applications');
-const Users = require('./../users/users');
 const Gigya = require('./../gigya/gigya_client');
 const Google = require('./../google/google_client');
+const OzLoadFuncs = require('./../oz_loadfuncs');
 
 const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
@@ -20,22 +20,15 @@ module.exports = {
       return createGigyaRsvp(data);
     } else if (data.provider === 'google') {
       return createGoogleRsvp(data);
+    } else if (data.provider === 'anonymous') {
+      return Promise.reject(Boom.notImplemented('anonymous provider not implemented'));
+      // return createAnonymousRsvp(data);
     } else {
       return Promise.reject(Boom.badRequest('Unsupported provider'));
     }
-  },
-  grantIsExpired: function (grant) {
-    return (
-      grant !== undefined &&
-      grant !== null &&
-      grant.exp !== undefined &&
-      grant.exp !== null &&
-      grant.exp < Oz.hawk.utils.now()
-    );
   }
 };
 
-var grantIsExpired = module.exports.grantIsExpired;
 
 // Here we are creating the user->app rsvp.
 
@@ -55,107 +48,132 @@ function createGigyaRsvp(data) {
 
   return Gigya.callApi('/accounts.exchangeUIDSignature', exchangeUIDSignatureParams)
   .then(result => Gigya.callApi('/accounts.getAccountInfo', { UID: data.UID }))
-  .then(result => validateEmail(data, result.body.profile.email))
-  .then(() => toLowerCaseEmail(data))
-  .then(data => findGrant({ user: data.email, app: data.app, provider: data.provider }));
+  .then(result => {
+    var promises = [
+      findApplication({ app: data.app, provider: data.provider }),
+      findGrant({ user: result.body.profile.email, app: data.app })
+    ];
+
+    return Promise.all(promises)
+    .then(results => createRsvp(results[0], results[1], result.body.profile.email));
+  });
 }
 
 
 function createGoogleRsvp(data) {
   // Verify the user with Google.
   return Google.tokeninfo(data)
-  .then(result => validateEmail(data, result.email))
-  .then(() => toLowerCaseEmail(data))
-  .then(data => findGrant({ user: data.email, app: data.app, provider: data.provider }));
+  .then(result => {
+    var promises = [
+      findApplication({ app: data.app, provider: data.provider }),
+      findGrant({ user: result.email, app: data.app })
+    ];
+
+    return Promise.all(promises)
+    .then(results => createRsvp(results[0], results[1], result.email));
+  });
 }
 
 
-function validateEmail(data, email) {
-  if (data.email !== email) {
-    return Promise.reject(Boom.badRequest('Invalid email'));
-  } else {
-    return Promise.resolve();
-  }
+function createAnonymousRsvp(data) {
+
+  let grant = {};
+
+  return findApplication({ app: data.app, provider: data.provider })
+  .then(app => {
+    var grant = {
+      id: 'TEST',
+      app: app.id,
+      user: data.fingerprint,
+      exp: null,
+      scope: []
+    };
+
+    return new Promise((resolve, reject) => {
+      // Generating the RSVP based on the grant
+      Oz.ticket.generate(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
+        if (err) {
+          console.error(err);
+          return reject(err);
+        } else {
+          // After granting app access, the user returns to the app with the rsvp.
+          return resolve(rsvp);
+        }
+      });
+    });
+  });
+
 }
 
 
-function toLowerCaseEmail(data) {
-  data.email = data.email.toLowerCase();
-  return Promise.resolve(data);
-}
-
-
-function findGrant(data) {
-
+function findApplication({app, provider}) {
   return MongoDB.collection('applications')
   .findOne(
-    { id: data.app },
+    { id: app },
     { fields: { _id: 0 } })
   .then (app => {
     if (app === null){
       return Promise.reject(Boom.unauthorized('Unknown application'));
-    } else if (app.settings && app.settings.provider && app.settings.provider !== data.provider){
-      return Promise.reject(Boom.unauthorized('Invalid provider'));
     } else if (app.settings && app.settings.disallowGrants){
       return Promise.reject(Boom.unauthorized('App disallow users'));
+    } else if (app.settings && app.settings.provider && app.settings.provider !== provider){
+      return Promise.reject(Boom.unauthorized('Invalid provider for application'));
     } else {
       return Promise.resolve(app);
     }
-  })
-  .then(app => {
+  });
+}
 
-    // We only looking for any grants between user and app.
-    // We only insert a new one if none is found, the app allows it creation of now blank grants.
-    // If the existing grant is expired, the user should be denied access.
-    return MongoDB.collection('grants').findOne(
-      { user: data.user, app: data.app },
-      { fields: { _id: 0 } })
-    .then(grant => {
 
-      if (grantIsExpired(grant)) {
-
-        return Promise.reject(Boom.forbidden());
-
-      } else if (grant === null &&
-          app.settings &&
-          app.settings.disallowAutoCreationGrants) {
-          // The setting disallowAutoCreationGrants makes sure that no grants
-          // are created automatically.
-
-        return Promise.reject(Boom.forbidden());
-
-      } else if (grant === null ) {
-
-        // Creating new clean grant
-        grant = {
-          app: data.app,
-          user: data.user,
-          scope: []
-        };
-
-        Applications.createAppGrant(grant);
-
-      }
-
-      return new Promise((resolve, reject) => {
-        // Generating the RSVP based on the grant
-        Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
-          if (err) {
-            console.error(err);
-            return reject(err);
-          }
-          // After granting app access, the user returns to the app with the rsvp.
-          return resolve(rsvp);
-        });
-      });
-    });
-  })
-  .catch(err => {
-    if(err.isBoom){
-      return Promise.reject(err);
+function findGrant({user, app}) {
+  return MongoDB.collection('grants')
+  .findOne(
+    { user: user, app: app },
+    { fields: { _id: 0 } }
+  )
+  .then(grant => {
+    if (OzLoadFuncs.grantIsExpired(grant)) {
+      return Promise.reject(Boom.forbidden('Grant expired'));
     } else {
-      return Promise.reject(Boom.unauthorized(err.message));
+      return Promise.resolve(grant);
     }
   });
+}
 
+
+function createRsvp(app, grant, user){
+  const noGrant = grant === undefined || grant === null;
+  if (noGrant &&
+      app.settings &&
+      app.settings.disallowAutoCreationGrants) {
+      // The setting disallowAutoCreationGrants makes sure that no grants
+      // are created automatically.
+
+    return Promise.reject(Boom.forbidden());
+
+  } else if (noGrant) {
+
+    // Creating new clean grant
+    grant = {
+      app: app.id,
+      user: user,
+      scope: []
+    };
+
+    Applications.createAppGrant(grant);
+
+  }
+
+  return new Promise((resolve, reject) => {
+    // Generating the RSVP based on the grant
+    Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
+      if (err) {
+        console.error(err);
+        return reject(err);
+      } else {
+        // After granting app access, the user returns to the app with the rsvp.
+        return resolve(rsvp);
+      }
+    });
+  });
 }

@@ -8,7 +8,6 @@ const Oz = require('oz');
 const OzLoadFuncs = require('./../oz_loadfuncs');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
-const Users = require('./users');
 const Gigya = require('./../gigya/gigya_client');
 const EventLog = require('./../audit/eventlog');
 
@@ -387,10 +386,7 @@ module.exports.register = function (server, options, next) {
           return reply(Boom.badRequest('You cannot delete yourself'));
         }
 
-        // TODO:
-        // The "mark user as deletedAt" is handled through the gigya notifications.
-        // So this should be a real remove from MongoDB, since this is a more power-level request
-        Users.deleteUserId({ id: request.params.id })
+        MongoDB.collection('users').remove({ id: request.params.id })
         .then(() => {
           EventLog.logUserEvent(request.params.id, 'Deleting user');
           reply({'status': 'ok'});

@@ -17,7 +17,6 @@ module.exports.register = function (server, options, next) {
     maxAge: 86400
   };
 
-
   server.route({
     method: 'GET',
     path: '/{scope}',
@@ -35,7 +34,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-
+      
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
         if (err) {
           return reply(err)
@@ -46,8 +45,25 @@ module.exports.register = function (server, options, next) {
         // But we need to find out how we should handle any changes to the scope (by POST/PATCH). Should we then reissue the ticket with new ticket.ext.private?
         if (true) {
 
-          Permissions.getScope(ticket)
-          .then(user => reply(user.dataScopes[request.params.scope]));
+          Permissions.get(ticket)
+          .then(result => {
+            if (result.isBoom) {
+              return reply(result);
+            }
+
+            let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+
+            if (Object.keys(request.query).length > 1) {
+
+              validateScopeWithQuery(requestedScope, request.query)
+              .then(result => reply(result));
+
+            } else {
+
+              reply(requestedScope);
+
+            }
+          });
 
         } else {
 
@@ -83,12 +99,28 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.getScope({
+      Permissions.get({
         user: request.params.user,
         scope: request.params.scope
       })
-      .then(user => reply(user.dataScopes[request.params.scope]));
+      .then(result => {
+        if (result.isBoom){
+          return reply(result);
+        }
 
+        let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+
+        if (Object.keys(request.query).length > 1) {
+
+          validateScopeWithQuery(requestedScope, request.query)
+          .then(result => reply(result));
+
+        } else {
+
+          reply(requestedScope);
+
+        }
+      });
     }
   });
 
@@ -114,7 +146,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.setScope({
+      Permissions.set({
         user: request.params.user,
         scope: request.params.scope,
         payload: request.payload
@@ -151,7 +183,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      Permissions.updateScope({
+      Permissions.update({
         user: request.params.user,
         scope: request.params.scope,
         payload: request.payload
@@ -194,12 +226,28 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.getScope({
+      Permissions.get({
         user: request.params.email.toLowerCase(),
         scope: request.params.scope
       })
-      .then(user => reply(user.dataScopes[request.params.scope]));
+      .then(result => {
+        if (result.isBoom){
+          return reply(result);
+        }
 
+        let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+
+        if (Object.keys(request.query).length > 1) {
+
+          validateScopeWithQuery(requestedScope, request.query)
+          .then(result => reply(result));
+
+        } else {
+
+          reply(requestedScope);
+
+        }
+      });
     }
   });
 
@@ -231,7 +279,7 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
 
 
-      Permissions.setScope({
+      Permissions.set({
         user: request.params.email.toLowerCase(),
         scope: request.params.scope,
         payload: request.payload
@@ -254,4 +302,28 @@ module.exports.register = function (server, options, next) {
 module.exports.register.attributes = {
   name: 'permissions',
   version: '1.0.0'
+};
+
+
+const validateScopeWithQuery = function(scope, query) {
+
+  let allCorrect = Object.keys(query).every(key => {
+
+    if (typeof scope[key] === 'boolean') {
+      return scope[key].toString() === query[key];
+    } else if (typeof scope[key] === 'string') {
+      return scope[key] === query[key];
+    } else if (typeof scope[key] === 'object') {
+      return JSON.stringify(scope[key]) === JSON.stringify(query[key]);
+    } else {
+      return false;
+    }
+
+  });
+
+  if (allCorrect){
+    return Promise.resolve();
+  } else {
+    return Promise.resolve(Boom.forbidden());
+  }
 };

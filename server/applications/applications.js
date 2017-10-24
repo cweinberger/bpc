@@ -88,7 +88,11 @@ function createApp(input) {
 function updateApp(id, input) {
 
   return MongoDB.collection('applications')
-    .updateOne({id:id}, {$set: input}, {returnNewDocument: true});
+  .updateOne(
+    {id:id},
+    {$set: input},
+    {returnNewDocument: true}
+  );
 
 }
 
@@ -111,8 +115,11 @@ function deleteAppById(id, userTicket) {
     MongoDB.collection('applications').update(
       { id: userTicket.app }, { $pull: { scope: consoleScope } }
     ),
-    MongoDB.collection('grants').update(
-      { app: userTicket.app }, { $pull: { scope: consoleScope } }, { multi: true }
+    MongoDB.collection('grants')
+    .update(
+      { app: userTicket.app },
+      { $pull: { scope: consoleScope } },
+      { multi: true }
     )
   ];
 
@@ -139,12 +146,16 @@ function assignAdminScope(app, ticket) {
   const consoleScope = 'admin:'.concat(app.id);
   const ops = [
     // Adding the 'admin:' scope to console app, so that users can be admins.
-    MongoDB.collection('applications').update(
-      { id: ticket.app }, { $addToSet: { scope: consoleScope } }
+    MongoDB.collection('applications')
+    .update(
+      { id: ticket.app },
+      { $addToSet: { scope: consoleScope } }
     ),
     // Adding scope 'admin:' to the grant of user that created the application.
-    MongoDB.collection('grants').update(
-      { id: ticket.grant }, { $addToSet: { scope: consoleScope } }
+    MongoDB.collection('grants')
+    .update(
+      { id: ticket.grant },
+      { $addToSet: { scope: consoleScope } }
     )
   ];
 
@@ -226,7 +237,10 @@ function updateAppGrant( grant) {
     grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
 
     return MongoDB.collection('grants')
-    .update({id: grant.id}, {$set: grant});
+    .update(
+      {id: grant.id},
+      {$set: grant}
+    );
 
   });
 

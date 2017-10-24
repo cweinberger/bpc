@@ -52,8 +52,8 @@ module.exports.register = function (server, options, next) {
           return reply(err)
         }
 
-        Permissions.getScope(ticket)
-        .then(user => reply(user.dataScopes))
+        Permissions.get(ticket)
+        .then(result => reply(result));
       });
     }
   });

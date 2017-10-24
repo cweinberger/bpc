@@ -11,6 +11,7 @@ const MongoDB = require('./mocks/mongodb_mock');
 const Gigya = require('./mocks/gigya_mock');
 const Google = require('./mocks/google_mock');
 const Rsvp = require('./../server/rsvp/rsvp');
+const OzLoadFuncs = require('./../server/oz_loadfuncs');
 
 // Test shortcuts.
 const { expect, describe, it, before, beforeEach, after } = exports.lab = require('lab').script();
@@ -21,37 +22,37 @@ describe('rsvp unit tests', () => {
   describe('grant', () => {
 
     it('is not expired when grant is undefined', done => {
-      const result = Rsvp.grantIsExpired();
+      const result = OzLoadFuncs.grantIsExpired();
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant is null', done => {
-      const result = Rsvp.grantIsExpired(null);
+      const result = OzLoadFuncs.grantIsExpired(null);
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant.exp is undefined', done => {
-      const result = Rsvp.grantIsExpired({});
+      const result = OzLoadFuncs.grantIsExpired({});
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant.exp is null', done => {
-      const result = Rsvp.grantIsExpired({ exp: null });
+      const result = OzLoadFuncs.grantIsExpired({ exp: null });
       expect(result).to.be.false();
       done();
     });
 
     it('is not expired when grant.exp is now() + 20000', done => {
-      const result = Rsvp.grantIsExpired({ exp: Oz.hawk.utils.now() + 20000 });
+      const result = OzLoadFuncs.grantIsExpired({ exp: Oz.hawk.utils.now() + 20000 });
       expect(result).to.be.false();
       done();
     });
 
     it('expired when grant.exp is now() - 20000', done => {
-      const result = Rsvp.grantIsExpired({ exp: Oz.hawk.utils.now() - 20000 });
+      const result = OzLoadFuncs.grantIsExpired({ exp: Oz.hawk.utils.now() - 20000 });
       expect(result).to.be.true();
       done();
     });
@@ -254,13 +255,20 @@ describe('rsvp integration test', () => {
     done();
   });
 
-  after(done => {
-    Gigya.callApi.reset();
+  before(done => {
+    Google.tokeninfo //.withArgs({id_token: 'random_id_token_hdjshjdhs', access_token: 'random_access_token_kfjsdhkjfhsdwe'})
+    .resolves({ID: 'doensnotexistsatgoogle', email: 'doensnotexists@testgoogle.nl'});
     done();
   });
 
-  it('get rsvp for a gigya user', done => {
+  after(done => {
+    Gigya.callApi.reset();
+    Google.tokeninfo.reset();
+    done();
+  });
 
+
+  it('get rsvp for a gigya user', done => {
     let payload = {
       provider: 'gigya',
       UID: 'doensnotexists',
@@ -275,8 +283,80 @@ describe('rsvp integration test', () => {
       expect(response.statusCode).to.be.equal(200);
       expect(response.result.rsvp).to.have.length(334);
       done();
-    });
+    })
+    .catch(done);
+  });
 
+
+  it('invalid request for rsvp for a gigya user', done => {
+    let payload = {
+      provider: 'gigya',
+      UID: 'doensnotexists',
+      email: 'doensnotexists@test.nl',
+      app: 'app_with_gigya_provider'
+    };
+
+    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
+    .then(response => {
+      expect(response.statusCode).to.be.equal(400);
+      done();
+    })
+    .catch(done);
+  });
+
+
+  it('get rsvp for a google user', done => {
+    let payload = {
+      provider: 'google',
+      ID: 'doensnotexistsatgoogle',
+      email: 'doensnotexists@testgoogle.nl',
+      app: 'valid-app',
+      id_token: 'random_id_token_hdjshjdhs',
+      access_token: 'random_access_token_kfjsdhkjfhsdwe'
+    };
+
+    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
+    .then(response => {
+      expect(response.statusCode).to.be.equal(200);
+      expect(response.result.rsvp).to.have.length(334);
+      done();
+    })
+    .catch(done);
+  });
+
+  it('get rsvp for a google user', done => {
+    let payload = {
+      provider: 'google',
+      ID: 'doensnotexistsatgoogle',
+      email: 'doensnotexists@testgoogle.nl',
+      app: 'app_with_gigya_provider',
+      id_token: 'random_id_token_nmvbcnm',
+      access_token: 'random_access_token_oyiyu'
+    };
+
+    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
+    .then(response => {
+      expect(response.statusCode).to.be.equal(401);
+      done();
+    })
+    .catch(done);
+  });
+
+
+  it('get rsvp for a anonymous user', done => {
+    let payload = {
+      provider: 'anonymous',
+      app: 'app_with_gigya_provider',
+      fingerprint: 'fdi76234rgwegr37489rsdfihfg8723tjefhsgdfs7d86'
+    };
+
+    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
+    .then(response => {
+      // expect(response.statusCode).to.be.equal(400);
+      expect(response.statusCode).to.be.equal(501);
+      done();
+    })
+    .catch(done);
   });
 
 });

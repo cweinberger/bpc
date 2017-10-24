@@ -27,9 +27,9 @@ describe('users - functional tests', () => {
 
     // Getting the appTicket
     before(done => {
-      bpc_helper.getAppTicket(bt)
-      .then(result => {
-        appTicket = result;
+      bpc_helper.request({ method: 'POST', url: '/ticket/app' }, bt)
+      .then(response => {
+        appTicket = response.result;
       })
       .then(done)
       .catch(done);
@@ -38,8 +38,7 @@ describe('users - functional tests', () => {
     it('getting first user bt permissions', (done) => {
       bpc_helper.request({ method: 'GET', url: '/permissions/' + first.id + '/bt'}, appTicket, (response) => {
         expect(response.statusCode).to.equal(200);
-        var payload = JSON.parse(response.payload);
-        expect(payload.bt_paywall).to.true();
+        expect(response.result.bt_paywall).to.true();
         done();
       });
     });
@@ -60,9 +59,9 @@ describe('users - integration tests', () => {
 
   // Getting the appTicket
   before(done => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, {credentials: app}, (response) => {
+    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app, (response) => {
       expect(response.statusCode).to.equal(200);
-      appTicket = {credentials: JSON.parse(response.payload), app: app.id};
+      appTicket = response.result;
       done();
     });
   });
@@ -120,8 +119,7 @@ describe('users - integration tests', () => {
       expect(response.statusCode).to.equal(200);
 
       MongoDB.collection('users').find({id: '5347895384975934842757'}).toArray(function(err, result){
-        expect(result.length).to.equal(1);
-        expect(result[0].deletedAt).to.be.a.date();
+        expect(result.length).to.equal(0);
 
         done();
       });

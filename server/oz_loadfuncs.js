@@ -14,7 +14,6 @@ const Boom = require('boom');
 const Oz = require('oz');
 const MongoDB = require('./mongo/mongodb_client');
 const Permissions = require('./permissions/permissions');
-const Rsvp = require('./rsvp/rsvp');
 
 
 // Here we are creating the app ticket
@@ -38,7 +37,7 @@ function loadGrantFunc(id, next) {
       return next(err);
     } else if (grant === undefined || grant === null) {
       next(Boom.unauthorized());
-    } else if (Rsvp.grantIsExpired(grant)) {
+    } else if (grantIsExpired(grant)) {
       next(Boom.unauthorized());
     } else {
 
@@ -72,7 +71,7 @@ function loadGrantFunc(id, next) {
         // Finding scope data to encrypt in the ticket for later usage.
         if (app.settings && app.settings.includeScopeInPrivatExt) {
 
-          Permissions.getScope(grant)
+          Permissions.get(grant)
           .then(user => {
             if (user === null) {
               // next(new Error('Unknown user'));
@@ -128,3 +127,16 @@ module.exports.parseAuthorizationHeader = function (requestHeaderAuthorization, 
 
   Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
 }
+
+
+module.exports.grantIsExpired = function (grant) {
+  return (
+    grant !== undefined &&
+    grant !== null &&
+    grant.exp !== undefined &&
+    grant.exp !== null &&
+    grant.exp < Oz.hawk.utils.now()
+  );
+};
+
+const grantIsExpired = module.exports.grantIsExpired;

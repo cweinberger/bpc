@@ -24,7 +24,7 @@ module.exports.register = function (server, options, next) {
       auth: {
         access: {
           scope: ['{params.scope}'],
-          entity: 'user'
+          entity: 'user' // <-- Important. Apps cannot request permissions with specifying what {user} to get
         }
       },
       cors: stdCors,
@@ -34,7 +34,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      
+
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
         if (err) {
           return reply(err)
@@ -46,12 +46,12 @@ module.exports.register = function (server, options, next) {
         if (true) {
 
           Permissions.get(ticket)
-          .then(result => {
-            if (result.isBoom) {
-              return reply(result);
+          .then(dataScopes => {
+            if (dataScopes.isBoom) {
+              return reply(dataScopes);
             }
 
-            let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+            let requestedScope = dataScopes[request.params.scope] ? dataScopes[request.params.scope] : {};
 
             if (Object.keys(request.query).length > 1) {
 
@@ -88,7 +88,7 @@ module.exports.register = function (server, options, next) {
       auth: {
         access: {
           scope: ['{params.scope}', 'admin'],
-          entity: 'app'
+          entity: 'app' // <-- Important. Users must not be allowed to get permissions from other users
         }
       },
       cors: stdCors,
@@ -103,12 +103,12 @@ module.exports.register = function (server, options, next) {
         user: request.params.user,
         scope: request.params.scope
       })
-      .then(result => {
-        if (result.isBoom){
-          return reply(result);
+      .then(dataScopes => {
+        if (dataScopes.isBoom){
+          return reply(dataScopes);
         }
 
-        let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+        let requestedScope = dataScopes[request.params.scope] ? dataScopes[request.params.scope] : {};
 
         if (Object.keys(request.query).length > 1) {
 
@@ -203,7 +203,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/{provider}/{email}/{scope}',
+    path: '/{provider}/{user}/{scope}',
     config: {
       auth: {
         access: {
@@ -219,7 +219,7 @@ module.exports.register = function (server, options, next) {
       validate: {
         params: {
           provider: Joi.string().valid('gigya', 'google'),
-          email: Joi.string().email(),
+          user: Joi.string(),
           scope: Joi.string()
         }
       }
@@ -227,15 +227,15 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
 
       Permissions.get({
-        user: request.params.email.toLowerCase(),
+        user: request.params.user,
         scope: request.params.scope
       })
-      .then(result => {
-        if (result.isBoom){
-          return reply(result);
+      .then(dataScopes => {
+        if (dataScopes.isBoom){
+          return reply(dataScopes);
         }
 
-        let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+        let requestedScope = dataScopes[request.params.scope] ? dataScopes[request.params.scope] : {};
 
         if (Object.keys(request.query).length > 1) {
 
@@ -254,7 +254,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/{provider}/{email}/{scope}',
+    path: '/{provider}/{user}/{scope}',
     config: {
       auth: {
         access: {
@@ -270,7 +270,7 @@ module.exports.register = function (server, options, next) {
       validate: {
         params: {
           provider: Joi.string().valid('gigya', 'google'),
-          email: Joi.string().email(),
+          user: Joi.string(),
           scope: Joi.string()
         },
         payload: Joi.object()
@@ -280,7 +280,7 @@ module.exports.register = function (server, options, next) {
 
 
       Permissions.set({
-        user: request.params.email.toLowerCase(),
+        user: request.params.user,
         scope: request.params.scope,
         payload: request.payload
       })

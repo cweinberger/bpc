@@ -67,17 +67,23 @@ function loadGrantFunc(id, next) {
 
         grant.scope = grant.scope.concat(missingScopes);
 
+        let ext = {
+          public: {},
+          private: {
+            collection: 'test'
+          }
+        };
 
         // Finding scope data to encrypt in the ticket for later usage.
         if (app.settings && app.settings.includeScopeInPrivatExt) {
 
           Permissions.get(grant)
-          .then(user => {
-            if (user === null) {
+          .then(dataScopes => {
+            if (dataScopes === null) {
               // next(new Error('Unknown user'));
-              next(null, grant);
+              next(null, grant, ext);
             } else {
-              let ext = { public: {}, private: user.dataScopes };
+              Object.assign(ext.private, dataScopes);
               next(null, grant, ext);
             }
           })
@@ -87,6 +93,7 @@ function loadGrantFunc(id, next) {
 
         } else {
 
+          // next(null, grant, ext);
           next(null, grant);
 
         }

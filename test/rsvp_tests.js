@@ -352,8 +352,8 @@ describe('rsvp integration test', () => {
 
     bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
     .then(response => {
-      // expect(response.statusCode).to.be.equal(400);
-      expect(response.statusCode).to.be.equal(501);
+      expect(response.statusCode).to.be.equal(401);
+      // expect(response.statusCode).to.be.equal(501);
       done();
     })
     .catch(done);

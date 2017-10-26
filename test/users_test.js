@@ -91,8 +91,6 @@ describe('users - integration tests', () => {
     let options = {
       method: 'POST',
       url: '/users/register',
-      headers: {
-      },
       payload: {
         email: 'newuser@notyetcreated.nl',
         password: 'justsomerandomtext'
@@ -110,9 +108,7 @@ describe('users - integration tests', () => {
   it('delete user', done => {
     let options = {
       method: 'DELETE',
-      url: '/users/5347895384975934842757',
-      headers: {
-      }
+      url: '/users/5347895384975934842757'
     };
 
     bpc_helper.request(options, appTicket, (response) => {

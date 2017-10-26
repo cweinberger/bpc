@@ -207,7 +207,7 @@ function upsertUserId ({id, email, provider}) {
 
   let selector = {
     $or: [
-      { email: email },
+      { email: email.toLowerCase() },
       { id: id }
     ]
   };

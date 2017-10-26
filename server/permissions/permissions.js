@@ -13,7 +13,7 @@ module.exports.get = function({user, scope}) {
 
   let selector = {
     $or: [
-      { email: user },
+      { email: user.toLowerCase() },
       { id: user }
     ],
     deletedAt: { $exists: false }
@@ -50,7 +50,7 @@ module.exports.set = function({user, scope, payload}) {
 
   let selector = {
     $or: [
-      { email: user },
+      { email: user.toLowerCase() },
       { id: user }
     ]
   };
@@ -62,7 +62,7 @@ module.exports.set = function({user, scope, payload}) {
   // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
   let setOnInsert = {
     id: user,
-    email: user,
+    email: user.toLowerCase(),
     createdAt: new Date()
   };
 
@@ -113,7 +113,7 @@ module.exports.update = function({user, scope, payload}) {
 
   let selector = {
     $or: [
-      { email: user },
+      { email: user.toLowerCase() },
       { id: user }
     ]
   };

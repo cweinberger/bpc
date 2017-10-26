@@ -21,8 +21,8 @@ module.exports = {
     } else if (data.provider === 'google') {
       return createGoogleRsvp(data);
     } else if (data.provider === 'anonymous') {
-      return Promise.reject(Boom.notImplemented('anonymous provider not implemented'));
-      // return createAnonymousRsvp(data);
+      // return Promise.reject(Boom.notImplemented('anonymous provider not implemented'));
+      return createAnonymousRsvp(data);
     } else {
       return Promise.reject(Boom.badRequest('Unsupported provider'));
     }
@@ -89,15 +89,33 @@ function createAnonymousRsvp(data) {
       scope: []
     };
 
+    var ticket = {
+      app: app.id,
+      user: data.fingerprint,
+      exp: Oz.hawk.utils.now() + (1000 * 60),
+      scope: [],
+      grant: 'FDGDF'
+    };
+
+    var options = {
+      ext: {
+        private: {
+          test: 'test_generate'
+        }
+      }
+    };
+
     return new Promise((resolve, reject) => {
       // Generating the RSVP based on the grant
-      Oz.ticket.generate(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
+      // Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
+      Oz.ticket.generate(ticket, ENCRYPTIONPASSWORD, options, (err, rsvp) => {
         if (err) {
           console.error(err);
           return reject(err);
         } else {
           // After granting app access, the user returns to the app with the rsvp.
-          return resolve(rsvp);
+          console.log('TICKET', rsvp);
+          return resolve(rsvp.id);
         }
       });
     });

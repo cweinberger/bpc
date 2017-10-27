@@ -199,6 +199,9 @@ db.grants.insert({
 The following indexes have been created manually:
 
 ```
+db.applications.createIndex( { id: 1 })
+db.grants.createIndex({ id: 1 })
+db.grants.createIndex({ user: 1, app: 1 })
 db.users.createIndex( { id: 1 })
 db.users.createIndex( { email: 1, provider: 1 })
 db.users.createIndex( { id: 1, email: 1, provider: 1 })

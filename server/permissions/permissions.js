@@ -24,22 +24,28 @@ module.exports.get = function({user, scope}) {
   };
 
   // The details must only be the dataScopes that are allowed for the application.
-  if (scope instanceof Array) {
-    scope.forEach(scopeName => {
-      projection['dataScopes.'.concat(scopeName)] = 1;
-    });
-  } else if(typeof scope === 'string'){
-    projection['dataScopes.'.concat(scope)] = 1;
+  if (MongoDB.isMock) {
+    // Well, mongo-mock does not support projection of sub-documents
+  } else {
+    if (scope instanceof Array) {
+      scope.forEach(scopeName => {
+        projection['dataScopes.'.concat(scopeName)] = 1;
+      });
+    } else if(typeof scope === 'string'){
+      projection['dataScopes.'.concat(scope)] = 1;
+    }
   }
 
-  return MongoDB.collection('users').findOne(selector, projection)
+  return MongoDB.collection('users')
+  .findOne(selector, projection)
   .then(user => {
-
     if (user === null){
       return Promise.resolve(Boom.notFound());
+    } else if (user.dataScopes === undefined || user.dataScopes === null) {
+      return Promise.resolve({});
+    } else {
+      return Promise.resolve(user.dataScopes);
     }
-
-    return Promise.resolve(user.dataScopes);
 
   })
   .catch(err => Boom.badRequest());

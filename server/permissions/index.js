@@ -19,6 +19,34 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
+    path: '/',
+    config: {
+      auth: {
+        access: {
+          entity: 'user' // <-- Important. Apps cannot request permissions with specifying what {user} to get
+        }
+      },
+      cors: stdCors,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply) {
+
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+        if (err) {
+          return reply(err)
+        }
+
+        Permissions.get(ticket)
+        .then(dataScopes => reply(dataScopes));
+      });
+    }
+  });
+
+  server.route({
+    method: 'GET',
     path: '/{scope}',
     config: {
       auth: {

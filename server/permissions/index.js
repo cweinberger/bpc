@@ -17,6 +17,9 @@ module.exports.register = function (server, options, next) {
     maxAge: 86400
   };
 
+  // TODO: Add audit trail for all requests in this plugin
+  // TODO: Implement audit trail of what update was performed by what app.
+
   server.route({
     method: 'GET',
     path: '/',
@@ -39,8 +42,19 @@ module.exports.register = function (server, options, next) {
           return reply(err)
         }
 
-        Permissions.get(ticket)
-        .then(dataScopes => reply(dataScopes));
+        // Should we query the database or look in the private part of the ticket?
+        // See GET /{scope} handler below
+        if (true) {
+
+          Permissions.get(ticket)
+          .then(dataScopes => reply(dataScopes));
+
+        } else {
+
+          // We can get the data from the ticket.ext.private part.
+          reply();
+
+        }
       });
     }
   });

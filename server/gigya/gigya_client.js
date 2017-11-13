@@ -94,6 +94,8 @@ module.exports.callApi = function(path, payload = null, api = 'accounts') {
         return reject(Boom.create(_body.statusCode, _body.errorDetails, _body))
       }
 
+      // TODO: I would really like to re-write this.
+      // The response must simply be the reponse from gigya. And not body in object
       return resolve({response, body: _body});
     });
 

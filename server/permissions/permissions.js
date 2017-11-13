@@ -11,11 +11,15 @@ module.exports.get = function({user, scope}) {
     return Promise.reject('user or scope missing');
   }
 
-  let selector = {
+  let filter = {
     $or: [
       { email: user.toLowerCase() },
       { id: user }
     ]
+  };
+
+  let update = {
+    $currentDate: { 'lastFetched': { $type: "date" } }
   };
 
   let projection = {
@@ -32,14 +36,24 @@ module.exports.get = function({user, scope}) {
       });
     } else if(typeof scope === 'string'){
       projection['dataScopes.'.concat(scope)] = 1;
+    } else {
+      projection['dataScopes'] = 0;
     }
   }
 
-  return MongoDB.collection('users').findOne(selector, projection)
-  .then(user => {
-    if (user === null){
+  const options = {
+    projection: projection
+  };
+
+  return MongoDB.collection('users').findOneAndUpdate(filter, update, options)
+  .then(result => {
+    if (result.n === 0){
       return Promise.resolve(Boom.notFound());
-    } else if (user.dataScopes === undefined || user.dataScopes === null) {
+    }
+
+    const user = result.value;
+
+    if (user.dataScopes === undefined || user.dataScopes === null) {
       return Promise.resolve({});
     } else {
       return Promise.resolve(user.dataScopes);
@@ -111,26 +125,26 @@ module.exports.set = function({user, scope, payload}) {
 
 module.exports.update = function({user, scope, payload}) {
 
-  let selector = {
+  let filter = {
     $or: [
       { email: user.toLowerCase() },
       { id: user }
     ]
   };
 
-  let operators = {
+  let update = {
     '$currentDate': {}
   };
 
   Object.keys(payload).filter(disallowedUpdateOperators).forEach(operator => {
-    operators[operator] = {};
+    update[operator] = {};
     Object.keys(payload[operator]).forEach(field => {
-      operators[operator]['dataScopes.'.concat(scope,'.',field)] = payload[operator][field];
+      update[operator]['dataScopes.'.concat(scope,'.',field)] = payload[operator][field];
     });
   });
 
   // This must come after payload to make sure it cannot be set by the application
-  operators['$currentDate']['lastUpdated'] = { $type: "date" };
+  update['$currentDate']['lastUpdated'] = { $type: "date" };
 
   var projection = {
     _id: 0
@@ -142,7 +156,7 @@ module.exports.update = function({user, scope, payload}) {
     returnOriginal: false
   };
 
-  return MongoDB.collection('users').findOneAndUpdate(selector, operators, options)
+  return MongoDB.collection('users').findOneAndUpdate(filter, update, options)
   .catch(err => Boom.badRequest());
 
   function disallowedUpdateOperators(operator) {

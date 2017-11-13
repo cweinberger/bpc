@@ -7,6 +7,7 @@ const Boom = require('boom');
 const Gigya = require('./../gigya/gigya_client');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const MongoDB = require('./../mongo/mongodb_client');
+const EventLog = require('./../audit/eventlog');
 
 
 module.exports.register = function (server, options, next) {
@@ -198,7 +199,9 @@ function accountLoggedInEventHandler(event) {
 
 function accountDeletedEventHandler(event) {
   return deleteUserId({ id: event.data.uid })
+  .then(() => EventLog.logUserEvent(event.data.uid, 'Deleting user'))
   .catch(err => {
+    EventLog.logUserEvent(event.data.uid, 'Deleting user Failed');
     console.error(err);
   });
 }
@@ -248,12 +251,26 @@ function upsertUserId ({id, email, provider}) {
 
 // TODO: Should we do more? Eg. expire grants?
 function deleteUserId ({id}){
-  return MongoDB.collection('users')
-  // .findOneAndDelete({ id: id }) // findOneAndDelete Not implemented in mongo-mock
-  .findOne({ id: id })
-  .then(user => {
-    user.deletedAt = new Date();
-    return MongoDB.collection('deleted_users').insert(user);
-  })
-  .then(() => MongoDB.collection('users').remove({ id: id }))
+
+   // findOneAndDelete Not implemented in mongo-mock
+  if (MongoDB.isMock) {
+
+    return MongoDB.collection('users')
+    .findOne({ id: id })
+    .then(user => {
+      user.deletedAt = new Date();
+      return MongoDB.collection('deleted_users').insert(user);
+    })
+    .then(() => MongoDB.collection('users').remove({ id: id }))
+
+  } else {
+
+    return MongoDB.collection('users')
+    .findOneAndDelete({ id: id })
+    .then(user => {
+      user.deletedAt = new Date();
+      MongoDB.collection('deleted_users').insert(user);
+    });
+
+  }
 };

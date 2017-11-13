@@ -15,8 +15,7 @@ module.exports.get = function({user, scope}) {
     $or: [
       { email: user.toLowerCase() },
       { id: user }
-    ],
-    deletedAt: { $exists: false }
+    ]
   };
 
   let projection = {

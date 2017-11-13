@@ -35,8 +35,7 @@ module.exports.get = function({user, scope}) {
     }
   }
 
-  return MongoDB.collection('users')
-  .findOne(selector, projection)
+  return MongoDB.collection('users').findOne(selector, projection)
   .then(user => {
     if (user === null){
       return Promise.resolve(Boom.notFound());
@@ -95,21 +94,17 @@ module.exports.set = function({user, scope, payload}) {
     $setOnInsert: setOnInsert
   };
 
+  const options = {
+    upsert: true,
+    // We're update multi because when updating using {provider}/{email} endpoint e.g. gigya/dako@berlingskemedia.dk
+    //   there is a possibility that the user was deleted and created in Gigya with a new UID.
+    //   In this case we have multiple user-objects in BPC. So to be safe, we update them all so nothing is lost.
+    multi: true
+    //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+    //  collation: <document>
+  };
 
-  return MongoDB.collection('users')
-  .update(
-    selector,
-    operators,
-    {
-      upsert: true,
-      // We're update multi because when updating using {provider}/{email} endpoint e.g. gigya/dako@berlingskemedia.dk
-      //   there is a possibility that the user was deleted and created in Gigya with a new UID.
-      //   In this case we have multiple user-objects in BPC. So to be safe, we update them all so nothing is lost.
-      multi: true
-      //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
-      //  collation: <document>
-    }
-  )
+  return MongoDB.collection('users').update(selector, operators, options)
   .catch(err => Boom.badRequest());
 };
 
@@ -142,15 +137,12 @@ module.exports.update = function({user, scope, payload}) {
   };
   projection['dataScopes.'.concat(scope)] = 1;
 
-  return MongoDB.collection('users')
-  .findOneAndUpdate(
-    selector,
-    operators,
-    {
-      projection: projection,
-      returnOriginal: false
-    }
-  )
+  const options = {
+    projection: projection,
+    returnOriginal: false
+  };
+
+  return MongoDB.collection('users').findOneAndUpdate(selector, operators, options)
   .catch(err => Boom.badRequest());
 
   function disallowedUpdateOperators(operator) {

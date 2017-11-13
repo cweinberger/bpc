@@ -238,13 +238,11 @@ function upsertUserId ({id, email, provider}) {
     $setOnInsert: setOnInsert
   };
 
-  return MongoDB.collection('users').update(
-    selector,
-    operators,
-    {
-      upsert: true
-    }
-  );
+  const options = {
+    upsert: true
+  };
+
+  return MongoDB.collection('users').update(selector, operators, options);
 };
 
 
@@ -255,8 +253,7 @@ function deleteUserId ({id}){
    // findOneAndDelete Not implemented in mongo-mock
   if (MongoDB.isMock) {
 
-    return MongoDB.collection('users')
-    .findOne({ id: id })
+    return MongoDB.collection('users').findOne({ id: id })
     .then(user => {
       user.deletedAt = new Date();
       return MongoDB.collection('deleted_users').insert(user);
@@ -265,8 +262,7 @@ function deleteUserId ({id}){
 
   } else {
 
-    return MongoDB.collection('users')
-    .findOneAndDelete({ id: id })
+    return MongoDB.collection('users').findOneAndDelete({ id: id })
     .then(user => {
       user.deletedAt = new Date();
       MongoDB.collection('deleted_users').insert(user);

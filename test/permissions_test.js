@@ -85,7 +85,7 @@ describe('permissions - functional tests', () => {
 
       bpc_helper.request({ url: '/permissions/bt' + queryPermissions }, simple_first_user_ticket)
       .then(response => {
-        expect(response.statusCode).to.equal(403);
+        expect(response.statusCode).to.equal(404);
         done();
       })
       .catch(done);

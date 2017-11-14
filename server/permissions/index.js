@@ -47,7 +47,8 @@ module.exports.register = function (server, options, next) {
         if (true) {
 
           Permissions.get(ticket)
-          .then(dataScopes => reply(dataScopes));
+          .then(dataScopes => reply(dataScopes))
+          .catch(err => reply(err));
 
         } else {
 
@@ -87,25 +88,27 @@ module.exports.register = function (server, options, next) {
         // But we need to find out how we should handle any changes to the scope (by POST/PATCH). Should we then reissue the ticket with new ticket.ext.private?
         if (true) {
 
-          Permissions.get(ticket)
-          .then(dataScopes => {
-            if (dataScopes.isBoom) {
-              return reply(dataScopes);
-            }
+          if (Object.keys(request.query).length > 0) {
 
-            let requestedScope = dataScopes[request.params.scope] ? dataScopes[request.params.scope] : {};
+            Permissions.count({user: ticket.user, scope: request.params.scope}, request.query)
+            .then(result => {
+              if(result === 1) {
+                reply({ status: 'OK' });
+              } else {
+                reply(Boom.notFound());
+              }
+            })
+            .catch(err => reply(err));
 
-            if (Object.keys(request.query).length > 1) {
+          } else {
 
-              validateScopeWithQuery(requestedScope, request.query)
-              .then(result => reply(result));
+            Permissions.get(ticket)
+            .then(dataScopes => reply(dataScopes[request.params.scope]
+              ? dataScopes[request.params.scope]
+              : {}))
+            .catch(err => reply(err));
+          }
 
-            } else {
-
-              reply(requestedScope);
-
-            }
-          });
 
         } else {
 
@@ -141,28 +144,27 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.get({
-        user: request.params.user,
-        scope: request.params.scope
-      })
-      .then(dataScopes => {
-        if (dataScopes.isBoom){
-          return reply(dataScopes);
-        }
+      if (Object.keys(request.query).length > 0) {
 
-        let requestedScope = dataScopes[request.params.scope] ? dataScopes[request.params.scope] : {};
+        Permissions.count({ user: request.params.user, scope: request.params.scope }, request.query)
+        .then(result => {
+          if(result === 1) {
+            reply({ status: 'OK' });
+          } else {
+            reply(Boom.notFound());
+          }
+        })
+        .catch(err => reply(err));
 
-        if (Object.keys(request.query).length > 1) {
+      } else {
 
-          validateScopeWithQuery(requestedScope, request.query)
-          .then(result => reply(result));
+        Permissions.get({ user: request.params.user, scope: request.params.scope })
+        .then(dataScopes => reply(dataScopes[request.params.scope]
+          ? dataScopes[request.params.scope]
+          : {}))
+        .catch(err => reply(err));
 
-        } else {
-
-          reply(requestedScope);
-
-        }
-      });
+      }
     }
   });
 
@@ -200,7 +202,7 @@ module.exports.register = function (server, options, next) {
           reply({'status': 'ok'});
         }
       })
-      .catch(err => reply(Boom.badImplementation(err.message)));
+      .catch(err => reply(err));
     }
   });
 
@@ -237,8 +239,7 @@ module.exports.register = function (server, options, next) {
           reply(result.value.dataScopes[request.params.scope]);
         }
       })
-      // We are replying with badRequest here, because it's propably an error in the operators in the request.
-      .catch(err => reply(Boom.badRequest(err.message)));
+      .catch(err => reply(Boom.badRequest(err.message)));      
     }
   });
 
@@ -268,28 +269,29 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.get({
-        user: request.params.user,
-        scope: request.params.scope
-      })
-      .then(dataScopes => {
-        if (dataScopes.isBoom){
-          return reply(dataScopes);
-        }
+      if (Object.keys(request.query).length > 0) {
 
-        let requestedScope = dataScopes[request.params.scope] ? dataScopes[request.params.scope] : {};
+        Permissions.count({ user: request.params.user, scope: request.params.scope }, request.query)
+        .then(result => {
+          if(result === 1) {
+            reply({ status: 'OK' });
+          } else {
+            reply(Boom.notFound());
+          }
+        })
+        .catch(err => reply(err));
 
-        if (Object.keys(request.query).length > 1) {
+      } else {
 
-          validateScopeWithQuery(requestedScope, request.query)
-          .then(result => reply(result));
-
-        } else {
-
-          reply(requestedScope);
-
-        }
-      });
+        Permissions.get({
+          user: request.params.user,
+          scope: request.params.scope
+        })
+        .then(dataScopes => reply(dataScopes[request.params.scope]
+          ? dataScopes[request.params.scope]
+          : {}))
+        .catch(err => reply(err));
+      }
     }
   });
 
@@ -320,7 +322,6 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-
       Permissions.set({
         user: request.params.user,
         scope: request.params.scope,
@@ -333,7 +334,7 @@ module.exports.register = function (server, options, next) {
           reply({'status': 'ok'});
         }
       })
-      .catch(err => reply(Boom.badImplementation(err.message)));
+      .catch(err => reply(err));
     }
   });
 
@@ -354,6 +355,11 @@ module.exports.register = function (server, options, next) {
         failAction: 'log'
       },
       validate: {
+        params: {
+          provider: Joi.string().valid('gigya', 'google'),
+          user: Joi.string(),
+          scope: Joi.string()
+        },
         payload: Joi.object()
       }
     },
@@ -370,8 +376,7 @@ module.exports.register = function (server, options, next) {
           reply(result.value.dataScopes[request.params.scope]);
         }
       })
-      // We are replying with badRequest here, because it's propably an error in the operators in the request.
-      .catch(err => reply(Boom.badRequest(err.message)));
+      .catch(err => reply(err));
     }
   });
 
@@ -383,28 +388,4 @@ module.exports.register = function (server, options, next) {
 module.exports.register.attributes = {
   name: 'permissions',
   version: '1.0.0'
-};
-
-
-const validateScopeWithQuery = function(scope, query) {
-
-  let allCorrect = Object.keys(query).every(key => {
-
-    if (typeof scope[key] === 'boolean') {
-      return scope[key].toString() === query[key];
-    } else if (typeof scope[key] === 'string') {
-      return scope[key] === query[key];
-    } else if (typeof scope[key] === 'object') {
-      return JSON.stringify(scope[key]) === JSON.stringify(query[key]);
-    } else {
-      return false;
-    }
-
-  });
-
-  if (allCorrect){
-    return Promise.resolve();
-  } else {
-    return Promise.resolve(Boom.forbidden());
-  }
 };

@@ -8,17 +8,17 @@ const MongoDB = require('./../mongo/mongodb_client');
 module.exports.get = function({user, scope}) {
 
   if (!user || !scope) {
-    return Promise.reject('user or scope missing');
+    return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  let filter = {
+  const filter = {
     $or: [
       { email: user.toLowerCase() },
       { id: user }
     ]
   };
 
-  let update = {
+  const update = {
     $currentDate: {
       'lastTouched': { $type: "date" },
       'lastFetched': { $type: "date" }
@@ -51,7 +51,7 @@ module.exports.get = function({user, scope}) {
   return MongoDB.collection('users').findOneAndUpdate(filter, update, options)
   .then(result => {
     if (result.n === 0){
-      return Promise.resolve(Boom.notFound());
+      return Promise.reject(Boom.notFound());
     }
 
     const user = result.value;
@@ -67,9 +67,43 @@ module.exports.get = function({user, scope}) {
 };
 
 
+module.exports.count = function({user, scope}, query) {
+
+  if (!user || !scope) {
+    return Promise.reject(Boom.badRequest('user or scope missing'));
+  }
+
+  if (typeof scope !== 'string') {
+    return Promise.reject(Boom.badRequest('scope must be a string'));
+  }
+
+  let filter = {
+    $or: [
+      { email: user.toLowerCase() },
+      { id: user }
+    ]
+  };
+
+  Object.keys(query).forEach(key => {
+    try {
+      filter['dataScopes.'.concat(scope,".",key)] = JSON.parse(query[key]);
+    } catch(ex) {
+      filter['dataScopes.'.concat(scope,".",key)] = query[key];
+    }
+  });
+
+  return MongoDB.collection('users').count(filter, {limit: 1});
+
+};
+
+
 module.exports.set = function({user, scope, payload}) {
 
-  let selector = {
+  if (!user || !scope) {
+    return Promise.reject(Boom.badRequest('user or scope missing'));
+  }
+
+  const selector = {
     $or: [
       { email: user.toLowerCase() },
       { id: user }
@@ -105,7 +139,7 @@ module.exports.set = function({user, scope, payload}) {
 
   }
 
-  let operators = {
+  const operators = {
     $currentDate: {
       'lastTouched': { $type: "date" },
       'lastUpdated': { $type: "date" }
@@ -124,14 +158,18 @@ module.exports.set = function({user, scope, payload}) {
     //  collation: <document>
   };
 
-  return MongoDB.collection('users').update(selector, operators, options)
-  .catch(err => Boom.badRequest());
+  return MongoDB.collection('users').update(selector, operators, options);
+
 };
 
 
 module.exports.update = function({user, scope, payload}) {
 
-  let filter = {
+  if (!user || !scope) {
+    return Promise.reject(Boom.badRequest('user or scope missing'));
+  }
+
+  const filter = {
     $or: [
       { email: user.toLowerCase() },
       { id: user }
@@ -153,7 +191,7 @@ module.exports.update = function({user, scope, payload}) {
   update['$currentDate']['lastTouched'] = { $type: "date" };
   update['$currentDate']['lastUpdated'] = { $type: "date" };
 
-  var projection = {
+  let projection = {
     _id: 0
   };
   projection['dataScopes.'.concat(scope)] = 1;
@@ -163,8 +201,7 @@ module.exports.update = function({user, scope, payload}) {
     returnOriginal: false
   };
 
-  return MongoDB.collection('users').findOneAndUpdate(filter, update, options)
-  .catch(err => Boom.badRequest());
+  return MongoDB.collection('users').findOneAndUpdate(filter, update, options);
 
   function disallowedUpdateOperators(operator) {
     return [

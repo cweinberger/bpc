@@ -62,8 +62,7 @@ module.exports.get = function({user, scope}) {
       return Promise.resolve(user.dataScopes);
     }
 
-  })
-  .catch(err => Boom.badRequest());
+  });
 };
 
 

@@ -12,7 +12,7 @@ let db;
 
 
 // Establish connection and perform error handling.
-console.log('Connecting to MongoDB MOCK on ' + `${mongoDbConnection}`);
+console.log('Using MongoDB MOCK on ' + `${mongoDbConnection}`);
 MongoClient.connect(mongoDbConnection, (err, database) => {
   if (err) {
     throw err;

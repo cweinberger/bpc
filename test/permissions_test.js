@@ -100,6 +100,14 @@ describe('permissions - functional tests', () => {
       })
       .catch(done);
     });
-  });
 
+    it('getting non-existing user permissions', (done) => {
+      bpc_helper.request({ url: '/permissions/thisuserdoesnotexist/bt' }, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(404);
+        done();
+      })
+      .catch(done);
+    });
+  });
 });

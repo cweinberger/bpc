@@ -19,7 +19,10 @@ module.exports.get = function({user, scope}) {
   };
 
   let update = {
-    $currentDate: { 'lastFetched': { $type: "date" } }
+    $currentDate: {
+      'lastTouched': { $type: "date" },
+      'lastFetched': { $type: "date" }
+    }
   };
 
   let projection = {
@@ -103,7 +106,10 @@ module.exports.set = function({user, scope, payload}) {
   }
 
   let operators = {
-    $currentDate: { 'lastUpdated': { $type: "date" } },
+    $currentDate: {
+      'lastTouched': { $type: "date" },
+      'lastUpdated': { $type: "date" }
+    },
     $set: set,
     $setOnInsert: setOnInsert
   };
@@ -144,6 +150,7 @@ module.exports.update = function({user, scope, payload}) {
   });
 
   // This must come after payload to make sure it cannot be set by the application
+  update['$currentDate']['lastTouched'] = { $type: "date" };
   update['$currentDate']['lastUpdated'] = { $type: "date" };
 
   var projection = {

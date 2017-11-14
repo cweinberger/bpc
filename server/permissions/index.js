@@ -337,6 +337,45 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+
+  server.route({
+    method: 'PATCH',
+    path: '/{provider}/{user}/{scope}',
+    config: {
+      auth: {
+        access: {
+          scope: ['{params.scope}', 'admin'],
+          entity: 'app' // <-- Important. Users must not be allowed to set permissions
+        }
+      },
+      cors: stdCors,
+      state: {
+        parse: true,
+        failAction: 'log'
+      },
+      validate: {
+        payload: Joi.object()
+      }
+    },
+    handler: function(request, reply) {
+      Permissions.update({
+        user: request.params.user,
+        scope: request.params.scope,
+        payload: request.payload
+      })
+      .then(result => {
+        if (result === null) {
+          reply(Boom.notFound());
+        } else {
+          reply(result.value.dataScopes[request.params.scope]);
+        }
+      })
+      // We are replying with badRequest here, because it's propably an error in the operators in the request.
+      .catch(err => reply(Boom.badRequest(err.message)));
+    }
+  });
+
+
   next();
 };
 

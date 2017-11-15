@@ -102,7 +102,7 @@ module.exports.set = function({user, scope, payload}) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  const selector = {
+  const filter = {
     $or: [
       { email: user.toLowerCase() },
       { id: user }
@@ -117,7 +117,9 @@ module.exports.set = function({user, scope, payload}) {
   let setOnInsert = {
     id: user,
     email: user.toLowerCase(),
-    createdAt: new Date()
+    createdAt: new Date(),
+    lastUpdated: new Date(),
+    lastTouched: new Date()
   };
 
 
@@ -138,7 +140,7 @@ module.exports.set = function({user, scope, payload}) {
 
   }
 
-  const operators = {
+  const update = {
     $currentDate: {
       'lastTouched': { $type: "date" },
       'lastUpdated': { $type: "date" }
@@ -148,16 +150,12 @@ module.exports.set = function({user, scope, payload}) {
   };
 
   const options = {
-    upsert: true,
-    // We're update multi because when updating using {provider}/{email} endpoint e.g. gigya/dako@berlingskemedia.dk
-    //   there is a possibility that the user was deleted and created in Gigya with a new UID.
-    //   In this case we have multiple user-objects in BPC. So to be safe, we update them all so nothing is lost.
-    multi: true
+    upsert: true
     //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
     //  collation: <document>
   };
 
-  return MongoDB.collection('users').update(selector, operators, options);
+  return MongoDB.collection('users').updateOne(filter, update, options);
 
 };
 

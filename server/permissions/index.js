@@ -20,45 +20,6 @@ module.exports.register = function (server, options, next) {
   // TODO: Add audit trail for all requests in this plugin
   // TODO: Implement audit trail of what update was performed by what app.
 
-  server.route({
-    method: 'GET',
-    path: '/',
-    config: {
-      auth: {
-        access: {
-          entity: 'user' // <-- Important. Apps cannot request permissions with specifying what {user} to get
-        }
-      },
-      cors: stdCors,
-      state: {
-        parse: true,
-        failAction: 'log'
-      }
-    },
-    handler: function(request, reply) {
-
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
-        if (err) {
-          return reply(err)
-        }
-
-        // Should we query the database or look in the private part of the ticket?
-        // See GET /{scope} handler below
-        if (true) {
-
-          Permissions.get(ticket)
-          .then(dataScopes => reply(dataScopes))
-          .catch(err => reply(err));
-
-        } else {
-
-          // We can get the data from the ticket.ext.private part.
-          reply();
-
-        }
-      });
-    }
-  });
 
   server.route({
     method: 'GET',
@@ -90,7 +51,11 @@ module.exports.register = function (server, options, next) {
 
           if (Object.keys(request.query).length > 0) {
 
-            Permissions.count({user: ticket.user, scope: request.params.scope}, request.query)
+            Permissions.count({
+              user: ticket.user,
+              scope: request.params.scope
+            },
+            request.query)
             .then(result => {
               if(result === 1) {
                 reply({ status: 'OK' });
@@ -146,7 +111,11 @@ module.exports.register = function (server, options, next) {
 
       if (Object.keys(request.query).length > 0) {
 
-        Permissions.count({ user: request.params.user, scope: request.params.scope }, request.query)
+        Permissions.count({
+          user: request.params.user,
+          scope: request.params.scope
+        },
+        request.query)
         .then(result => {
           if(result === 1) {
             reply({ status: 'OK' });
@@ -195,13 +164,7 @@ module.exports.register = function (server, options, next) {
         scope: request.params.scope,
         payload: request.payload
       })
-      .then(result => {
-        if (result === null) {
-          reply(Boom.notFound());
-        } else {
-          reply({'status': 'ok'});
-        }
-      })
+      .then(result => reply({'status': 'ok'}))
       .catch(err => reply(err));
     }
   });
@@ -227,26 +190,27 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
+
       Permissions.update({
         user: request.params.user,
         scope: request.params.scope,
         payload: request.payload
       })
       .then(result => {
-        if (result === null) {
+        if (result.n === 0) {
           reply(Boom.notFound());
         } else {
           reply(result.value.dataScopes[request.params.scope]);
         }
       })
-      .catch(err => reply(Boom.badRequest(err.message)));      
+      .catch(err => reply(Boom.badRequest(err.message)));
     }
   });
 
 
   server.route({
     method: 'GET',
-    path: '/{provider}/{user}/{scope}',
+    path: '/{collection}/{user}/{scope}',
     config: {
       auth: {
         access: {
@@ -261,7 +225,7 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         params: {
-          provider: Joi.string().valid('gigya', 'google'),
+          collection: Joi.string().valid('gigya', 'google', 'fingerprints'),
           user: Joi.string(),
           scope: Joi.string()
         }
@@ -271,7 +235,11 @@ module.exports.register = function (server, options, next) {
 
       if (Object.keys(request.query).length > 0) {
 
-        Permissions.count({ user: request.params.user, scope: request.params.scope }, request.query)
+        Permissions.count({
+          user: request.params.user,
+          scope: request.params.scope
+        },
+        request.query)
         .then(result => {
           if(result === 1) {
             reply({ status: 'OK' });
@@ -298,7 +266,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/{provider}/{user}/{scope}',
+    path: '/{collection}/{user}/{scope}',
     config: {
       auth: {
         access: {
@@ -313,7 +281,7 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         params: {
-          provider: Joi.string().valid('gigya', 'google'),
+          collection: Joi.string().valid('gigya', 'google', 'fingerprints'),
           user: Joi.string(),
           scope: Joi.string()
         },
@@ -327,13 +295,7 @@ module.exports.register = function (server, options, next) {
         scope: request.params.scope,
         payload: request.payload
       })
-      .then(result => {
-        if (result === null) {
-          reply(Boom.notFound());
-        } else {
-          reply({'status': 'ok'});
-        }
-      })
+      .then(result => reply({'status': 'ok'}))
       .catch(err => reply(err));
     }
   });
@@ -341,7 +303,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'PATCH',
-    path: '/{provider}/{user}/{scope}',
+    path: '/{collection}/{user}/{scope}',
     config: {
       auth: {
         access: {
@@ -356,7 +318,7 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         params: {
-          provider: Joi.string().valid('gigya', 'google'),
+          collection: Joi.string().valid('gigya', 'google', 'fingerprints'),
           user: Joi.string(),
           scope: Joi.string()
         },
@@ -364,13 +326,14 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
+
       Permissions.update({
         user: request.params.user,
         scope: request.params.scope,
         payload: request.payload
       })
       .then(result => {
-        if (result === null) {
+        if (result.n === 0) {
           reply(Boom.notFound());
         } else {
           reply(result.value.dataScopes[request.params.scope]);
@@ -382,6 +345,7 @@ module.exports.register = function (server, options, next) {
 
 
   next();
+
 };
 
 

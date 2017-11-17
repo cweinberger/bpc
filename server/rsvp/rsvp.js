@@ -77,26 +77,30 @@ function createGoogleRsvp(data) {
 
 function createAnonymousRsvp(data) {
 
+  if (!data.auid || !validUUID(data.auid.replace('Gh18.1**', ''))) {
+    data.auid = "Gh18.1**".concat(generateUUID());
+  }
+console.log('data', data);
   let grant = {};
 
   return findApplication({ app: data.app, provider: data.provider })
   .then(app => {
     var grant = {
-      id: 'TEST',
+      id: data.auid,
       app: app.id,
-      user: data.fingerprint,
+      user: data.auid,
       exp: null,
       scope: []
     };
 
     var ticket = {
       app: app.id,
-      user: data.fingerprint,
-      exp: Oz.hawk.utils.now() + (1000 * 60),
+      user: data.auid,
+      exp: Oz.hawk.utils.now() + (1000 * 60 * 60 * 24), // One day
       scope: [],
-      grant: 'FDGDF'
+      grant: data.auid
     };
-
+console.log('now', Oz.hawk.utils.now());
     var options = {
       ext: {
         private: {
@@ -194,4 +198,22 @@ function createRsvp(app, grant, user){
       }
     });
   });
+}
+
+
+function generateUUID () {
+  var d = Date.now();
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function'){
+      d += performance.now(); //use high-precision timer if available
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = (d + Math.random() * 16) % 16 | 0;
+      d = Math.floor(d / 16);
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+
+function validUUID(input) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input);
 }

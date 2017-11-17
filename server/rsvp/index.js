@@ -37,9 +37,6 @@ const rsvpValidation = Joi.object().keys({
     is: 'google', then: Joi.required(), otherwise: Joi.forbidden()
   }),
   email: Joi.strip(),
-  fingerprint: Joi.string().when('provider', {
-    is: 'anonymous', then: Joi.required(), otherwise: Joi.forbidden()
-  }),
   app: Joi.string().required(),
   returnUrl: Joi.string().uri().optional()
 });
@@ -47,26 +44,50 @@ const rsvpValidation = Joi.object().keys({
 
 module.exports.register = function (server, options, next) {
 
+  server.state('auid', {
+    path: '/',
+    // domain: ".".concat(BPC_PUB_HOST ? BPC_PUB_HOST : server.info.host.concat('.local')),
+    ttl: 30585600000, // 354 days
+    isSecure: false,
+    isSameSite: false,
+    isHttpOnly: true,
+    encoding: 'none',
+    clearInvalid: false, // remove invalid cookies
+    strictHeader: false // don't allow violations of RFC 6265
+  });
+
   server.route({
     method: 'GET',
     path: '/',
     config: {
       auth: false,
       cors: corsRules,
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'error' // may also be 'ignore' or 'log'
+      },
       validate: {
         query: rsvpValidation
       }
     },
     handler: function (request, reply) {
-      Rsvp.create(request.query)
+
+      let data = Object.assign({}, request.query, request.state);
+      console.log('data', data);
+
+      Rsvp.create(data)
       .then(rsvp => {
         // After granting app access, the user returns to the app with the rsvp.
         // TODO: the returnUrl must be a setting on the App, and not part of the URL.
         //   And the reponse must always be a redirect on a GET /rsvp
         if (request.query.returnUrl) {
-          reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp));
+          reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp))
+          .state('auid', 'test_redir');
         } else {
-          reply({rsvp:rsvp}).header('X-RSVP-TOKEN', rsvp);
+          reply({rsvp:rsvp})
+          .state('auid', 'test')
+          // .unstate('auid')
+          .header('X-RSVP-TOKEN', rsvp);
         }
       })
       .catch(err => reply(err));
@@ -93,7 +114,10 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function (request, reply) {
-      Rsvp.create(request.payload)
+      let data = Object.assign({}, request.query, request.state);
+      console.log('data', data);
+
+      Rsvp.create(data)
       .then(rsvp => reply({rsvp:rsvp}).header('X-RSVP-TOKEN', rsvp))
       .catch(err => reply(err));
       // .catch(err => {

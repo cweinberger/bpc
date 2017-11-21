@@ -3,7 +3,7 @@
 
 const Oz = require('oz');
 const Boom = require('boom');
-const crypto = require('crypto');
+const Crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 const Applications = require('./../applications/applications');
 const Gigya = require('./../gigya/gigya_client');
@@ -14,7 +14,7 @@ const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
 
 module.exports = {
-  create: function (data) {
+  create: function (data, reply) {
     if (data.provider === 'gigya') {
       // return createGigyaRsvp(data).then(callback);
       return createGigyaRsvp(data);
@@ -22,7 +22,7 @@ module.exports = {
       return createGoogleRsvp(data);
     } else if (data.provider === 'anonymous') {
       // return Promise.reject(Boom.notImplemented('anonymous provider not implemented'));
-      return createAnonymousRsvp(data);
+      return createAnonymousRsvp(data, reply);
     } else {
       return Promise.reject(Boom.badRequest('Unsupported provider'));
     }
@@ -49,12 +49,10 @@ function createGigyaRsvp(data) {
   return Gigya.callApi('/accounts.exchangeUIDSignature', exchangeUIDSignatureParams)
   .then(result => Gigya.callApi('/accounts.getAccountInfo', { UID: data.UID }))
   .then(result => {
-    var promises = [
+    return Promise.all([
       findApplication({ app: data.app, provider: data.provider }),
       findGrant({ user: result.body.profile.email, app: data.app })
-    ];
-
-    return Promise.all(promises)
+    ])
     .then(results => createRsvp(results[0], results[1], result.body.profile.email));
   });
 }
@@ -64,67 +62,49 @@ function createGoogleRsvp(data) {
   // Verify the user with Google.
   return Google.tokeninfo(data)
   .then(result => {
-    var promises = [
+    return Promise.all([
       findApplication({ app: data.app, provider: data.provider }),
       findGrant({ user: result.email, app: data.app })
-    ];
-
-    return Promise.all(promises)
+    ])
     .then(results => createRsvp(results[0], results[1], result.email));
   });
 }
 
 
-function createAnonymousRsvp(data) {
+function createAnonymousRsvp(data, reply) {
 
-  if (!data.auid || !validUUID(data.auid.replace('Gh18.1**', ''))) {
-    data.auid = "Gh18.1**".concat(generateUUID());
+  if (!data.auid || !validUUID(data.auid.replace('auid::', ''))) {
+    data.auid = 'auid::' + generateUUID();
+    // Setting the cookie
+    reply.state('auid', data.auid)
   }
-console.log('data', data);
-  let grant = {};
 
+console.log('data', data);
   return findApplication({ app: data.app, provider: data.provider })
   .then(app => {
-    var grant = {
-      id: data.auid,
+
+    // Dynamic grant. Will not be stored anywhere.
+    // But can be parsed in loadGrantFunc using the id.
+    let grant = {
       app: app.id,
       user: data.auid,
       exp: null,
       scope: []
     };
 
-    var ticket = {
-      app: app.id,
-      user: data.auid,
-      exp: Oz.hawk.utils.now() + (1000 * 60 * 60 * 24), // One day
-      scope: [],
-      grant: data.auid
-    };
-console.log('now', Oz.hawk.utils.now());
-    var options = {
-      ext: {
-        private: {
-          test: 'test_generate'
-        }
-      }
-    };
+    grant.id = 'agid::' + new Buffer(JSON.stringify(grant)).toString('base64');
 
     return new Promise((resolve, reject) => {
-      // Generating the RSVP based on the grant
-      // Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
-      Oz.ticket.generate(ticket, ENCRYPTIONPASSWORD, options, (err, rsvp) => {
+      Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
         if (err) {
           console.error(err);
           return reject(err);
         } else {
-          // After granting app access, the user returns to the app with the rsvp.
-          console.log('TICKET', rsvp);
-          return resolve(rsvp.id);
+          return resolve(rsvp);
         }
       });
     });
   });
-
 }
 
 
@@ -173,6 +153,10 @@ function createRsvp(app, grant, user){
 
     return Promise.reject(Boom.forbidden());
 
+  } else if (noGrant && !user) {
+
+    return Promise.reject(Boom.forbidden());
+
   } else if (noGrant) {
 
     // Creating new clean grant
@@ -182,6 +166,7 @@ function createRsvp(app, grant, user){
       scope: []
     };
 
+    // Generates the grant.id and saves the grant
     Applications.createAppGrant(grant);
 
   }

@@ -346,8 +346,7 @@ describe('rsvp integration test', () => {
   it('get rsvp for a anonymous user', done => {
     let payload = {
       provider: 'anonymous',
-      app: 'app_with_gigya_provider',
-      fingerprint: 'fdi76234rgwegr37489rsdfihfg8723tjefhsgdfs7d86'
+      app: 'app_with_gigya_provider'
     };
 
     bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)

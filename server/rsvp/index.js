@@ -73,33 +73,20 @@ module.exports.register = function (server, options, next) {
     handler: function (request, reply) {
 
       let data = Object.assign({}, request.query, request.state);
-      console.log('data', data);
 
-      Rsvp.create(data)
+      Rsvp.create(data, reply)
       .then(rsvp => {
         // After granting app access, the user returns to the app with the rsvp.
         // TODO: the returnUrl must be a setting on the App, and not part of the URL.
         //   And the reponse must always be a redirect on a GET /rsvp
         if (request.query.returnUrl) {
-          reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp))
-          .state('auid', 'test_redir');
+          reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp));
         } else {
           reply({rsvp:rsvp})
-          .state('auid', 'test')
-          // .unstate('auid')
           .header('X-RSVP-TOKEN', rsvp);
         }
       })
       .catch(err => reply(err));
-      // .catch(err => {
-      //   if(err.statusCode >= 500) {
-      //     // We want to hide the error from the end user.
-      //     // Boom.badImplementation() logs the error
-      //     return reply(Boom.badImplementation())
-      //   } else {
-      //     return reply(err);
-      //   }
-      // });
     }
   });
 
@@ -114,21 +101,11 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function (request, reply) {
-      let data = Object.assign({}, request.query, request.state);
-      console.log('data', data);
+      let data = Object.assign({}, request.payload, request.state);
 
       Rsvp.create(data)
       .then(rsvp => reply({rsvp:rsvp}).header('X-RSVP-TOKEN', rsvp))
       .catch(err => reply(err));
-      // .catch(err => {
-      //   if(err.statusCode >= 500) {
-      //     // We want to hide the error from the end user.
-      //     // Boom.badImplementation() logs the error
-      //     return reply(Boom.badImplementation())
-      //   } else {
-      //     return reply(err);
-      //   }
-      // });
     }
   });
 

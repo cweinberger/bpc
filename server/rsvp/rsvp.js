@@ -76,10 +76,11 @@ function createAnonymousRsvp(data, reply) {
   if (!data.auid || !validUUID(data.auid.replace('auid::', ''))) {
     data.auid = 'auid::' + generateUUID();
     // Setting the cookie
-    reply.state('auid', data.auid)
+    if (reply && reply.state) { // Because of testing
+      reply.state('auid', data.auid)
+    }
   }
 
-console.log('data', data);
   return findApplication({ app: data.app, provider: data.provider })
   .then(app => {
 

@@ -132,9 +132,7 @@ function findApplication({app}) {
     } else if (app.settings && app.settings.disallowGrants){
       return Promise.reject(Boom.unauthorized('App disallow users'));
     } else if (app.settings && !app.settings.allowAnonymousUsers){
-      // TODO:
-      // return Promise.reject(Boom.unauthorized('Anonymous disallowed for application'));
-      return Promise.resolve(app);
+      return Promise.reject(Boom.unauthorized('Anonymous tickets not allowed for application'));
     } else {
       return Promise.resolve(app);
     }

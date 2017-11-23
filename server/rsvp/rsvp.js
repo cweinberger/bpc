@@ -14,15 +14,12 @@ const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 
 
 module.exports = {
-  create: function (data, reply) {
+  create: function (data) {
     if (data.provider === 'gigya') {
       // return createGigyaRsvp(data).then(callback);
       return createGigyaRsvp(data);
     } else if (data.provider === 'google') {
       return createGoogleRsvp(data);
-    } else if (data.provider === 'anonymous') {
-      // return Promise.reject(Boom.notImplemented('anonymous provider not implemented'));
-      return createAnonymousRsvp(data, reply);
     } else {
       return Promise.reject(Boom.badRequest('Unsupported provider'));
     }
@@ -67,44 +64,6 @@ function createGoogleRsvp(data) {
       findGrant({ user: result.email, app: data.app })
     ])
     .then(results => createRsvp(results[0], results[1], result.email));
-  });
-}
-
-
-function createAnonymousRsvp(data, reply) {
-
-  if (!data.auid || !validUUID(data.auid.replace('auid::', ''))) {
-    data.auid = 'auid::' + generateUUID();
-    // Setting the cookie
-    if (reply && reply.state) { // Because of testing
-      reply.state('auid', data.auid)
-    }
-  }
-
-  return findApplication({ app: data.app, provider: data.provider })
-  .then(app => {
-
-    // Dynamic grant. Will not be stored anywhere.
-    // But can be parsed in loadGrantFunc using the id.
-    let grant = {
-      app: app.id,
-      user: data.auid,
-      exp: null,
-      scope: []
-    };
-
-    grant.id = 'agid::' + new Buffer(JSON.stringify(grant)).toString('base64');
-
-    return new Promise((resolve, reject) => {
-      Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
-        if (err) {
-          console.error(err);
-          return reject(err);
-        } else {
-          return resolve(rsvp);
-        }
-      });
-    });
   });
 }
 
@@ -180,26 +139,8 @@ function createRsvp(app, grant, user){
         return reject(err);
       } else {
         // After granting app access, the user returns to the app with the rsvp.
-        return resolve(rsvp);
+        return resolve({rsvp: rsvp});
       }
     });
   });
-}
-
-
-function generateUUID () {
-  var d = Date.now();
-  if (typeof performance !== 'undefined' && typeof performance.now === 'function'){
-      d += performance.now(); //use high-precision timer if available
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = (d + Math.random() * 16) % 16 | 0;
-      d = Math.floor(d / 16);
-      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
-}
-
-
-function validUUID(input) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input);
 }

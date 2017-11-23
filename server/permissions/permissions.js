@@ -50,7 +50,7 @@ module.exports.get = function({user, scope}) {
 
   return MongoDB.collection('users').findOneAndUpdate(filter, update, options)
   .then(result => {
-    if (result.n === 0){
+    if (result.n === 0 || result.value === null) {
       return Promise.reject(Boom.notFound());
     }
 

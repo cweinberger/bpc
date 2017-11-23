@@ -225,7 +225,7 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         params: {
-          collection: Joi.string().valid('gigya', 'google', 'fingerprints'),
+          collection: Joi.string().valid('gigya', 'fingerprints'),
           user: Joi.string(),
           scope: Joi.string()
         }
@@ -281,7 +281,7 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         params: {
-          collection: Joi.string().valid('gigya', 'google', 'fingerprints'),
+          collection: Joi.string().valid('gigya'),
           user: Joi.string(),
           scope: Joi.string()
         },
@@ -318,7 +318,7 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         params: {
-          collection: Joi.string().valid('gigya', 'google', 'fingerprints'),
+          collection: Joi.string().valid('gigya'),
           user: Joi.string(),
           scope: Joi.string()
         },

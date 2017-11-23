@@ -15,9 +15,8 @@ const corsRules = {
   maxAge: 86400
 };
 
-
 const rsvpValidation = Joi.object().keys({
-  provider: Joi.string().valid('gigya', 'google', 'anonymous').default('gigya'),
+  provider: Joi.string().valid('gigya', 'google').default('gigya'),
   UID: Joi.string().when('provider', {
     is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden()
   }),
@@ -44,18 +43,6 @@ const rsvpValidation = Joi.object().keys({
 
 module.exports.register = function (server, options, next) {
 
-  server.state('auid', {
-    path: '/',
-    // domain: ".".concat(BPC_PUB_HOST ? BPC_PUB_HOST : server.info.host.concat('.local')),
-    ttl: 30585600000, // 354 days
-    isSecure: false,
-    isSameSite: false,
-    isHttpOnly: true,
-    encoding: 'none',
-    clearInvalid: false, // remove invalid cookies
-    strictHeader: false // don't allow violations of RFC 6265
-  });
-
   server.route({
     method: 'GET',
     path: '/',
@@ -74,16 +61,15 @@ module.exports.register = function (server, options, next) {
 
       let data = Object.assign({}, request.query, request.state);
 
-      Rsvp.create(data, reply)
-      .then(rsvp => {
+      Rsvp.create(data)
+      .then(result => {
         // After granting app access, the user returns to the app with the rsvp.
         // TODO: the returnUrl must be a setting on the App, and not part of the URL.
         //   And the reponse must always be a redirect on a GET /rsvp
         if (request.query.returnUrl) {
-          reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp));
+          reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp)).header('X-RSVP-TOKEN', result.rsvp);
         } else {
-          reply({rsvp:rsvp})
-          .header('X-RSVP-TOKEN', rsvp);
+          reply(result).header('X-RSVP-TOKEN', result.rsvp);
         }
       })
       .catch(err => reply(err));
@@ -104,7 +90,7 @@ module.exports.register = function (server, options, next) {
       let data = Object.assign({}, request.payload, request.state);
 
       Rsvp.create(data)
-      .then(rsvp => reply({rsvp:rsvp}).header('X-RSVP-TOKEN', rsvp))
+      .then(result => reply(result).header('X-RSVP-TOKEN', result.rsvp))
       .catch(err => reply(err));
     }
   });

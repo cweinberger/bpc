@@ -25,7 +25,7 @@ module.exports.get = function({user, scope}) {
   };
 
   let projection = {
-    _id: 0,
+    _id: 0
   };
 
   // The details must only be the dataScopes that are allowed for the application.

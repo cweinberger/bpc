@@ -136,8 +136,8 @@ describe('rsvp unit tests', () => {
         email: 'some@email.com',
         app: 'invalid-app'
       })
-      .then(rsvp => {
-        expect(rsvp).to.be.undefined();
+      .then(result => {
+        expect(result.rsvp).to.be.undefined();
         done(new Error('RSVP must not be issued'));
       })
       .catch(err => {
@@ -154,9 +154,9 @@ describe('rsvp unit tests', () => {
         email: 'some@email.com',
         app: 'valid-app'
       })
-      .then(rsvp => {
-        expect(rsvp).to.be.a.string();
-        expect(rsvp).to.have.length(334);
+      .then(result => {
+        expect(result.rsvp).to.be.a.string();
+        expect(result.rsvp).to.have.length(334);
         done();
       })
       .catch(err => {
@@ -188,9 +188,9 @@ describe('rsvp unit tests', () => {
         email: 'userwithnopreviousgrant@email.com',
         app: 'valid-app'
       })
-      .then(rsvp => {
-        expect(rsvp).to.be.a.string();
-        expect(rsvp).to.have.length(334);
+      .then(result => {
+        expect(result.rsvp).to.be.a.string();
+        expect(result.rsvp).to.have.length(334);
 
         // Wating a second to make sure the grant is saved to MongoDB
         setTimeout(
@@ -218,8 +218,8 @@ describe('rsvp unit tests', () => {
         email: 'userwithnopreviousgrant@email.com',
         app: 'app_with_disallowAutoCreationGrants'
       })
-      .then(rsvp => {
-        expect(rsvp).to.not.exist();
+      .then(result => {
+        expect(result.rsvp).to.not.exist();
         done(new Error('RSVP must not be issued to userwithnopreviousgrant'));
       })
       .catch(err => {
@@ -337,22 +337,6 @@ describe('rsvp integration test', () => {
     bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
     .then(response => {
       expect(response.statusCode).to.be.equal(401);
-      done();
-    })
-    .catch(done);
-  });
-
-
-  it('get rsvp for a anonymous user', done => {
-    let payload = {
-      provider: 'anonymous',
-      app: 'app_with_gigya_provider'
-    };
-
-    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
-    .then(response => {
-      expect(response.statusCode).to.be.equal(401);
-      // expect(response.statusCode).to.be.equal(501);
       done();
     })
     .catch(done);

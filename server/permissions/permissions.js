@@ -20,7 +20,6 @@ module.exports.get = function({user, scope}) {
 
   const update = {
     $currentDate: {
-      'lastTouched': { $type: "date" },
       'lastFetched': { $type: "date" }
     }
   };
@@ -117,9 +116,8 @@ module.exports.set = function({user, scope, payload}) {
   let setOnInsert = {
     id: user,
     email: user.toLowerCase(),
-    createdAt: new Date(),
-    lastUpdated: new Date(),
-    lastTouched: new Date()
+    createdAt: new Date()
+    // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
   };
 
 
@@ -142,7 +140,6 @@ module.exports.set = function({user, scope, payload}) {
 
   const update = {
     $currentDate: {
-      'lastTouched': { $type: "date" },
       'lastUpdated': { $type: "date" }
     },
     $set: set,
@@ -185,7 +182,6 @@ module.exports.update = function({user, scope, payload}) {
   });
 
   // This must come after payload to make sure it cannot be set by the application
-  update['$currentDate']['lastTouched'] = { $type: "date" };
   update['$currentDate']['lastUpdated'] = { $type: "date" };
 
   let projection = {

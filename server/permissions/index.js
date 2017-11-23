@@ -17,6 +17,10 @@ module.exports.register = function (server, options, next) {
     maxAge: 86400
   };
 
+  // TODO: Add audit trail for all requests in this plugin
+  // TODO: Implement audit trail of what update was performed by what app.
+
+
   server.route({
     method: 'GET',
     path: '/{scope}',
@@ -24,7 +28,7 @@ module.exports.register = function (server, options, next) {
       auth: {
         access: {
           scope: ['{params.scope}'],
-          entity: 'user'
+          entity: 'user' // <-- Important. Apps cannot request permissions with specifying what {user} to get
         }
       },
       cors: stdCors,
@@ -34,7 +38,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
-      
+
       OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
         if (err) {
           return reply(err)
@@ -45,25 +49,31 @@ module.exports.register = function (server, options, next) {
         // But we need to find out how we should handle any changes to the scope (by POST/PATCH). Should we then reissue the ticket with new ticket.ext.private?
         if (true) {
 
-          Permissions.get(ticket)
-          .then(result => {
-            if (result.isBoom) {
-              return reply(result);
-            }
+          if (Object.keys(request.query).length > 0) {
 
-            let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+            Permissions.count({
+              user: ticket.user,
+              scope: request.params.scope
+            },
+            request.query)
+            .then(result => {
+              if(result === 1) {
+                reply({ status: 'OK' });
+              } else {
+                reply(Boom.notFound());
+              }
+            })
+            .catch(err => reply(err));
 
-            if (Object.keys(request.query).length > 1) {
+          } else {
 
-              validateScopeWithQuery(requestedScope, request.query)
-              .then(result => reply(result));
+            Permissions.get(ticket)
+            .then(dataScopes => reply(dataScopes[request.params.scope]
+              ? dataScopes[request.params.scope]
+              : {}))
+            .catch(err => reply(err));
+          }
 
-            } else {
-
-              reply(requestedScope);
-
-            }
-          });
 
         } else {
 
@@ -88,7 +98,7 @@ module.exports.register = function (server, options, next) {
       auth: {
         access: {
           scope: ['{params.scope}', 'admin'],
-          entity: 'app'
+          entity: 'app' // <-- Important. Users must not be allowed to get permissions from other users
         }
       },
       cors: stdCors,
@@ -99,28 +109,31 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.get({
-        user: request.params.user,
-        scope: request.params.scope
-      })
-      .then(result => {
-        if (result.isBoom){
-          return reply(result);
-        }
+      if (Object.keys(request.query).length > 0) {
 
-        let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+        Permissions.count({
+          user: request.params.user,
+          scope: request.params.scope
+        },
+        request.query)
+        .then(result => {
+          if(result === 1) {
+            reply({ status: 'OK' });
+          } else {
+            reply(Boom.notFound());
+          }
+        })
+        .catch(err => reply(err));
 
-        if (Object.keys(request.query).length > 1) {
+      } else {
 
-          validateScopeWithQuery(requestedScope, request.query)
-          .then(result => reply(result));
+        Permissions.get({ user: request.params.user, scope: request.params.scope })
+        .then(dataScopes => reply(dataScopes[request.params.scope]
+          ? dataScopes[request.params.scope]
+          : {}))
+        .catch(err => reply(err));
 
-        } else {
-
-          reply(requestedScope);
-
-        }
-      });
+      }
     }
   });
 
@@ -151,14 +164,8 @@ module.exports.register = function (server, options, next) {
         scope: request.params.scope,
         payload: request.payload
       })
-      .then(result => {
-        if (result === null) {
-          reply(Boom.notFound());
-        } else {
-          reply({'status': 'ok'});
-        }
-      })
-      .catch(err => reply(Boom.badImplementation(err.message)));
+      .then(result => reply({'status': 'ok'}))
+      .catch(err => reply(err));
     }
   });
 
@@ -183,19 +190,19 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply) {
+
       Permissions.update({
         user: request.params.user,
         scope: request.params.scope,
         payload: request.payload
       })
       .then(result => {
-        if (result === null) {
+        if (result.n === 0) {
           reply(Boom.notFound());
         } else {
           reply(result.value.dataScopes[request.params.scope]);
         }
       })
-      // We are replying with badRequest here, because it's propably an error in the operators in the request.
       .catch(err => reply(Boom.badRequest(err.message)));
     }
   });
@@ -203,7 +210,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/{provider}/{email}/{scope}',
+    path: '/{collection}/{user}/{scope}',
     config: {
       auth: {
         access: {
@@ -218,43 +225,48 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         params: {
-          provider: Joi.string().valid('gigya', 'google'),
-          email: Joi.string().email(),
+          collection: Joi.string().valid('gigya', 'fingerprints'),
+          user: Joi.string(),
           scope: Joi.string()
         }
       }
     },
     handler: function(request, reply) {
 
-      Permissions.get({
-        user: request.params.email.toLowerCase(),
-        scope: request.params.scope
-      })
-      .then(result => {
-        if (result.isBoom){
-          return reply(result);
-        }
+      if (Object.keys(request.query).length > 0) {
 
-        let requestedScope = result[request.params.scope] ? result[request.params.scope] : {};
+        Permissions.count({
+          user: request.params.user,
+          scope: request.params.scope
+        },
+        request.query)
+        .then(result => {
+          if(result === 1) {
+            reply({ status: 'OK' });
+          } else {
+            reply(Boom.notFound());
+          }
+        })
+        .catch(err => reply(err));
 
-        if (Object.keys(request.query).length > 1) {
+      } else {
 
-          validateScopeWithQuery(requestedScope, request.query)
-          .then(result => reply(result));
-
-        } else {
-
-          reply(requestedScope);
-
-        }
-      });
+        Permissions.get({
+          user: request.params.user,
+          scope: request.params.scope
+        })
+        .then(dataScopes => reply(dataScopes[request.params.scope]
+          ? dataScopes[request.params.scope]
+          : {}))
+        .catch(err => reply(err));
+      }
     }
   });
 
 
   server.route({
     method: 'POST',
-    path: '/{provider}/{email}/{scope}',
+    path: '/{collection}/{user}/{scope}',
     config: {
       auth: {
         access: {
@@ -269,8 +281,8 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         params: {
-          provider: Joi.string().valid('gigya', 'google'),
-          email: Joi.string().email(),
+          collection: Joi.string().valid('gigya'),
+          user: Joi.string(),
           scope: Joi.string()
         },
         payload: Joi.object()
@@ -278,52 +290,66 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-
       Permissions.set({
-        user: request.params.email.toLowerCase(),
+        user: request.params.user,
+        scope: request.params.scope,
+        payload: request.payload
+      })
+      .then(result => reply({'status': 'ok'}))
+      .catch(err => reply(err));
+    }
+  });
+
+
+  server.route({
+    method: 'PATCH',
+    path: '/{collection}/{user}/{scope}',
+    config: {
+      auth: {
+        access: {
+          scope: ['{params.scope}', 'admin'],
+          entity: 'app' // <-- Important. Users must not be allowed to set permissions
+        }
+      },
+      cors: stdCors,
+      state: {
+        parse: true,
+        failAction: 'log'
+      },
+      validate: {
+        params: {
+          collection: Joi.string().valid('gigya'),
+          user: Joi.string(),
+          scope: Joi.string()
+        },
+        payload: Joi.object()
+      }
+    },
+    handler: function(request, reply) {
+
+      Permissions.update({
+        user: request.params.user,
         scope: request.params.scope,
         payload: request.payload
       })
       .then(result => {
-        if (result === null) {
+        if (result.n === 0) {
           reply(Boom.notFound());
         } else {
-          reply({'status': 'ok'});
+          reply(result.value.dataScopes[request.params.scope]);
         }
       })
-      .catch(err => reply(Boom.badImplementation(err.message)));
+      .catch(err => reply(err));
     }
   });
 
+
   next();
+
 };
 
 
 module.exports.register.attributes = {
   name: 'permissions',
   version: '1.0.0'
-};
-
-
-const validateScopeWithQuery = function(scope, query) {
-
-  let allCorrect = Object.keys(query).every(key => {
-
-    if (typeof scope[key] === 'boolean') {
-      return scope[key].toString() === query[key];
-    } else if (typeof scope[key] === 'string') {
-      return scope[key] === query[key];
-    } else if (typeof scope[key] === 'object') {
-      return JSON.stringify(scope[key]) === JSON.stringify(query[key]);
-    } else {
-      return false;
-    }
-
-  });
-
-  if (allCorrect){
-    return Promise.resolve();
-  } else {
-    return Promise.resolve(Boom.forbidden());
-  }
 };

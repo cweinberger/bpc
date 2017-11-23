@@ -3,7 +3,7 @@
 
 const Oz = require('oz');
 const Boom = require('boom');
-const crypto = require('crypto');
+const Crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 const Applications = require('./../applications/applications');
 const Gigya = require('./../gigya/gigya_client');
@@ -20,9 +20,6 @@ module.exports = {
       return createGigyaRsvp(data);
     } else if (data.provider === 'google') {
       return createGoogleRsvp(data);
-    } else if (data.provider === 'anonymous') {
-      return Promise.reject(Boom.notImplemented('anonymous provider not implemented'));
-      // return createAnonymousRsvp(data);
     } else {
       return Promise.reject(Boom.badRequest('Unsupported provider'));
     }
@@ -49,12 +46,10 @@ function createGigyaRsvp(data) {
   return Gigya.callApi('/accounts.exchangeUIDSignature', exchangeUIDSignatureParams)
   .then(result => Gigya.callApi('/accounts.getAccountInfo', { UID: data.UID }))
   .then(result => {
-    var promises = [
+    return Promise.all([
       findApplication({ app: data.app, provider: data.provider }),
       findGrant({ user: result.body.profile.email, app: data.app })
-    ];
-
-    return Promise.all(promises)
+    ])
     .then(results => createRsvp(results[0], results[1], result.body.profile.email));
   });
 }
@@ -64,45 +59,12 @@ function createGoogleRsvp(data) {
   // Verify the user with Google.
   return Google.tokeninfo(data)
   .then(result => {
-    var promises = [
+    return Promise.all([
       findApplication({ app: data.app, provider: data.provider }),
       findGrant({ user: result.email, app: data.app })
-    ];
-
-    return Promise.all(promises)
+    ])
     .then(results => createRsvp(results[0], results[1], result.email));
   });
-}
-
-
-function createAnonymousRsvp(data) {
-
-  let grant = {};
-
-  return findApplication({ app: data.app, provider: data.provider })
-  .then(app => {
-    var grant = {
-      id: 'TEST',
-      app: app.id,
-      user: data.fingerprint,
-      exp: null,
-      scope: []
-    };
-
-    return new Promise((resolve, reject) => {
-      // Generating the RSVP based on the grant
-      Oz.ticket.generate(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
-        if (err) {
-          console.error(err);
-          return reject(err);
-        } else {
-          // After granting app access, the user returns to the app with the rsvp.
-          return resolve(rsvp);
-        }
-      });
-    });
-  });
-
 }
 
 
@@ -151,6 +113,10 @@ function createRsvp(app, grant, user){
 
     return Promise.reject(Boom.forbidden());
 
+  } else if (noGrant && !user) {
+
+    return Promise.reject(Boom.forbidden());
+
   } else if (noGrant) {
 
     // Creating new clean grant
@@ -160,6 +126,7 @@ function createRsvp(app, grant, user){
       scope: []
     };
 
+    // Generates the grant.id and saves the grant
     Applications.createAppGrant(grant);
 
   }
@@ -172,7 +139,7 @@ function createRsvp(app, grant, user){
         return reject(err);
       } else {
         // After granting app access, the user returns to the app with the rsvp.
-        return resolve(rsvp);
+        return resolve({rsvp: rsvp});
       }
     });
   });

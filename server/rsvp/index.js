@@ -15,9 +15,8 @@ const corsRules = {
   maxAge: 86400
 };
 
-
 const rsvpValidation = Joi.object().keys({
-  provider: Joi.string().valid('gigya', 'google', 'anonymous').default('gigya'),
+  provider: Joi.string().valid('gigya', 'google').default('gigya'),
   UID: Joi.string().when('provider', {
     is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden()
   }),
@@ -37,9 +36,6 @@ const rsvpValidation = Joi.object().keys({
     is: 'google', then: Joi.required(), otherwise: Joi.forbidden()
   }),
   email: Joi.strip(),
-  fingerprint: Joi.string().when('provider', {
-    is: 'anonymous', then: Joi.required(), otherwise: Joi.forbidden()
-  }),
   app: Joi.string().required(),
   returnUrl: Joi.string().uri().optional()
 });
@@ -53,32 +49,30 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: false,
       cors: corsRules,
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'error' // may also be 'ignore' or 'log'
+      },
       validate: {
         query: rsvpValidation
       }
     },
     handler: function (request, reply) {
-      Rsvp.create(request.query)
-      .then(rsvp => {
+
+      let data = Object.assign({}, request.query, request.state);
+
+      Rsvp.create(data)
+      .then(result => {
         // After granting app access, the user returns to the app with the rsvp.
         // TODO: the returnUrl must be a setting on the App, and not part of the URL.
         //   And the reponse must always be a redirect on a GET /rsvp
         if (request.query.returnUrl) {
-          reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp));
+          reply.redirect(request.query.returnUrl.concat('?rsvp=', rsvp)).header('X-RSVP-TOKEN', result.rsvp);
         } else {
-          reply({rsvp:rsvp}).header('X-RSVP-TOKEN', rsvp);
+          reply(result).header('X-RSVP-TOKEN', result.rsvp);
         }
       })
       .catch(err => reply(err));
-      // .catch(err => {
-      //   if(err.statusCode >= 500) {
-      //     // We want to hide the error from the end user.
-      //     // Boom.badImplementation() logs the error
-      //     return reply(Boom.badImplementation())
-      //   } else {
-      //     return reply(err);
-      //   }
-      // });
     }
   });
 
@@ -93,18 +87,11 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function (request, reply) {
-      Rsvp.create(request.payload)
-      .then(rsvp => reply({rsvp:rsvp}).header('X-RSVP-TOKEN', rsvp))
+      let data = Object.assign({}, request.payload, request.state);
+
+      Rsvp.create(data)
+      .then(result => reply(result).header('X-RSVP-TOKEN', result.rsvp))
       .catch(err => reply(err));
-      // .catch(err => {
-      //   if(err.statusCode >= 500) {
-      //     // We want to hide the error from the end user.
-      //     // Boom.badImplementation() logs the error
-      //     return reply(Boom.badImplementation())
-      //   } else {
-      //     return reply(err);
-      //   }
-      // });
     }
   });
 

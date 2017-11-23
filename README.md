@@ -199,6 +199,9 @@ db.grants.insert({
 The following indexes have been created manually:
 
 ```
+db.applications.createIndex( { id: 1 })
+db.grants.createIndex({ id: 1 })
+db.grants.createIndex({ user: 1, app: 1 })
 db.users.createIndex( { id: 1 })
 db.users.createIndex( { email: 1, provider: 1 })
 db.users.createIndex( { id: 1, email: 1, provider: 1 })
@@ -214,10 +217,14 @@ db.users.createIndex( { id: 1, email: 1, provider: 1 })
 
 ## Debugging
 
-Use `node debug localhost:5858` to start the debugger.
+When starting BPC using `gulp`, the debug flag is automatically set.
+
+Start a new termimal and run `node debug localhost:5858` to start the debugger and attach to BPC.
 Insert `debugger;` statements into the code to make a breakpoint.
 
-See official documentation on more info on the [Debugger](https://nodejs.org/dist/latest-v6.x/docs/api/debugger.html)
+On the `debug>` prompt, use commands like `next`, `repl`, CTRL-C, `cont`, `quit`.
+
+See official documentation for more info on the [Debugger](https://nodejs.org/dist/latest-v6.x/docs/api/debugger.html)
 
 
 ## Testing

@@ -7,6 +7,7 @@ const Boom = require('boom');
 const Gigya = require('./../gigya/gigya_client');
 const GigyaUtils = require('./../gigya/gigya_utils');
 const MongoDB = require('./../mongo/mongodb_client');
+const EventLog = require('./../audit/eventlog');
 
 
 module.exports.register = function (server, options, next) {
@@ -176,11 +177,7 @@ function accountCreatedEventHandler(event) {
 
 function accountRegisteredEventHandler(event) {
   return Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid })
-  .then(result => upsertUserId({
-    id: event.data.uid,
-    email: result.body.profile.email.toLowerCase(),
-    provider: 'gigya' })
-  );
+  .then(result => upsertUserId(result.body));
 }
 
 
@@ -198,24 +195,30 @@ function accountLoggedInEventHandler(event) {
 
 function accountDeletedEventHandler(event) {
   return deleteUserId({ id: event.data.uid })
+  .then(() => EventLog.logUserEvent(event.data.uid, 'Deleting user'))
   .catch(err => {
+    EventLog.logUserEvent(event.data.uid, 'Deleting user Failed');
     console.error(err);
   });
 }
 
-function upsertUserId ({id, email, provider}) {
+
+function upsertUserId (accountInfo) {
 
   let selector = {
     $or: [
-      { email: email },
-      { id: id }
+      { email: accountInfo.profile.email.toLowerCase() },
+      { id: accountInfo.UID }
     ]
   };
 
   let set = {
-    id: id,
-    email: email.toLowerCase(),
-    provider: provider
+    id: accountInfo.UID,
+    email: accountInfo.profile.email.toLowerCase(),
+    provider: 'gigya',
+    gigya: {
+      UID: accountInfo.UID
+    }
   };
 
   let setOnInsert = {
@@ -235,25 +238,23 @@ function upsertUserId ({id, email, provider}) {
     $setOnInsert: setOnInsert
   };
 
-  return MongoDB.collection('users').update(
-    selector,
-    operators,
-    {
-      upsert: true
-    }
-  );
+  const options = {
+    upsert: true
+  };
+
+  return MongoDB.collection('users').update(selector, operators, options);
 };
 
 
 
 // TODO: Should we do more? Eg. expire grants?
 function deleteUserId ({id}){
-  return MongoDB.collection('users')
-  // .findOneAndDelete({ id: id }) // findOneAndDelete Not implemented in mongo-mock
-  .findOne({ id: id })
-  .then(user => {
+
+  return MongoDB.collection('users').findOneAndDelete({ id: id })
+  .then(result => {
+    let user = result.value;
     user.deletedAt = new Date();
     return MongoDB.collection('deleted_users').insert(user);
-  })
-  .then(() => MongoDB.collection('users').remove({ id: id }))
+  });
+
 };

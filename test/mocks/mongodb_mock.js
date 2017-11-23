@@ -12,7 +12,7 @@ let db;
 
 
 // Establish connection and perform error handling.
-console.log('Connecting to MongoDB MOCK on ' + `${mongoDbConnection}`);
+console.log('Using MongoDB MOCK on ' + `${mongoDbConnection}`);
 MongoClient.connect(mongoDbConnection, (err, database) => {
   if (err) {
     throw err;
@@ -29,7 +29,78 @@ module.exports.close = function(callback) {
 
 
 module.exports.collection = function(collectionName) {
-  return db.collection(collectionName);
+  let coll = db.collection(collectionName)
+
+  // findOneAndUpdate Not implemented in mongo-mock
+  // my own simple fake findOneAndUpdate
+  coll.findOneAndUpdate = function (filter, update, options) {
+
+    options = options ? options : {};
+
+    const updateOneOptions = {
+      upsert: options.upsert,
+    };
+
+    const findOneOptions = {
+      fields: options.projection,
+      sort: options.sort,
+      maxTimeMS: options.maxTimeMS
+    };
+
+    if (options.returnOriginal) {
+
+      return coll.updateOne(filter, update, updateOneOptions)
+      .then(() => {
+        return coll.findOne(filter, findOneOptions)
+        .then(user => {
+          if (!user) {
+            return Promise.resolve({n: 0});
+          }
+
+          return Promise.resolve({n: 1, value: user});
+        });
+      });
+
+    } else {
+
+      return coll.findOne(filter, findOneOptions)
+      .then(user => {
+        if (!user) {
+          return Promise.resolve({n: 0});
+        }
+
+        coll.updateOne(filter, update, updateOneOptions);
+        return Promise.resolve({n: 1, value: user});
+      });
+
+    }
+  };
+
+  // findOneAndDelete Not implemented in mongo-mock
+  // my own simple fake findOneAndDelete
+  coll.findOneAndDelete = function (filter, options) {
+
+    options = options ? options : {};
+
+    const findOneOptions = {
+      fields: options.projection,
+      sort: options.sort,
+      maxTimeMS: options.maxTimeMS
+    };
+
+    return coll.findOne(filter, findOneOptions)
+    .then(user => {
+      if (!user) {
+        return Promise.resolve({n: 0});
+      }
+
+      coll.remove(filter);
+      return Promise.resolve({n: 1, value: user});
+    });
+  };
+
+  return coll;
+
 };
 
 

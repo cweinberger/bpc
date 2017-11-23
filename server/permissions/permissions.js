@@ -8,15 +8,21 @@ const MongoDB = require('./../mongo/mongodb_client');
 module.exports.get = function({user, scope}) {
 
   if (!user || !scope) {
-    return Promise.reject('user or scope missing');
+    return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  let selector = {
+  const filter = {
     $or: [
-      { email: user },
+      { email: user.toLowerCase() },
       { id: user }
-    ],
-    deletedAt: { $exists: false }
+    ]
+  };
+
+  const update = {
+    $currentDate: {
+      'lastTouched': { $type: "date" },
+      'lastFetched': { $type: "date" }
+    }
   };
 
   let projection = {
@@ -24,33 +30,81 @@ module.exports.get = function({user, scope}) {
   };
 
   // The details must only be the dataScopes that are allowed for the application.
-  if (scope instanceof Array) {
-    scope.forEach(scopeName => {
-      projection['dataScopes.'.concat(scopeName)] = 1;
-    });
-  } else if(typeof scope === 'string'){
-    projection['dataScopes.'.concat(scope)] = 1;
+  if (MongoDB.isMock) {
+    // Well, mongo-mock does not support projection of sub-documents
+  } else {
+    if (scope instanceof Array) {
+      scope.forEach(scopeName => {
+        projection['dataScopes.'.concat(scopeName)] = 1;
+      });
+    } else if(typeof scope === 'string'){
+      projection['dataScopes.'.concat(scope)] = 1;
+    } else {
+      projection['dataScopes'] = 0;
+    }
   }
 
-  return MongoDB.collection('users').findOne(selector, projection)
-  .then(user => {
+  const options = {
+    projection: projection
+  };
 
-    if (user === null){
-      return Promise.resolve(Boom.notFound());
+  return MongoDB.collection('users').findOneAndUpdate(filter, update, options)
+  .then(result => {
+    if (result.n === 0 || result.value === null) {
+      return Promise.reject(Boom.notFound());
     }
 
-    return Promise.resolve(user.dataScopes);
+    const user = result.value;
 
-  })
-  .catch(err => Boom.badRequest());
+    if (user.dataScopes === undefined || user.dataScopes === null) {
+      return Promise.resolve({});
+    } else {
+      return Promise.resolve(user.dataScopes);
+    }
+
+  });
+};
+
+
+module.exports.count = function({user, scope}, query) {
+
+  if (!user || !scope) {
+    return Promise.reject(Boom.badRequest('user or scope missing'));
+  }
+
+  if (typeof scope !== 'string') {
+    return Promise.reject(Boom.badRequest('scope must be a string'));
+  }
+
+  let filter = {
+    $or: [
+      { email: user.toLowerCase() },
+      { id: user }
+    ]
+  };
+
+  Object.keys(query).forEach(key => {
+    try {
+      filter['dataScopes.'.concat(scope,".",key)] = JSON.parse(query[key]);
+    } catch(ex) {
+      filter['dataScopes.'.concat(scope,".",key)] = query[key];
+    }
+  });
+
+  return MongoDB.collection('users').count(filter, {limit: 1});
+
 };
 
 
 module.exports.set = function({user, scope, payload}) {
 
-  let selector = {
+  if (!user || !scope) {
+    return Promise.reject(Boom.badRequest('user or scope missing'));
+  }
+
+  const filter = {
     $or: [
-      { email: user },
+      { email: user.toLowerCase() },
       { id: user }
     ]
   };
@@ -62,8 +116,10 @@ module.exports.set = function({user, scope, payload}) {
   // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
   let setOnInsert = {
     id: user,
-    email: user,
-    createdAt: new Date()
+    email: user.toLowerCase(),
+    createdAt: new Date(),
+    lastUpdated: new Date(),
+    lastTouched: new Date()
   };
 
 
@@ -84,69 +140,65 @@ module.exports.set = function({user, scope, payload}) {
 
   }
 
-  let operators = {
-    $currentDate: { 'lastUpdated': { $type: "date" } },
+  const update = {
+    $currentDate: {
+      'lastTouched': { $type: "date" },
+      'lastUpdated': { $type: "date" }
+    },
     $set: set,
     $setOnInsert: setOnInsert
   };
 
+  const options = {
+    upsert: true
+    //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+    //  collation: <document>
+  };
 
-  return MongoDB.collection('users')
-  .update(
-    selector,
-    operators,
-    {
-      upsert: true,
-      // We're update multi because when updating using {provider}/{email} endpoint e.g. gigya/dako@berlingskemedia.dk
-      //   there is a possibility that the user was deleted and created in Gigya with a new UID.
-      //   In this case we have multiple user-objects in BPC. So to be safe, we update them all so nothing is lost.
-      multi: true
-      //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
-      //  collation: <document>
-    }
-  )
-  .catch(err => Boom.badRequest());
+  return MongoDB.collection('users').updateOne(filter, update, options);
+
 };
 
 
 module.exports.update = function({user, scope, payload}) {
 
-  let selector = {
+  if (!user || !scope) {
+    return Promise.reject(Boom.badRequest('user or scope missing'));
+  }
+
+  const filter = {
     $or: [
-      { email: user },
+      { email: user.toLowerCase() },
       { id: user }
     ]
   };
 
-  let operators = {
+  let update = {
     '$currentDate': {}
   };
 
   Object.keys(payload).filter(disallowedUpdateOperators).forEach(operator => {
-    operators[operator] = {};
+    update[operator] = {};
     Object.keys(payload[operator]).forEach(field => {
-      operators[operator]['dataScopes.'.concat(scope,'.',field)] = payload[operator][field];
+      update[operator]['dataScopes.'.concat(scope,'.',field)] = payload[operator][field];
     });
   });
 
   // This must come after payload to make sure it cannot be set by the application
-  operators['$currentDate']['lastUpdated'] = { $type: "date" };
+  update['$currentDate']['lastTouched'] = { $type: "date" };
+  update['$currentDate']['lastUpdated'] = { $type: "date" };
 
-  var projection = {
+  let projection = {
     _id: 0
   };
   projection['dataScopes.'.concat(scope)] = 1;
 
-  return MongoDB.collection('users')
-  .findOneAndUpdate(
-    selector,
-    operators,
-    {
-      projection: projection,
-      returnOriginal: false
-    }
-  )
-  .catch(err => Boom.badRequest());
+  const options = {
+    projection: projection,
+    returnOriginal: false
+  };
+
+  return MongoDB.collection('users').findOneAndUpdate(filter, update, options);
 
   function disallowedUpdateOperators(operator) {
     return [

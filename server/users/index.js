@@ -38,8 +38,7 @@ module.exports.register = function (server, options, next) {
       validate: {
         query: Joi.object().keys({
           id: Joi.string(),
-          email: Joi.string(),
-          provider: Joi.string().valid('gigya', 'google').default('gigya')
+          email: Joi.string()
         }).unknown(false).or('id', 'email')
       }
     },
@@ -48,8 +47,7 @@ module.exports.register = function (server, options, next) {
         $or: [
           { id: request.query.id },
           { email: request.query.email.toLowerCase() }
-        ],
-        provider: request.query.provider
+        ]
       };
 
       MongoDB.collection('users').find(query)
@@ -72,8 +70,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors,
       validate: {
         payload: Joi.object().keys({
-          email: Joi.string().required(),
-          provider: Joi.string().valid('gigya', 'google').default('gigya')
+          email: Joi.string().required()
         }).unknown(false)
       }
     },

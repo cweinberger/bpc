@@ -57,6 +57,10 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: false,
       cors: corsRules,
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'error' // may also be 'ignore' or 'log'
+      },
       validate: {
         payload: {
           app: Joi.string().required()
@@ -78,14 +82,11 @@ module.exports.register.attributes = {
 
 function createAnonymousRsvp(request, reply) {
   let data = Object.assign({}, request.query, request.payload, request.state);
-  console.log('createAnonymousRsvp', data);
 
   if (!data.auid || !validUUID(data.auid.replace('auid::', ''))) {
     data.auid = 'auid::' + generateUUID();
     // Setting the cookie
-    if (reply && reply.state) { // Because of testing
-      reply.state('auid', data.auid);
-    }
+    reply.state('auid', data.auid);
   }
 
   return findApplication({ app: data.app })

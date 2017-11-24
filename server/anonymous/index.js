@@ -92,6 +92,7 @@ function createAnonymousRsvp(request, reply) {
   return findApplication({ app: data.app })
   .then(app => {
 
+    // We are fixing/preventing the scope on an anonymous ticket to be anything else than "anonymous"
     app.scope = ['anonymous'];
 
     // Dynamic grant. Will not be stored anywhere.

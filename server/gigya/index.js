@@ -12,7 +12,6 @@ const EventLog = require('./../audit/eventlog');
 
 module.exports.register = function (server, options, next) {
 
-  const stdCors = {
   server.route({
     method: 'POST',
     path: '/notifications',

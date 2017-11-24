@@ -133,7 +133,7 @@ function findApplication({app}) {
       return Promise.reject(Boom.unauthorized('Unknown application'));
     } else if (app.settings && app.settings.disallowGrants){
       return Promise.reject(Boom.unauthorized('App disallow users'));
-    } else if (app.settings && !app.settings.allowAnonymousUsers){
+    } else if (!app.settings || !app.settings.allowAnonymousUsers){
       return Promise.reject(Boom.unauthorized('Anonymous tickets not allowed for application'));
     } else {
       return Promise.resolve(app);

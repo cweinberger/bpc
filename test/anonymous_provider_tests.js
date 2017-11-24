@@ -63,6 +63,23 @@ describe('anonymous users - integration tests', () => {
   });
 
 
+  describe('disallow anonymous ticket for apps without settings.allowAnonymousUsers', () => {
+
+    it('getting ticket without fingerprint', (done) => {
+
+      bpc_helper.request({
+        method: 'GET',
+        url: `/ticket/anonymous?app=${test_data.applications.app_with_profile_scope.id}`
+      }, null)
+      .then(response => {
+        expect(response.statusCode).to.be.equal(401);
+        done();
+      })
+      .catch(done);
+    });
+  });
+
+
   describe('a known fingerprint', () => {
 
     // A random, but valid UUID

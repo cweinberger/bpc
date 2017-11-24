@@ -72,7 +72,10 @@ module.exports = {
       id: 'app_with_anonymous_scope',
       scope: ['anonymous', 'anothernotanonynmousscope'],
       key: '90835fgfgfjtregjefre34jvcxvxkjfed89043lkgle',
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        allowAnonymousUsers: true
+      }
     },
     app_with_gigya_provider: {
       id: 'app_with_gigya_provider',

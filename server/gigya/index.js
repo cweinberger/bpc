@@ -253,6 +253,10 @@ function deleteUserId ({id}){
   return MongoDB.collection('users').findOneAndDelete({ id: id })
   .then(result => {
     let user = result.value;
+    if (user === null) {
+      console.log('result', result);
+      return Promise.reject();
+    }
     user.deletedAt = new Date();
     return MongoDB.collection('deleted_users').insert(user);
   });

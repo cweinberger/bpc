@@ -254,7 +254,6 @@ function deleteUserId ({id}){
   .then(result => {
     let user = result.value;
     if (user === null) {
-      console.log('result', result);
       return Promise.reject();
     }
     user.deletedAt = new Date();

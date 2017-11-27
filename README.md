@@ -190,7 +190,8 @@ db.grants.insert({
   id:'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
   app: 'console',
   user: 'dako@berlingskemedia.dk',
-  scope: ['admin:*']
+  scope: ['admin:*'],
+  exp: null
 })
 ```
 

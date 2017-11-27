@@ -97,8 +97,8 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
       Applications.findAppById(request.params.id)
-        .then(app => reply(app ? app : Boom.notFound()))
-        .catch(err => reply(Boom.wrap(err)));
+      .then(app => reply(app ? app : Boom.notFound()))
+      .catch(err => reply(Boom.wrap(err)));
     }
   });
 
@@ -127,8 +127,8 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
       Applications.updateApp(request.params.id, request.payload)
-        .then(res => reply({'status':'ok'}))
-        .catch(err => reply(Boom.wrap(err)));
+      .then(res => reply({'status':'ok'}))
+      .catch(err => reply(Boom.wrap(err)));
     }
   });
 
@@ -196,7 +196,7 @@ module.exports.register = function (server, options, next) {
           id: Joi.strip(),
           app: Joi.strip(),
           user: Joi.string().required(),
-          exp: Joi.date().timestamp('unix').raw(),
+          exp: Joi.date().timestamp('unix').raw().allow(null),
           scope: Applications.scopeValidation
         }
       }
@@ -208,8 +208,8 @@ module.exports.register = function (server, options, next) {
       });
 
       Applications.createAppGrant(grant)
-        .then(grant => reply({'status':'ok'}))
-        .catch(err => reply(err));
+      .then(grant => reply({'status':'ok'}))
+      .catch(err => reply(err));
 
     }
   });
@@ -245,8 +245,8 @@ module.exports.register = function (server, options, next) {
       });
 
       Applications.updateAppGrant(grant)
-        .then(grant => reply({'status':'ok'}))
-        .catch(err => reply(err));
+      .then(grant => reply({'status':'ok'}))
+      .catch(err => reply(err));
 
     }
   });
@@ -268,7 +268,9 @@ module.exports.register = function (server, options, next) {
 
       MongoDB.collection('grants').remove({
         id: request.params.grantId, app: request.params.id
-      }, reply);
+      })
+      .then(result => reply({'status':'ok'}))
+      .catch(err => reply(err));
 
     }
   });

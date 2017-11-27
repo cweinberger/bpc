@@ -68,11 +68,14 @@ module.exports = {
       key: '908345kojte9kgjef08934j5lkjgfed890435lkjglz',
       algorithm: 'sha256'
     },
-    app_with_ad_model_scope: {
-      id: 'app_with_ad_model_scope',
-      scope: ['ad_model'],
+    app_with_anonymous_scope: {
+      id: 'app_with_anonymous_scope',
+      scope: ['anonymous', 'anothernotanonynmousscope'],
       key: '90835fgfgfjtregjefre34jvcxvxkjfed89043lkgle',
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        allowAnonymousUsers: true
+      }
     },
     app_with_gigya_provider: {
       id: 'app_with_gigya_provider',

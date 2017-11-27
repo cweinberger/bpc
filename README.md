@@ -190,7 +190,8 @@ db.grants.insert({
   id:'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
   app: 'console',
   user: 'dako@berlingskemedia.dk',
-  scope: ['admin:*']
+  scope: ['admin:*'],
+  exp: null
 })
 ```
 
@@ -236,6 +237,8 @@ flag).
 The test suite will run without a MongoDB database, and use a memory-based
 mockup database instead if a lab test script is exported by the modules parent.
 (This is a standard usage of `lab`. See [lab usage](https://github.com/hapijs/lab)).
+
+The test assertions are written using `code` library. See [API reference](https://github.com/hapijs/code/blob/master/API.md).
 
 Once these minor prerequisites are in place, simply run this command from the
 command line, while in the BPC root directory;

@@ -57,6 +57,10 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: false,
       cors: corsRules,
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'error' // may also be 'ignore' or 'log'
+      },
       validate: {
         payload: {
           app: Joi.string().required()
@@ -78,19 +82,17 @@ module.exports.register.attributes = {
 
 function createAnonymousRsvp(request, reply) {
   let data = Object.assign({}, request.query, request.payload, request.state);
-  console.log('createAnonymousRsvp', data);
 
   if (!data.auid || !validUUID(data.auid.replace('auid::', ''))) {
     data.auid = 'auid::' + generateUUID();
     // Setting the cookie
-    if (reply && reply.state) { // Because of testing
-      reply.state('auid', data.auid);
-    }
+    reply.state('auid', data.auid);
   }
 
   return findApplication({ app: data.app })
   .then(app => {
 
+    // We are fixing/preventing the scope on an anonymous ticket to be anything else than "anonymous"
     app.scope = ['anonymous'];
 
     // Dynamic grant. Will not be stored anywhere.
@@ -131,7 +133,7 @@ function findApplication({app}) {
       return Promise.reject(Boom.unauthorized('Unknown application'));
     } else if (app.settings && app.settings.disallowGrants){
       return Promise.reject(Boom.unauthorized('App disallow users'));
-    } else if (app.settings && !app.settings.allowAnonymousUsers){
+    } else if (!app.settings || !app.settings.allowAnonymousUsers){
       return Promise.reject(Boom.unauthorized('Anonymous tickets not allowed for application'));
     } else {
       return Promise.resolve(app);

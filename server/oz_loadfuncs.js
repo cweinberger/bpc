@@ -50,9 +50,7 @@ function loadGrantFunc(id, next) {
         extendGrant(grant, app),
         buildExt(grant, app)
       ])
-      .then(result => {
-        next(null, result[0], result[1]);
-      })
+      .then(result => next(null, result[0], result[1]));
     })
     .catch(err => next(err));
   })

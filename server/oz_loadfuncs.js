@@ -54,9 +54,9 @@ function loadGrantFunc(id, next) {
         next(null, result[0], result[1]);
       })
     })
-    .catch(err => next);
+    .catch(err => next(err));
   })
-  .catch(err => next);
+  .catch(err => next(err));
 };
 
 
@@ -80,14 +80,14 @@ module.exports.strategyOptions = {
 };
 
 
-module.exports.parseAuthorizationHeader = function (requestHeaderAuthorization, callback){
+module.exports.parseAuthorizationHeader = function (requestHeaderAuthorization, callback) {
   var id = requestHeaderAuthorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
   if (id === undefined || id === null || id === ''){
     return callback(Boom.unauthorized('Authorization Hawk ticket not found'));
   }
 
   Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
-}
+};
 
 
 module.exports.grantIsExpired = function (grant) {

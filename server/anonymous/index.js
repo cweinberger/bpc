@@ -83,8 +83,8 @@ module.exports.register.attributes = {
 function createAnonymousRsvp(request, reply) {
   let data = Object.assign({}, request.query, request.payload, request.state);
 
-  if (!data.auid || !validUUID(data.auid.replace('auid::', ''))) {
-    data.auid = 'auid::' + generateUUID();
+  if (!data.auid || !validUUID(data.auid.replace('auid**', ''))) {
+    data.auid = 'auid**' + generateUUID();
     // Setting the cookie
     reply.state('auid', data.auid);
   }
@@ -106,7 +106,7 @@ function createAnonymousRsvp(request, reply) {
 
     grant.exp = Oz.hawk.utils.now() + (60000 * 60 * 24 * 350);
 
-    grant.id = 'agid::' + new Buffer(JSON.stringify(grant)).toString('base64');
+    grant.id = 'agid**' + new Buffer(JSON.stringify(grant)).toString('base64');
 
     Oz.ticket.issue(app, grant, ENCRYPTIONPASSWORD, {}, (err, ticket) => {
       if (err) {

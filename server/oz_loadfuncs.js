@@ -35,7 +35,7 @@ function loadGrantFunc(id, next) {
 
   let gettingGrant;
 
-  if (id.startsWith('agid::')) {
+  if (id.startsWith('agid**')) {
     gettingGrant = parseAgid(id);
   } else {
     gettingGrant = findGrant(id);
@@ -104,7 +104,7 @@ const grantIsExpired = module.exports.grantIsExpired;
 function parseAgid(id){
   return new Promise((resolve, reject) => {
     try {
-      let grant = JSON.parse(new Buffer(id.replace('agid::', ''), 'base64'));
+      let grant = JSON.parse(new Buffer(id.replace('agid**', ''), 'base64'));
       grant.id = id;
       resolve(grant);
     } catch (ex) {

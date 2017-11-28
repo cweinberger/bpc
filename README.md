@@ -223,7 +223,15 @@ When starting BPC using `gulp`, the debug flag is automatically set.
 Start a new termimal and run `node debug localhost:5858` to start the debugger and attach to BPC.
 Insert `debugger;` statements into the code to make a breakpoint.
 
-On the `debug>` prompt, use commands like `next`, `repl`, CTRL-C, `cont`, `quit`.
+On the `debug>` prompt, use commands like:
+
+  * `repl`
+  * `next`, `n`
+  * `step`, `s`
+  * `cont`, `c`
+  * `out`, `o`
+  * CTRL-C
+  * `quit`
 
 See official documentation for more info on the [Debugger](https://nodejs.org/dist/latest-v6.x/docs/api/debugger.html)
 

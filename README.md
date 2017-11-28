@@ -160,8 +160,10 @@ To generate a Hawk Authorization header, see the [API Documentation](doc/API.md)
 
 ## BPC console
 
-The BPC console is a special application for managing BPC. It enabled it's users
+The BPC console is a separate application for managing BPC. It enabled it's users
 register other applications in BPC, set scopes and administer users.
+
+The BPC Console must be primed in the database to work. See section about MongoDB under Setup.
 
 
 # Setup
@@ -170,8 +172,8 @@ This section is only relevant when developing BPC.
 
 ## MongoDB
 
-You can almost start with an empty database. However, it needs to be primed
-with an application with admin scope and corresponding admin user who can manage permissions etc.
+You can start with an empty database. However, to be able to register applications etc., we need the BPC Console. And this needs to be primed
+ in the database including an admin user who can manage permissions etc. Use these MongoDB commands:
 
 ```
 db.applications.insert({

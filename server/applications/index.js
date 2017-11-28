@@ -208,7 +208,7 @@ module.exports.register = function (server, options, next) {
       });
 
       Applications.createAppGrant(grant)
-      .then(grant => reply({'status':'ok'}))
+      .then(grant => reply(grant))
       .catch(err => reply(err));
 
     }

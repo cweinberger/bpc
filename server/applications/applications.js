@@ -208,7 +208,8 @@ function createAppGrant(grant) {
 
     // Keep only the scopes allowed in the app scope.
     grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
-    return MongoDB.collection('grants').insertOne(grant);
+    return MongoDB.collection('grants').insertOne(grant)
+    .then(res => grant);
 
   });
 

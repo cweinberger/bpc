@@ -44,7 +44,7 @@ describe('anonymous users - integration tests', () => {
       .then(response => {
         expect(response.statusCode).to.be.equal(200);
         expect(response.headers).to.include('set-cookie');
-        expect(response.headers['set-cookie'][0]).to.include('auid=auid::');
+        expect(response.headers['set-cookie'][0]).to.include('auid=auid**');
 
         anonymousUserTicket = response.result;
 
@@ -53,8 +53,8 @@ describe('anonymous users - integration tests', () => {
         expect(anonymousUserTicket.scope).to.be.an.array();
         expect(anonymousUserTicket.scope).to.have.length(1);
         expect(anonymousUserTicket.scope).to.only.include('anonymous');
-        expect(anonymousUserTicket.user).to.startWith('auid::');
-        expect(anonymousUserTicket.grant).to.startWith('agid::');
+        expect(anonymousUserTicket.user).to.startWith('auid**');
+        expect(anonymousUserTicket.grant).to.startWith('agid**');
         expect(anonymousUserTicket.app).to.equal(app.id);
         done();
       })
@@ -83,7 +83,7 @@ describe('anonymous users - integration tests', () => {
   describe('a known fingerprint', () => {
 
     // A random, but valid UUID
-    const fingerprint = 'auid::e64f340a-84c6-466f-ad72-b5f9966e36fa';
+    const fingerprint = 'auid**e64f340a-84c6-466f-ad72-b5f9966e36fa';
 
     it('getting anonymous user permissions without any there', (done) => {
 
@@ -153,9 +153,9 @@ describe('anonymous users - integration tests', () => {
           expect(anonymousUserTicket.scope).to.be.an.array();
           expect(anonymousUserTicket.scope).to.have.length(1);
           expect(anonymousUserTicket.scope).to.only.include('anonymous');
-          expect(anonymousUserTicket.user).to.startWith('auid::');
+          expect(anonymousUserTicket.user).to.startWith('auid**');
           expect(anonymousUserTicket.user).to.be.equal(fingerprint);
-          expect(anonymousUserTicket.grant).to.startWith('agid::');
+          expect(anonymousUserTicket.grant).to.startWith('agid**');
           expect(anonymousUserTicket.app).to.equal(app.id);
           done();
         })

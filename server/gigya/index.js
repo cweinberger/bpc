@@ -146,7 +146,8 @@ function upsertUser (accountInfo) {
     id: accountInfo.UID,
     email: accountInfo.profile.email.toLowerCase(),
     gigya: {
-      UID: accountInfo.UID
+      UID: accountInfo.UID,
+      email: accountInfo.profile.email.toLowerCase()
     }
   };
 

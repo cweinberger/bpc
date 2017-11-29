@@ -78,15 +78,16 @@ function handleEvents(events){
         let a = accountRegisteredEventHandler(event);
         p.push(a);
         break;
-      // case "accountUpdated":
-      //   accountUpdatedEventHandler(event);
-      //   break;
+      case "accountUpdated":
+        let b = accountUpdatedEventHandler(event);
+        p.push(b);
+        break;
       // case "accountLoggedIn":
       //   accountLoggedInEventHandler(event);
       //   break;
       case "accountDeleted":
-        let b = accountDeletedEventHandler(event);
-        p.push(b);
+        let c = accountDeletedEventHandler(event);
+        p.push(c);
         break;
       default:
 
@@ -106,13 +107,13 @@ function accountCreatedEventHandler(event) {
 
 function accountRegisteredEventHandler(event) {
   return Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid })
-  .then(result => upsertUserId(result.body));
+  .then(result => upsertUser(result.body));
 }
 
 
 function accountUpdatedEventHandler(event) {
-  // Do nothing
-  return Promise.resolve();
+  return Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid })
+  .then(result => upsertUser(result.body));
 }
 
 
@@ -132,7 +133,7 @@ function accountDeletedEventHandler(event) {
 }
 
 
-function upsertUserId (accountInfo) {
+function upsertUser (accountInfo) {
 
   let selector = {
     $or: [
@@ -144,7 +145,6 @@ function upsertUserId (accountInfo) {
   let set = {
     id: accountInfo.UID,
     email: accountInfo.profile.email.toLowerCase(),
-    provider: 'gigya',
     gigya: {
       UID: accountInfo.UID
     }

@@ -14,7 +14,8 @@ module.exports.get = function({user, scope}) {
   const filter = {
     $or: [
       { email: user.toLowerCase() },
-      { id: user }
+      { id: user },
+      { 'gigya.UID': user }
     ]
   };
 
@@ -78,7 +79,8 @@ module.exports.count = function({user, scope}, query) {
   let filter = {
     $or: [
       { email: user.toLowerCase() },
-      { id: user }
+      { id: user },
+      { 'gigya.UID': user }
     ]
   };
 
@@ -104,7 +106,8 @@ module.exports.set = function({user, scope, payload}) {
   const filter = {
     $or: [
       { email: user.toLowerCase() },
-      { id: user }
+      { id: user },
+      { 'gigya.UID': user }
     ]
   };
 
@@ -166,7 +169,8 @@ module.exports.update = function({user, scope, payload}) {
   const filter = {
     $or: [
       { email: user.toLowerCase() },
-      { id: user }
+      { id: user },
+      { 'gigya.UID': user }
     ]
   };
 

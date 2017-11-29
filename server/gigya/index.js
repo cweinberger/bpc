@@ -137,14 +137,13 @@ function upsertUser (accountInfo) {
 
   let selector = {
     $or: [
+      { id: accountInfo.profile.email.toLowerCase() },
       { email: accountInfo.profile.email.toLowerCase() },
       { id: accountInfo.UID }
     ]
   };
 
   let set = {
-    id: accountInfo.UID,
-    email: accountInfo.profile.email.toLowerCase(),
     gigya: {
       UID: accountInfo.UID,
       email: accountInfo.profile.email.toLowerCase()
@@ -152,6 +151,8 @@ function upsertUser (accountInfo) {
   };
 
   let setOnInsert = {
+    id: accountInfo.profile.email.toLowerCase(),
+    email: accountInfo.profile.email.toLowerCase(),
     createdAt: new Date(),
     dataScopes: {}
   };

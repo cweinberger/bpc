@@ -219,46 +219,6 @@ describe('application unit tests', () => {
 
 
 
-  describe('assignAdminScope()', () => {
-
-    it('fails for nonexisting app id', done => {
-
-      const ticket = {
-        app: 'invalid-app',
-        grant: crypto.randomBytes(20).toString('hex')
-      }
-
-      Applications.assignAdminScope('invalid-app', ticket)
-      .then(isUpdated => {
-
-        expect(isUpdated).to.be.a.boolean();
-        expect(isUpdated).to.be.false();
-        done();
-
-      })
-      .catch(done);
-    });
-
-    it('succeeds for existing app id', done => {
-
-      const ticket = {
-        app: 'valid-app',
-        grant: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre'
-      }
-
-      Applications.assignAdminScope('valid-app', ticket)
-      .then(isUpdated => {
-
-        expect(isUpdated).to.be.a.boolean();
-        expect(isUpdated).to.be.true();
-        done();
-
-      })
-      .catch(done);
-    });
-  });
-
-
   describe('createAppGrant()', () => {
 
     it('fails for nonexisting app id', done => {

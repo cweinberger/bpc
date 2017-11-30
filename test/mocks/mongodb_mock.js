@@ -1,25 +1,39 @@
 /* jshint node: true */
 'use strict';
 
-
-const MockedDB = require('mongo-mock');
-const MongoClient = MockedDB.MongoClient;
 const test_data = require('../data/test_data');
 
+var MongoClient;
+var mongoDbConnection;
 
-const mongoDbConnection = 'mongodb://mockingbird:27017/hasflown';
+const mongoDbConnectionTesting = process.env.MONGODB_CONNECTION_TESTING;
+module.exports.isMock = mongoDbConnectionTesting === undefined;
+
+if(module.exports.isMock) {
+  MongoClient = require('mongo-mock').MongoClient;
+  mongoDbConnection = 'mongodb://mockingbird:27017/hasflown';
+} else {
+  MongoClient = require('mongodb').MongoClient;
+  mongoDbConnection = mongoDbConnectionTesting;
+}
+
+
 let db;
 
-
-// Establish connection and perform error handling.
-console.log('Using MongoDB MOCK on ' + `${mongoDbConnection}`);
-MongoClient.connect(mongoDbConnection, (err, database) => {
-  if (err) {
-    throw err;
-  } else if (!database) {
-    throw new Error('Unable to connect to database!');
-  }
-  db = database;
+module.exports.ready = new Promise((resolve, reject) => {
+  // Establish connection and perform error handling.
+  console.log('Using MongoDB on ' + `${mongoDbConnection}`);
+  MongoClient.connect(mongoDbConnection, (err, database) => {
+    if (err) {
+      reject();
+      throw err;
+    } else if (!database) {
+      reject();
+      throw new Error('Unable to connect to database!');
+    }
+    db = database;
+    resolve();
+  });
 });
 
 
@@ -29,7 +43,12 @@ module.exports.close = function(callback) {
 
 
 module.exports.collection = function(collectionName) {
-  let coll = db.collection(collectionName)
+
+  let coll = db.collection(collectionName);
+
+  if(!module.exports.isMock) {
+    return coll;
+  }
 
   // findOneAndUpdate Not implemented in mongo-mock
   // my own simple fake findOneAndUpdate
@@ -105,8 +124,9 @@ module.exports.collection = function(collectionName) {
 
 
 module.exports.initate = function (done) {
-  return clearMongoMock()
-  .then(() => fillMongoMock())
+  return module.exports.ready
+  .then(() => module.exports.clear())
+  .then(() => module.exports.fill())
   .then(() => {
     if (typeof done === 'function') {
       done();
@@ -114,20 +134,22 @@ module.exports.initate = function (done) {
   });
 };
 
-module.exports.isMock = true;
+module.exports.reset = module.exports.initate;
 
 
-function clearMongoMock (done){
+module.exports.clear = function (done){
   var k = Object.keys(test_data).map(function(collectionKey){
     return db.collection(collectionKey).remove({});
   });
 
-  return Promise.all(k);
+  return Promise.all(k)
+  .then(() => Promise.resolve());
 }
 
 
-function fillMongoMock (done){
+module.exports.fill = function (done){
   var k = Object.keys(test_data).map(function(collectionKey){
+    if (Object.keys(test_data[collectionKey]).length === 0) {return Promise.resolve();}
     return db.collection(collectionKey).insert(objectToArray(test_data[collectionKey]))
   });
 
@@ -138,9 +160,4 @@ function fillMongoMock (done){
       return input[key];
     });
   }
-}
-
-
-function random40Character() {
-  return crypto.randomBytes(20).toString('hex'); // (gives 40 characters)
 }

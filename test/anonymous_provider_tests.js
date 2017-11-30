@@ -17,7 +17,11 @@ describe('anonymous users - integration tests', () => {
   var appTicket;
 
   before(done => {
-    bpc_helper.start().then(done);
+    MongoDB.reset().then(done);
+  });
+
+  after(done => {
+    MongoDB.clear().then(done);
   });
 
   // Getting the appTicket
@@ -26,7 +30,7 @@ describe('anonymous users - integration tests', () => {
     .then(response => {
       appTicket = response.result;
     })
-    .then(done)
+    .then(() => done())
     .catch(done);
   });
 

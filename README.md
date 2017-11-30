@@ -166,6 +166,34 @@ register other applications in BPC, set scopes and administer users.
 The BPC Console must be primed in the database to work. See section about MongoDB under Setup.
 
 
+# Gigya integrations
+
+BPC integrates to Gigya in two ways: *RSVP/exchangeUIDSignature* and *Webhooks*.
+
+## RSVP/exchangeUIDSignature
+
+This integration is happening during the issue of an RSVP. After the user has logged in on the website using Gigya Web SDK,
+the user is redirected to BPC with the *UID*, *UIDSignature* and *signatureTimestamp*. Using these values, BPC can exchange
+for new *UIDSignature* and *signatureTimestamp*, using the method *accounts.exchangeUIDSignature*. If this succeeds, BPC has verified the user, retrieves the email and can issue an RSVP to the user.
+The user now returns to the website with the RSVP, to get a user ticket.
+
+## Webhooks
+
+Gigya webhooks are push notifications of account events to BPC. These events are eg. *accountRegistered*, *accountUpdated* and *accountDeleted*.
+The notification endpoint on BPC is */gigya/notifications*.
+
+When a user registers on Gigya, the notification from Gigya will make sure the UID and email is registered in BPC. This will allow for permission-requests using the UID and email.
+
+When a user is deleted on Gigya, the notification from Gigya will make sure the user is marked as deleted in BPC. This will disallow  permission-requests using the UID and email.
+
+See more about Webhooks on [Gigya Documentation](https://developers.gigya.com/display/GD/Webhooks).
+
+Important:
+
+  * Make sure these webhooks are created on the Gigya Console for all Berlingske Media sites.
+  * The User/App key must the same as the App Key BPC has set in as the ENV var `GIGYA_USER_KEY`.
+
+
 # Setup
 
 This section is only relevant when developing BPC.

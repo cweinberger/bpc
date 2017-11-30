@@ -15,9 +15,12 @@ const { expect, describe, it, before, after } = exports.lab = require('lab').scr
 describe('users - functional tests', () => {
 
   before(done => {
-    bpc_helper.start().then(done);
+    MongoDB.reset().then(done);
   });
 
+  after(done => {
+    MongoDB.clear().then(done);
+  });
 
   describe('getting user with an app ticket', () => {
 
@@ -31,7 +34,7 @@ describe('users - functional tests', () => {
       .then(response => {
         appTicket = response.result;
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -54,7 +57,11 @@ describe('users - integration tests', () => {
   let appTicket;
 
   before(done => {
-    bpc_helper.start().then(done);
+    MongoDB.reset().then(done);
+  });
+
+  after(done => {
+    MongoDB.clear().then(done);
   });
 
   // Getting the appTicket
@@ -76,7 +83,7 @@ describe('users - integration tests', () => {
     //   format: 'json',
     //   regToken: 'randomRegToken1234'
     // }).resolves({body: {UID: 'randomUID1234'}});
-
+    Gigya.callApi.reset();
     Gigya.callApi.onFirstCall().resolves({body: {regToken: 'randomRegToken1234'}});
     Gigya.callApi.onSecondCall().resolves({body: {UID: 'randomUID1234'}});
     done();

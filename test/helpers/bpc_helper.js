@@ -6,7 +6,7 @@ const Hawk = require('hawk');
 const Oz = require('oz');
 const crypto = require('crypto');
 const bpc = require('../../server');
-const MongoDB = require('../mocks/mongodb_mock');
+
 
 module.exports.request = function (options, ticket, callback) {
 
@@ -74,21 +74,4 @@ module.exports.generateRsvp = function(app, grant, callback) {
       }
     });
   });
-};
-
-
-module.exports.start = function(){
-  if(bpc.info.started > 0){
-    return MongoDB.initate();
-  } else {
-    return new Promise((resolve, reject) => {
-      MongoDB.initate().then(() => bpc.start(function(err){
-        if (err) {
-          reject();
-        } else {
-          resolve();
-        }
-      }));
-    });
-  }
 };

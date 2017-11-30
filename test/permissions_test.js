@@ -19,7 +19,11 @@ describe('permissions - functional tests', () => {
   const simple_first_user = test_data.users.simple_first_user;
 
   before(done => {
-    bpc_helper.start().then(done);
+    MongoDB.reset().then(done);
+  });
+
+  after(done => {
+    MongoDB.clear().then(done);
   });
 
   // Getting the appTicket
@@ -34,7 +38,6 @@ describe('permissions - functional tests', () => {
 
 
   describe('getting user permissions with an app ticket', () => {
-
 
     it('getting first user bt permissions', (done) => {
       bpc_helper.request({ url: '/permissions/' + simple_first_user.id + '/bt' }, appTicket)

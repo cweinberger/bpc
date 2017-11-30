@@ -17,7 +17,11 @@ const { expect, describe, it, before, after } = exports.lab = require('lab').scr
 describe('gigya notifications - functional tests', () => {
 
   before(done => {
-    bpc_helper.start().then(done);
+    MongoDB.reset().then(done);
+  });
+
+  after(done => {
+    MongoDB.clear().then(done);
   });
 
   before(done => {
@@ -81,21 +85,19 @@ describe('gigya notifications - functional tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({id: '1'}).toArray())
+      .then(() => MongoDB.collection('users').find({id: '1@test.nl'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0]).not.to.be.null();
         expect(result[0].email).to.equal('1@test.nl');
-        expect(result[0].provider).to.equal('gigya');
         expect(result[0].createdAt).to.be.a.date();
         return Promise.resolve();
       })
-      .then(() => MongoDB.collection('users').find({id: '2'}).toArray())
+      .then(() => MongoDB.collection('users').find({id: '2@test.nl'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0]).not.to.be.null();
         expect(result[0].email).to.equal('2@test.nl');
-        expect(result[0].provider).to.equal('gigya');
         expect(result[0].createdAt).to.be.a.date();
 
         done();
@@ -104,9 +106,12 @@ describe('gigya notifications - functional tests', () => {
     });
 
 
-
-
     it('getting accountDeleted test 1', (done) => {
+
+      if(MongoDB.isMock){
+        // mongo-mock does not support selection from subdocuments and other stuff
+        return done();
+      }
 
       const notifications_request = {
         method: 'POST',
@@ -147,12 +152,12 @@ describe('gigya notifications - functional tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({id: '1'}).toArray())
+      .then(() => MongoDB.collection('users').find({id: '1@test.nl'}).toArray())
       .then(result => {
         expect(result.length).to.equal(0);
         return Promise.resolve();
       })
-      .then(() => MongoDB.collection('deleted_users').find({id: '1'}).toArray())
+      .then(() => MongoDB.collection('deleted_users').find({id: '1@test.nl'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0].deletedAt).to.be.a.date();
@@ -204,10 +209,12 @@ describe('gigya notifications - functional tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({id: '3'}).toArray())
+      .then(() => MongoDB.collection('users').find({id: '3@test.nl'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0].email).to.equal('3@test.nl');
+        expect(result[0].gigya.UID).to.equal('3');
+        expect(result[0].gigya.email).to.equal('3@test.nl');
 
         done();
       })

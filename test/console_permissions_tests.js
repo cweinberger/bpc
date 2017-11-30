@@ -4,6 +4,7 @@
 // Bootstrap the testing harness.
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
+const MongoDB = require('./mocks/mongodb_mock');
 const bpc_helper = require('./helpers/bpc_helper');
 // const Permissions = require('./../server/permissions');
 
@@ -18,7 +19,11 @@ describe('console - functional tests:', () => {
 
 
   before(done => {
-    bpc_helper.start().then(done);
+    MongoDB.reset().then(done);
+  });
+
+  after(done => {
+    MongoDB.clear().then(done);
   });
 
   // Getting the console_app_ticket

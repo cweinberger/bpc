@@ -69,12 +69,13 @@ function createApp(input) {
   };
 
     // Ensure that the id is unique before creating the application.
-    return convertToUniqueid(app.id).then(uniqueId => {
+    return convertToUniqueid(app.id)
+    .then(uniqueId => {
       app.id = uniqueId;
       return app;
-    }).then(app => MongoDB.collection('applications').insertOne(app))
-      .then(res => app);
-
+    })
+    .then(app => MongoDB.collection('applications').insertOne(app))
+    .then(res => app);
 }
 
 

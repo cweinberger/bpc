@@ -4,6 +4,15 @@
 const Boom = require('boom');
 const MongoDB = require('./../mongo/mongodb_client');
 
+function stdFilter(user){
+  return {
+    $or: [
+      { id: user },
+      { email: user.toLowerCase() },
+      { 'gigya.UID': user }
+    ]
+  };
+}
 
 module.exports.get = function({user, scope}) {
 
@@ -11,12 +20,7 @@ module.exports.get = function({user, scope}) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  const filter = {
-    $or: [
-      { email: user.toLowerCase() },
-      { id: user }
-    ]
-  };
+  const filter = stdFilter(user);
 
   const update = {
     $currentDate: {
@@ -75,12 +79,7 @@ module.exports.count = function({user, scope}, query) {
     return Promise.reject(Boom.badRequest('scope must be a string'));
   }
 
-  let filter = {
-    $or: [
-      { email: user.toLowerCase() },
-      { id: user }
-    ]
-  };
+  let filter = stdFilter(user);
 
   Object.keys(query).forEach(key => {
     try {
@@ -101,13 +100,7 @@ module.exports.set = function({user, scope, payload}) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  const filter = {
-    $or: [
-      { email: user.toLowerCase() },
-      { id: user }
-    ]
-  };
-
+  const filter = stdFilter(user);
 
   let set = {};
 
@@ -163,12 +156,7 @@ module.exports.update = function({user, scope, payload}) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  const filter = {
-    $or: [
-      { email: user.toLowerCase() },
-      { id: user }
-    ]
-  };
+  const filter = stdFilter(user);
 
   let update = {
     '$currentDate': {}

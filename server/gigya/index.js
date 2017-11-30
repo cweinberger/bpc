@@ -55,48 +55,66 @@ module.exports.register.attributes = {
 
 
 function handleEvents(events){
-  let p = [];
+  let completed = 0;
 
-  events.forEach(event => {
+  return new Promise((resolve, reject) => {
+
+    // We are doing this recursive because we want event event to be completed
+    //  before doing the next.
+    // Also multiple idential events might occur in the notifications.
+
+    dothisthis(events);
+
+
+    function dothisthis(events){
+      handleEvent(events[completed])
+      .then(() => {
+        if(++completed === events.length){
+          return resolve();
+        }
+        dothisthis(events);
+      });
+    }
+
+  });
+
+  function handleEvent(event){
+
     switch (event.type) {
       // Types of events:
       // accountCreated:
-        // Account created - fired when a new account record is actually created in Gigya's database.
+      // Account created - fired when a new account record is actually created in Gigya's database.
       // accountRegistered:
-        // Account registered - fired when a user completes registration.
+      // Account registered - fired when a user completes registration.
       // accountUpdated:
-        // Account updated - fired when a user record is updated.
+      // Account updated - fired when a user record is updated.
       // accountLoggedIn:
-        // Account logged in - fired when a user logs in.
+      // Account logged in - fired when a user logs in.
       // accountDeleted:
-        // Account deleted - fired when an account is deleted.
+      // Account deleted - fired when an account is deleted.
 
       // case "accountCreated":
       //   accountCreatedEventHandler(event);
       //   break;
       case "accountRegistered":
-        let a = accountRegisteredEventHandler(event);
-        p.push(a);
-        break;
+      return accountRegisteredEventHandler(event);
+      break;
       case "accountUpdated":
-        let b = accountUpdatedEventHandler(event);
-        p.push(b);
-        break;
+      return accountUpdatedEventHandler(event);
+      break;
       // case "accountLoggedIn":
       //   accountLoggedInEventHandler(event);
       //   break;
       case "accountDeleted":
-        let c = accountDeletedEventHandler(event);
-        p.push(c);
-        break;
+      return accountDeletedEventHandler(event);
+      break;
       default:
-
+        return Promise.resolve();
     }
-  });
-
-  return Promise.all(p);
-
+  }
 }
+
+
 
 
 function accountCreatedEventHandler(event) {
@@ -124,7 +142,7 @@ function accountLoggedInEventHandler(event) {
 
 
 function accountDeletedEventHandler(event) {
-  return deleteUserId({ id: event.data.uid })
+  return deleteUser({ id: event.data.uid })
   .then(() => EventLog.logUserEvent(event.data.uid, 'Deleting user'))
   .catch(err => {
     EventLog.logUserEvent(event.data.uid, 'Deleting user Failed');
@@ -135,7 +153,7 @@ function accountDeletedEventHandler(event) {
 
 function upsertUser (accountInfo) {
 
-  let selector = {
+  const selector = {
     $or: [
       { id: accountInfo.profile.email.toLowerCase() },
       { email: accountInfo.profile.email.toLowerCase() },
@@ -143,7 +161,7 @@ function upsertUser (accountInfo) {
     ]
   };
 
-  let set = {
+  const set = {
     gigya: {
       UID: accountInfo.UID,
       email: accountInfo.profile.email.toLowerCase()
@@ -179,9 +197,16 @@ function upsertUser (accountInfo) {
 
 
 // TODO: Should we do more? Eg. expire grants?
-function deleteUserId ({id}){
+function deleteUser ({ id }){
 
-  return MongoDB.collection('users').findOneAndDelete({ id: id })
+  const selector = {
+    $or: [
+      { 'gigya.UID': id },
+      { id: id }
+    ]
+  };
+
+  return MongoDB.collection('users').findOneAndDelete(selector)
   .then(result => {
     let user = result.value;
     if (user === null) {

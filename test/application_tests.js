@@ -5,6 +5,7 @@
 const sinon = require('sinon');
 const crypto = require('crypto');
 const Boom = require('boom');
+const test_data = require('./data/test_data');
 const MongoDB = require('./mocks/mongodb_mock');
 const Applications = require('./../server/applications/applications');
 
@@ -12,12 +13,15 @@ const Applications = require('./../server/applications/applications');
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
 
 
-
 describe('application unit tests', () => {
 
 
   before(done => {
-    MongoDB.initate().then(done);
+    MongoDB.reset().then(done);
+  });
+
+  after(done => {
+    MongoDB.clear().then(done);
   });
 
 
@@ -236,15 +240,10 @@ describe('application unit tests', () => {
 
       Applications.createAppGrant(grant)
       .then(grant => {
-
-        expect(grant).to.be.undefined();
         done(new Error('Grant must not be issued'))
-
       }).catch(err => {
-
         expect(err).to.exist();
         done();
-
       });
     });
 
@@ -296,15 +295,10 @@ describe('application unit tests', () => {
 
       Applications.updateAppGrant(grant)
       .then(grant => {
-
-        expect(grant).to.be.undefined();
         done(new Error('Grant must not be issued'));
-
       }).catch(err => {
-
         expect(err).to.exist();
         done();
-
       });
     });
 

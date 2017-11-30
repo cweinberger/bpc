@@ -197,13 +197,13 @@ module.exports.register = function (server, options, next) {
         payload: request.payload
       })
       .then(result => {
-        if (result.n === 0) {
+        if (result.value === null || result.n === 0) {
           reply(Boom.notFound());
         } else {
           reply(result.value.dataScopes[request.params.scope]);
         }
       })
-      .catch(err => reply(Boom.badRequest(err.message)));
+      .catch(err => {console.error(err); reply(Boom.badRequest(err.message))});
     }
   });
 

@@ -20,7 +20,11 @@ describe('gigya notifications after permissions - integration tests', () => {
   var app = test_data.applications.app_with_profile_scope;
 
   before(done => {
-    bpc_helper.start().then(done);
+    MongoDB.reset().then(done);
+  });
+
+  after(done => {
+    MongoDB.clear().then(done);
   });
 
   before(done => {
@@ -114,9 +118,10 @@ describe('gigya notifications after permissions - integration tests', () => {
     .then(result => {
       expect(result).not.to.be.null();
       expect(result.length).to.equal(1);
-      expect(result[0].id).to.be.equal('4');
+      expect(result[0].id).to.be.equal('4@test.nl');
       expect(result[0].email).to.equal('4@test.nl');
-      expect(result[0].provider).to.equal('gigya');
+      expect(result[0].gigya.UID).to.equal('4');
+      expect(result[0].gigya.email).to.equal('4@test.nl');
       expect(result[0].createdAt).to.be.a.date();
       // Testing the data scope using this key, since mongo-mock does not support sub-documents
       // https://github.com/williamkapke/mongo-mock/issues/26

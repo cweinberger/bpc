@@ -177,5 +177,7 @@ module.exports = {
       user: 'first_user@berlingskemedia.dk',
       scope: []
     }
-  }
+  },
+
+  deleted_users: {}
 };

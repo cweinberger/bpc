@@ -69,12 +69,13 @@ function createApp(input) {
   };
 
     // Ensure that the id is unique before creating the application.
-    return convertToUniqueid(app.id).then(uniqueId => {
+    return convertToUniqueid(app.id)
+    .then(uniqueId => {
       app.id = uniqueId;
       return app;
-    }).then(app => MongoDB.collection('applications').insertOne(app))
-      .then(res => app);
-
+    })
+    .then(app => MongoDB.collection('applications').insertOne(app))
+    .then(res => app);
 }
 
 
@@ -160,7 +161,9 @@ function assignAdminScope(app, ticket) {
   ];
 
   return Promise.all(ops)
-  .then(res => Promise.resolve(res[0].n === 1))
+  .then(res => {
+    return Promise.resolve(res[0].n === 1)
+  })
   .catch(err => {
     console.error(err);
     return Promise.reject(err);

@@ -19,7 +19,11 @@ describe('scope datafields - integration tests', () => {
   var user = test_data.users.simple_first_user;
 
   before(done => {
-    bpc_helper.start().then(done);
+    MongoDB.reset().then(done);
+  });
+
+  after(done => {
+    MongoDB.clear().then(done);
   });
 
   // Getting the appTicket

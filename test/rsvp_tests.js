@@ -65,7 +65,11 @@ describe('rsvp unit tests', () => {
   describe('create user RSVPs', () => {
 
     before(done => {
-      MongoDB.initate().then(done);
+      MongoDB.reset().then(done);
+    });
+
+    after(done => {
+      MongoDB.clear().then(done);
     });
 
     before(done => {
@@ -86,7 +90,6 @@ describe('rsvp unit tests', () => {
         app: 'valid-app'
       })
       .then(rsvp => {
-        expect(rsvp).to.be.undefined();
         done(new Error('RSVP must not be issued'));
       })
       .catch(err => {
@@ -102,7 +105,6 @@ describe('rsvp unit tests', () => {
         email: 'incorrect@domain.com'
       })
       .then(rsvp => {
-        expect(rsvp).to.be.undefined();
         done(new Error('RSVP must not be issued'));
       })
       .catch(err => {
@@ -119,7 +121,6 @@ describe('rsvp unit tests', () => {
         email: 'incorrect@domain.com'
       })
       .then(rsvp => {
-        expect(rsvp).to.be.undefined();
         done(new Error('RSVP must not be issued'));
       })
       .catch(err => {
@@ -137,7 +138,6 @@ describe('rsvp unit tests', () => {
         app: 'invalid-app'
       })
       .then(result => {
-        expect(result.rsvp).to.be.undefined();
         done(new Error('RSVP must not be issued'));
       })
       .catch(err => {
@@ -160,7 +160,6 @@ describe('rsvp unit tests', () => {
         done();
       })
       .catch(err => {
-        expect(err).to.not.exist();
         done(new Error('RSVP missing'));
       });
     });
@@ -170,7 +169,20 @@ describe('rsvp unit tests', () => {
   describe('creating new clean grant', () => {
 
     before(done => {
+      MongoDB.reset().then(done);
+    });
+
+    after(done => {
+      MongoDB.clear().then(done);
+    });
+
+    before(done => {
       Gigya.callApi.resolves({body: {profile: {email: 'userwithnopreviousgrant@email.com'}}});
+      done();
+    });
+
+    after(done => {
+      Gigya.callApi.reset();
       done();
     });
 
@@ -191,22 +203,18 @@ describe('rsvp unit tests', () => {
       .then(result => {
         expect(result.rsvp).to.be.a.string();
         expect(result.rsvp).to.have.length(334);
-
+      })
+      .then(() => {
         // Wating a second to make sure the grant is saved to MongoDB
-        setTimeout(
-          () => {
-            MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'valid-app'})
-            .then(grant => {
-              expect(grant).to.not.be.null();
-              expect(grant.id).to.have.length(40);
-              done();
-            });
-          }, 1000
-        );
-
+        return new Promise(resolve => setTimeout(resolve, 1000));
+      })
+      .then(() => MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'valid-app'}))
+      .then(grant => {
+        expect(grant).to.not.be.null();
+        expect(grant.id).to.have.length(40);
+        done();
       })
       .catch(err => {
-        expect(err).to.not.exist();
         done(new Error('RSVP missing'));
       });
     });
@@ -219,51 +227,53 @@ describe('rsvp unit tests', () => {
         app: 'app_with_disallowAutoCreationGrants'
       })
       .then(result => {
-        expect(result.rsvp).to.not.exist();
         done(new Error('RSVP must not be issued to userwithnopreviousgrant'));
+      })
+      .then(() => {
+        // Wating a second to make sure the grant is saved to MongoDB
+        return new Promise(resolve => setTimeout(resolve, 1000));
       })
       .catch(err => {
         expect(err).to.be.an.error('Forbidden');
 
-        // Wating a second to make sure the grant is saved to MongoDB
-        setTimeout(
-          () => {
-            MongoDB.collection('grants')
-            .findOne({user:'userwithnopreviousgrant@email.com', app: 'app_with_disallowAutoCreationGrants'})
-            .then(grant => {
-              expect(grant).to.be.null();
-              done();
-            });
-          }, 1000
-        );
-
+        MongoDB.collection('grants')
+        .findOne({user:'userwithnopreviousgrant@email.com', app: 'app_with_disallowAutoCreationGrants'})
+        .then(grant => {
+          expect(grant).to.be.null();
+          done();
+        });
       });
     });
   });
 });
 
 
-describe('rsvp integration test', () => {
+describe('rsvp integration test - gigya', () => {
 
   before(done => {
-    bpc_helper.start().then(done);
+    MongoDB.reset().then(done);
+  });
+
+  after(done => {
+    MongoDB.clear().then(done);
   });
 
   before(done => {
+    Gigya.callApi.withArgs('/accounts.exchangeUIDSignature', {
+      UID:'doensnotexists',
+      UIDSignature:'UIDSignature_random',
+      signatureTimestamp:'signatureTimestamp_random'
+    })
+    .resolves({body: {UID: 'doensnotexists'}});
+
     Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: 'doensnotexists'})
     .resolves({body: {UID: 'doensnotexists', profile: { email: 'doensnotexists@test.nl'}}});
-    done();
-  });
 
-  before(done => {
-    Google.tokeninfo //.withArgs({id_token: 'random_id_token_hdjshjdhs', access_token: 'random_access_token_kfjsdhkjfhsdwe'})
-    .resolves({ID: 'doensnotexistsatgoogle', email: 'doensnotexists@testgoogle.nl'});
     done();
   });
 
   after(done => {
     Gigya.callApi.reset();
-    Google.tokeninfo.reset();
     done();
   });
 
@@ -274,8 +284,8 @@ describe('rsvp integration test', () => {
       UID: 'doensnotexists',
       email: 'doensnotexists@test.nl',
       app: 'valid-app',
-      UIDSignature: 'ignored_in_this_test',
-      signatureTimestamp: 'ignored_in_this_test'
+      UIDSignature: 'UIDSignature_random',
+      signatureTimestamp: 'signatureTimestamp_random'
     };
 
     bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
@@ -302,6 +312,30 @@ describe('rsvp integration test', () => {
       done();
     })
     .catch(done);
+  });
+
+});
+
+
+describe('rsvp integration test - google', () => {
+
+  before(done => {
+    MongoDB.reset().then(done);
+  });
+
+  after(done => {
+    MongoDB.clear().then(done);
+  });
+
+  before(done => {
+    Google.tokeninfo //.withArgs({id_token: 'random_id_token_hdjshjdhs', access_token: 'random_access_token_kfjsdhkjfhsdwe'})
+    .resolves({ID: 'doensnotexistsatgoogle', email: 'doensnotexists@testgoogle.nl'});
+    done();
+  });
+
+  after(done => {
+    Google.tokeninfo.reset();
+    done();
   });
 
 

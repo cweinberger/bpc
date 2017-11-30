@@ -161,9 +161,7 @@ function assignAdminScope(app, ticket) {
   ];
 
   return Promise.all(ops)
-  .then(res => {
-    return Promise.resolve(res[0].n === 1)
-  })
+  .then(res => Promise.resolve(res[0].n === 1))
   .catch(err => {
     console.error(err);
     return Promise.reject(err);

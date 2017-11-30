@@ -203,7 +203,7 @@ module.exports.register = function (server, options, next) {
           reply(result.value.dataScopes[request.params.scope]);
         }
       })
-      .catch(err => {console.error(err); reply(Boom.badRequest(err.message))});
+      .catch(err => reply(Boom.badRequest(err.message)));
     }
   });
 

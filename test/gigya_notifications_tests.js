@@ -207,7 +207,7 @@ describe('gigya notifications - functional tests', () => {
         return Promise.resolve();
       })
       .then(() => {
-        return new Promise(resolve => setTimeout(resolve, 2000));
+        return new Promise(resolve => setTimeout(resolve, 1000));
       })
       .then(() => MongoDB.collection('users').find({id: '3@test.nl'}).toArray())
       .then(result => {

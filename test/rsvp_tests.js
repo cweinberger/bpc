@@ -235,13 +235,12 @@ describe('rsvp unit tests', () => {
       })
       .catch(err => {
         expect(err).to.be.an.error('Forbidden');
-
-        MongoDB.collection('grants')
-        .findOne({user:'userwithnopreviousgrant@email.com', app: 'app_with_disallowAutoCreationGrants'})
-        .then(grant => {
-          expect(grant).to.be.null();
-          done();
-        });
+        return Promise.resolve();
+      })
+      .then(() => MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'app_with_disallowAutoCreationGrants'}))
+      .then(grant => {
+        expect(grant).to.be.null();
+        done();
       });
     });
   });

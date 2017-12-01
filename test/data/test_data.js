@@ -88,9 +88,12 @@ module.exports = {
 
   users: {
     simple_first_user: {
-      email: 'first_user@berlingskemedia.dk',
       id: '3218736128736123215732',
-      provider: 'gigya',
+      email: 'first_user@berlingskemedia.dk',
+      gigya: {
+        UID: '3218736128736123215732',
+        email: 'first_user@berlingskemedia.dk'
+      },
       lastLogin: new Date(),
       dataScopes: {
         'bt': {
@@ -104,9 +107,12 @@ module.exports = {
       }
     },
     simple_second_user: {
-      email: 'second_user@berlingskemedia.dk',
       id: '5347895384975934842757',
-      provider: 'gigya',
+      email: 'second_user@berlingskemedia.dk',
+      gigya: {
+        UID: '5347895384975934842757',
+        email: 'second_user@berlingskemedia.dk'
+      },
       lastLogin: new Date(),
       dataScopes: {
         'bt': {
@@ -120,23 +126,24 @@ module.exports = {
       }
     },
     console_superadmin_google_user: {
-      email: 'console_admin@berlingskemedia.dk',
       id: '1111111111111111111111',
-      provider: 'google',
+      email: 'console_admin@berlingskemedia.dk',
       lastLogin: new Date(),
       dataScopes: {}
     },
     console_google_user: {
-      email: 'console_user@berlingskemedia.dk',
       id: '2222222222222222222222',
-      provider: 'google',
+      email: 'console_user@berlingskemedia.dk',
       lastLogin: new Date(),
       dataScopes: {}
     },
     mkoc_user: {
-      email: 'mkoc@berlingskemedia.dk',
       id: '117880216634946654515',
-      provider: 'gigya',
+      email: 'mkoc@berlingskemedia.dk',
+      gigya: {
+        UID: '5347895384975934842757',
+        email: 'mkoc@berlingskemedia.dk'
+      },
       lastLogin: new Date(),
       dataScopes: {}
     }

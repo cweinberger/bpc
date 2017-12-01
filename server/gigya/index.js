@@ -13,6 +13,68 @@ const EventLog = require('./../audit/eventlog');
 module.exports.register = function (server, options, next) {
 
   server.route({
+    method: 'GET',
+    path: '/',
+    config: {
+      auth: {
+        access: {
+          entity: 'app'
+        }
+      },
+      validate: {
+        query: Joi.object().keys({
+          id: Joi.string(),
+          email: Joi.string(),
+          UID: Joi.string()
+        }).xor('id', 'email', 'UID') // <-- Only one is required + allowed
+      }
+    },
+    handler: function(request, reply) {
+      let query;
+
+      // These are a lot of mixed keys.
+      // I'm am in the transition of moving the keys.
+      // So this is to be backwards compatible
+
+      if(request.query.id){
+        query = {
+          $or: [
+            { id: request.query.id },
+            { email: request.query.id }
+          ]
+        };
+      } else if (request.query.email){
+        let email = request.query.email.toLowerCase();
+        query = {
+          $or: [
+            { id: email },
+            { email: email }
+          ]
+        };
+      } else if (request.query.UID){
+        query = {
+          $or: [
+            { id: request.query.UID },
+            { 'gigya.UID': request.query.UID }
+          ]
+        };
+      } else {
+        // Based on the Joi validation, this "else" should not be possible
+        return reply(Boom.badRequest());
+      }
+
+      const projection = {
+        _id: 0,
+        gigya: 1
+      };
+
+      MongoDB.collection('users')
+      .findOne(query, projection)
+      .then(result => reply(result.gigya));
+    }
+  });
+
+  server.route({
     method: 'POST',
     path: '/notifications',
     config: {

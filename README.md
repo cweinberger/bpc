@@ -144,6 +144,27 @@ When BPC gives authorization for a user to access a specific application, the
 user receives an RSVP which must be returned to the application.
 
 
+# Oz, OAuth and BPC
+
+Usually, OAuth (and Oz) is used in scenarios where an application is granted
+various permissions to user-owned resources on a server. Eg. a
+photo-print-service (the app) is granted access to user photos (the resources)
+on Facebook (the server). The grant is reviewed and accepted by the user on a
+consent screen.
+
+Oz is used a bit differently in BPC:
+
+  * The server = BPC
+  * The application = website or app
+  * The user = customer
+  * The resources = customer account permissions
+    (An account permission could be eg. "Paying subscriber to b.dk")
+  * The user does not "own" the resources
+  * The user does not review the grant
+  * The grant is created automatically without any consent screen
+
+
+
 # Tools
 
 ## Hawk
@@ -164,6 +185,7 @@ The BPC console is a separate application for managing BPC. It enabled it's user
 register other applications in BPC, set scopes and administer users.
 
 The BPC Console must be primed in the database to work. See section about MongoDB under Setup.
+
 
 
 # Gigya integrations
@@ -192,6 +214,7 @@ Important:
 
   * Make sure these webhooks are created on the Gigya Console for all Berlingske Media sites.
   * The User/App key must the same as the App Key BPC has set in as the ENV var `GIGYA_USER_KEY`.
+
 
 
 # Setup
@@ -234,8 +257,8 @@ db.applications.createIndex( { id: 1 })
 db.grants.createIndex({ id: 1 })
 db.grants.createIndex({ user: 1, app: 1 })
 db.users.createIndex( { id: 1 })
-db.users.createIndex( { email: 1, provider: 1 })
-db.users.createIndex( { id: 1, email: 1, provider: 1 })
+db.users.createIndex( { email: 1 })
+db.users.createIndex( { 'gigya.UID': 1 })
 ```
 
 
@@ -293,23 +316,14 @@ _Please be aware of this when writing your own tests._
 
 BPC supports the following environment variables:
 
-  * `PORT` - port number that the application should listen on.
-  * `MONGODB_HOST` - host name or IP address of server running MongoDB. If
-    replica sets are used, this would be a comma-separated list of hostnames for
-    each server in the set.
-  * `MONGODB_PORT` - port number to connect to MongoDB on.
-  * `MONGODB_DB` - name of database to use on MongoDB.
-  * `MONGODB_REPLSET` - name of MongoDB replica set (optional).
-  * `MONGODB_READPREFERENCE` - type of MongoDB read preference if using replica
-    sets (optional). Refer to the MongoDB documentation for choices. The default
-    is `primaryPreferred`.
+  * `MONGODB_CONNECTION` - Connection string to the MongoDB. See [Connection String URI Format](https://docs.mongodb.com/manual/reference/connection-string/)
   * `GIGYA_APP_KEY` - application key to the Gigya API.
   * `GIGYA_USER_KEY` - user key to the Gigya API.
   * `GIGYA_SECRET_KEY` - secret to the Gigya API.
   * `ENCRYPTIONPASSWORD` - used by the Oz protocol for data encryption.
-
-If not using replica sets, `MONGODB_REPLSET` and `MONGODB_READPREFERENCE` can
-be ignored.
+  * `PORT` - (optional) port number that the application should listen on. Default 8000.
+  * `BPC_PUB_HOST` - (optional) when served behind e.g. a load balancer, set the public hostname for URL validation to work.
+  * `BPC_PUB_PORT` - (optional) when served behind e.g. a load balancer, set the public TCP port for URL validation to work.
 
 
 ## Docker
@@ -325,39 +339,16 @@ the environment variables appropriately;
 
 ```
 docker run \
-  --env=PORT=80 \
-  --env=MONGODB_HOST=<value> \
-  --env=MONGODB_PORT=<value> \
-  --env=MONGODB_DB=<value> \
+  --env=MONGODB_CONNECTION=<value> \
   --env=GIGYA_APP_KEY=<value> \
   --env=GIGYA_USER_KEY=<value> \
   --env=GIGYA_SECRET_KEY=<value> \
   --env=ENCRYPTIONPASSWORD=<value> \
-  --publish=80:80 \
+  --publish=80:8000 \
   -d berlingskemedia/bpc
 ```
 
 Please see the environment variable reference below for complete details.
 
-A Docker container should now be running and providing an API on port 80
+A Docker container should now be running and providing an API on port 8000
 (or otherwise, if you've reconfigured the `publish` parameter).
-
-
-# Oz, OAuth and BPC
-
-Usually, OAuth (and Oz) is used in scenarios where an application is granted
-various permissions to user-owned resources on a server. Eg. a
-photo-print-service (the app) is granted access to user photos (the resources)
-on Facebook (the server). The grant is reviewed and accepted by the user on a
-consent screen.
-
-Oz is used a bit differently in BPC:
-
-  * The server = BPC
-  * The application = website or app
-  * The user = customer
-  * The resources = customer account permissions
-    (An account permission could be eg. "Paying subscriber to b.dk")
-  * The user does not "own" the resources
-  * The user does not review the grant
-  * The grant is created automatically without any consent screen

@@ -169,11 +169,22 @@ module.exports.register = function (server, options, next) {
           entity: 'user'
         }
       },
-      cors: stdCors
+      cors: stdCors,
+      validate: {
+        query: {
+          user: Joi.string(),
+          scope: Joi.string()
+        }
+      }
     },
     handler: function (request, reply) {
+
+      const query = Object.assign(request.query, {
+         app: request.params.id
+      });
+
       MongoDB.collection('grants').find(
-        { app: request.params.id }, {fields: {_id: 0}}
+        query, {fields: {_id: 0}}
       ).toArray(reply);
     }
   });
@@ -197,7 +208,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.string().required(),
           exp: Joi.date().timestamp('unix').raw().allow(null),
-          scope: Applications.scopeValidation
+          scope: Applications.grantScopeValidation
         }
       }
     },
@@ -233,7 +244,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.strip(),
           exp: Joi.date().timestamp('unix').raw().allow(null),
-          scope: Applications.scopeValidation
+          scope: Applications.grantScopeValidation
         }
       }
     },

@@ -15,6 +15,9 @@ module.exports = {
       .regex(/^(?!admin).*$/, { name: 'admin', invert: false })
       .invalid([])
   ),
+  // The scopes on a grant will be filtered on what the apps scope.
+  // But we won't allow the admin nor superadmin scopes. These are given through other means
+  grantScopeValidation: Joi.array().items(Joi.string().invalid(['admin','admin:*'])),
   findAll,
   findAppById,
   createApp,

@@ -84,8 +84,8 @@ module.exports.register = function (server, options, next) {
           return reply(err);
         }
 
-        if (ticket.user === request.params.id){
-          return reply(Boom.badRequest('You cannot demote yourself'));
+        if (ticket.grant === request.params.id){
+          return reply(Boom.forbidden('You cannot demote yourself'));
         }
 
         MongoDB.collection('grants').update(

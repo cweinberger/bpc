@@ -8,6 +8,7 @@ const OzLoadFuncs = require('./../oz_loadfuncs');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 const Applications = require('./applications');
+const EventLog = require('./../audit/eventlog');
 
 
 module.exports.register = function (server, options, next) {
@@ -208,7 +209,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.string().required(),
           exp: Joi.date().timestamp('unix').raw().allow(null),
-          scope: Applications.grantScopeValidation
+          scope: Applications.scopeValidation
         }
       }
     },
@@ -244,7 +245,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.strip(),
           exp: Joi.date().timestamp('unix').raw().allow(null),
-          scope: Applications.grantScopeValidation
+          scope: Applications.scopeValidation
         }
       }
     },
@@ -277,7 +278,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
 
-      MongoDB.collection('grants').remove({
+      MongoDB.collection('grants').removeOne({
         id: request.params.grantId, app: request.params.id
       })
       .then(result => reply({'status':'ok'}))
@@ -287,14 +288,115 @@ module.exports.register = function (server, options, next) {
   });
 
 
+  server.route({
+    method: 'POST',
+    path: '/{id}/admin',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin:{params.id}', 'admin:*'],
+          entity: 'user'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: appAdminPayloadValidation
+      }
+    },
+    handler: appAdminHandler
+  });
+
+
+  server.route({
+    method: 'DELETE',
+    path: '/{id}/admin',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin:{params.id}', 'admin:*'],
+          entity: 'user'
+        }
+      },
+      cors: stdCors,
+      validate: {
+        payload: appAdminPayloadValidation
+      }
+    },
+    handler: appAdminHandler
+  });
+
   next();
 
 };
-
-
 
 
 module.exports.register.attributes = {
   name: 'applications',
   version: '1.0.0'
 };
+
+
+const appAdminPayloadValidation = Joi.object().keys({
+  _id: Joi.strip(),
+  id: Joi.string(),
+  app: Joi.strip(),
+  user: Joi.string(),
+  exp: Joi.strip(),
+  scope: Joi.strip()
+}).or('id', 'user');
+
+
+function appAdminHandler (request, reply) {
+  OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+
+    if (err) {
+      console.error(err);
+      return reply(err);
+    }
+
+    const query = Object.assign(request.payload, {
+      app: ticket.app
+    });
+
+    var update = {};
+    const adminScope = { scope: 'admin:'.concat(request.params.id) };
+
+    if(request.method === 'post'){
+      update.$addToSet =  adminScope;
+    } else {
+      update.$pull =  adminScope;
+    }
+
+    MongoDB.collection('grants')
+    .updateOne(query, update)
+    .then(res => {
+
+      if(res.result.n === 1) {
+
+        if(update.$addToSet) {
+
+          EventLog.logUserEvent(
+            request.params.id,
+            'Added Admin Scope to User',
+            {scope: adminScope, byUser: ticket.user}
+          );
+
+        } else {
+
+          EventLog.logUserEvent(
+            request.params.id,
+            'Pulled Admin Scope from User',
+            {scope: 'admin:'.concat(request.params.id), byUser: ticket.user}
+          );
+        }
+
+        reply({'status': 'ok'});
+
+      } else {
+
+        reply(Boom.badRequest());
+
+      }
+    });
+  });
+}

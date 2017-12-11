@@ -55,8 +55,8 @@ module.exports.register = function (server, options, next) {
               'Add Scope to User',
               {scope: 'admin:*', byUser: ticket.user}
             );
-            reply({'status': 'ok'});
 
+            reply({'status': 'ok'});
           }
         );
       });
@@ -111,8 +111,8 @@ module.exports.register = function (server, options, next) {
               'Remove Scope from User',
               {scope: 'admin:*', byUser: ticket.user}
             );
-            reply();
 
+            reply({'status': 'ok'});
           }
         );
       });

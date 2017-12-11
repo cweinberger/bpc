@@ -290,7 +290,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/{id}/admin',
+    path: '/{id}/makeadmin',
     config: {
       auth: {
         access: {
@@ -303,13 +303,40 @@ module.exports.register = function (server, options, next) {
         payload: appAdminPayloadValidation
       }
     },
-    handler: appAdminHandler
+    handler: function (request, reply) {
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+
+        if (err) {
+          console.error(err);
+          return reply(err);
+        }
+
+        Applications.assignAdminScopeToUser(request.params.id, request.payload, ticket)
+        .then(res => {
+          if(res.result.n === 1) {
+
+            EventLog.logUserEvent(
+              request.params.id,
+              'Added Admin Scope to User',
+              {scope: adminScope, byUser: ticket.user}
+            );
+
+            reply({'status': 'ok'});
+
+          } else {
+
+            reply(Boom.badRequest());
+
+          }
+        });
+      });
+    }
   });
 
 
   server.route({
-    method: 'DELETE',
-    path: '/{id}/admin',
+    method: 'POST',
+    path: '/{id}/removeadmin',
     config: {
       auth: {
         access: {
@@ -322,7 +349,34 @@ module.exports.register = function (server, options, next) {
         payload: appAdminPayloadValidation
       }
     },
-    handler: appAdminHandler
+    handler: function (request, reply) {
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+
+        if (err) {
+          console.error(err);
+          return reply(err);
+        }
+
+        Applications.removeAdminScopeFromUser(request.params.id, request.payload, ticket)
+        .then(res => {
+          if(res.result.n === 1) {
+
+            EventLog.logUserEvent(
+              request.params.id,
+              'Pulled Admin Scope from User',
+              {scope: 'admin:'.concat(request.params.id), byUser: ticket.user}
+            );
+
+            reply({'status': 'ok'});
+
+          } else {
+
+            reply(Boom.badRequest());
+
+          }
+        });
+      });
+    }
   });
 
   next();
@@ -344,59 +398,3 @@ const appAdminPayloadValidation = Joi.object().keys({
   exp: Joi.strip(),
   scope: Joi.strip()
 }).or('id', 'user');
-
-
-function appAdminHandler (request, reply) {
-  OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
-
-    if (err) {
-      console.error(err);
-      return reply(err);
-    }
-
-    const query = Object.assign(request.payload, {
-      app: ticket.app
-    });
-
-    var update = {};
-    const adminScope = { scope: 'admin:'.concat(request.params.id) };
-
-    if(request.method === 'post'){
-      update.$addToSet =  adminScope;
-    } else {
-      update.$pull =  adminScope;
-    }
-
-    MongoDB.collection('grants')
-    .updateOne(query, update)
-    .then(res => {
-
-      if(res.result.n === 1) {
-
-        if(update.$addToSet) {
-
-          EventLog.logUserEvent(
-            request.params.id,
-            'Added Admin Scope to User',
-            {scope: adminScope, byUser: ticket.user}
-          );
-
-        } else {
-
-          EventLog.logUserEvent(
-            request.params.id,
-            'Pulled Admin Scope from User',
-            {scope: 'admin:'.concat(request.params.id), byUser: ticket.user}
-          );
-        }
-
-        reply({'status': 'ok'});
-
-      } else {
-
-        reply(Boom.badRequest());
-
-      }
-    });
-  });
-}

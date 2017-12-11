@@ -21,6 +21,8 @@ module.exports = {
   updateApp,
   deleteAppById,
   assignAdminScope,
+  assignAdminScopeToUser,
+  removeAdminScopeFromUser,
   createAppGrant,
   updateAppGrant
 };
@@ -167,6 +169,35 @@ function assignAdminScope(app, ticket) {
     return Promise.reject(err);
   });
 
+}
+
+
+function assignAdminScopeToUser(app, grant, ticket) {
+  return adminScopeUser(app, grant, ticket, false);
+}
+
+
+function removeAdminScopeFromUser(app, grant, ticket) {
+  return adminScopeUser(app, grant, ticket, true);
+}
+
+
+function adminScopeUser(app, grant, ticket, pull = false) {
+  const query = Object.assign(grant, {
+    app: ticket.app
+  });
+
+  var update = {};
+  const adminScope = { scope: 'admin:'.concat(app) };
+
+  if(pull){
+    update.$pull =  adminScope;
+  } else {
+    update.$addToSet =  adminScope;
+  }
+
+  return MongoDB.collection('grants')
+  .updateOne(query, update);
 }
 
 

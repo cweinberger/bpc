@@ -14,7 +14,7 @@ part of the endpoint in question.
 
 ## Making authorized requests
 
-If an API endpoint requires a ticket, this means that the request must be signed with a Hawk _Authorization_ header.
+If an API endpoint requires authorization, this means that the request must be signed with a Hawk _Authorization_ header.
 
 To generate a Hawk _Authorization_ header, see the following code example:
 
@@ -37,7 +37,15 @@ var authorizationHeader = Hawk.client.header(
 
 Now the `field` attribute can be inserted into the _Authorization_ header of the HTTP request.
 
-Some endpoints requires a ticket issued to an `app`. Some endpoints requires a `user` ticket. And others take both (`any`). In these cases use respective ticket to genereate the Hawk _Authorization_ header, by added the ticket in the `credentials` attribute.
+Most endpoints requires the authorization to be generated using a [ticket](../README.md#ticket).
+Some endpoints requires a ticket issued to an `app`. Some endpoints requires a `user` ticket. And others take both (`any`).
+In these cases, use respective ticket to genereate the Hawk _Authorization_ header, by setting the ticket in the `credentials` attribute.
+
+To get an app ticket, use the endpoint [`POST /ticket/app`](#post-ticketapp).
+
+To get a user ticket, use the endpoint [`POST /ticket/user`](#post-ticketuser).
+
+See each endpoint for details on required authorization.
 
 
 ## Table of contents

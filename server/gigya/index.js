@@ -70,7 +70,16 @@ module.exports.register = function (server, options, next) {
 
       MongoDB.collection('users')
       .findOne(query, projection)
-      .then(result => reply(result.gigya));
+      .then(result => {
+        if(result === null) {
+          reply(Boom.notFound());
+        } else {
+          reply(result.gigya);
+        }
+      })
+      .catch((err) => {
+        reply(Boom.badRequest());
+      });
     }
   });
 

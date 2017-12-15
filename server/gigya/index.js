@@ -71,7 +71,7 @@ module.exports.register = function (server, options, next) {
       MongoDB.collection('users')
       .findOne(query, projection)
       .then(result => {
-        if(result === null) {
+        if(result === null || !result.gigya) {
           reply(Boom.notFound());
         } else {
           reply(result.gigya);

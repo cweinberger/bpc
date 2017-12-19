@@ -48,7 +48,7 @@ module.exports.register = function (server, options, next) {
         }
       }
     },
-    handler: createAnonymousRsvp
+    handler: createAnonymousTicket
   });
 
   server.route({
@@ -67,7 +67,7 @@ module.exports.register = function (server, options, next) {
         }
       }
     },
-    handler: createAnonymousRsvp
+    handler: createAnonymousTicket
   });
 
   next();
@@ -80,7 +80,7 @@ module.exports.register.attributes = {
 };
 
 
-function createAnonymousRsvp(request, reply) {
+function createAnonymousTicket(request, reply) {
   let data = Object.assign({}, request.query, request.payload, request.state);
 
   if (!data.auid || !validUUID(data.auid.replace('auid**', ''))) {

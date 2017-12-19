@@ -44,7 +44,8 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         query: {
-          app: Joi.string().required()
+          app: Joi.string(),
+          returnUrl: Joi.string().uri({scheme: ['http','https']})
         }
       }
     },
@@ -89,6 +90,22 @@ function createAnonymousTicket(request, reply) {
     reply.state('auid', data.auid);
   }
 
+  // The client wants a redirect. We don't need the ticket in this case. We got the auid cookie already.
+  if (request.query.returnUrl) {
+    return reply.redirect(request.query.returnUrl);
+  }
+
+  // The client has not given an app. This means we cannot issue a ticket. But the auid cookie is still relevant.
+  if (!data.app) {
+    // If we have a referrer, we redirect to that.
+    if (request.info.referrer) {
+      return reply.redirect(request.info.referrer);
+    // Otherwise a simple 200 OK.
+    } else {
+      return reply();
+    }
+  }
+
   return findApplication({ app: data.app })
   .then(app => {
 
@@ -116,8 +133,8 @@ function createAnonymousTicket(request, reply) {
         return reply(ticket);
       }
     });
-  }).
-  catch(err => {
+  })
+  .catch(err => {
     reply(err);
   });
 }

@@ -44,11 +44,12 @@ module.exports.register = function (server, options, next) {
       },
       validate: {
         query: {
-          app: Joi.string().required()
+          app: Joi.string(),
+          returnUrl: Joi.string().uri({scheme: ['http','https']})
         }
       }
     },
-    handler: createAnonymousRsvp
+    handler: createAnonymousTicket
   });
 
   server.route({
@@ -67,7 +68,7 @@ module.exports.register = function (server, options, next) {
         }
       }
     },
-    handler: createAnonymousRsvp
+    handler: createAnonymousTicket
   });
 
   next();
@@ -80,13 +81,29 @@ module.exports.register.attributes = {
 };
 
 
-function createAnonymousRsvp(request, reply) {
+function createAnonymousTicket(request, reply) {
   let data = Object.assign({}, request.query, request.payload, request.state);
 
   if (!data.auid || !validUUID(data.auid.replace('auid**', ''))) {
     data.auid = 'auid**' + generateUUID();
     // Setting the cookie
     reply.state('auid', data.auid);
+  }
+
+  // The client wants a redirect. We don't need the ticket in this case. We got the auid cookie already.
+  if (request.query.returnUrl) {
+    return reply.redirect(request.query.returnUrl);
+  }
+
+  // The client has not given an app. This means we cannot issue a ticket. But the auid cookie is still relevant.
+  if (!data.app) {
+    // If we have a referrer, we redirect to that.
+    if (request.info.referrer) {
+      return reply.redirect(request.info.referrer);
+    // Otherwise a simple 200 OK.
+    } else {
+      return reply();
+    }
   }
 
   return findApplication({ app: data.app })
@@ -116,8 +133,8 @@ function createAnonymousRsvp(request, reply) {
         return reply(ticket);
       }
     });
-  }).
-  catch(err => {
+  })
+  .catch(err => {
     reply(err);
   });
 }

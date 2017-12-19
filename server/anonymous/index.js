@@ -100,9 +100,9 @@ function createAnonymousTicket(request, reply) {
     // If we have a referrer, we redirect to that.
     if (request.info.referrer) {
       return reply.redirect(request.info.referrer);
-    // Otherwise a simple 200 OK.
+    // Otherwise a simple 200 OK with the user id.
     } else {
-      return reply();
+      return reply({user: data.auid});
     }
   }
 

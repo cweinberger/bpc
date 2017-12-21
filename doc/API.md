@@ -43,7 +43,7 @@ In these cases, use respective ticket to genereate the Hawk _Authorization_ head
 
 To get an app ticket, use the endpoint [`POST /ticket/app`](#post-ticketapp).
 
-To get a user ticket, use the endpoint [`POST /ticket/user`](#post-ticketuser).
+To get a user ticket, use the endpoints [`GET /rsvp`](#get-rsvp) and [`POST /ticket/user`](#post-ticketuser).
 
 See each endpoint for details on required authorization.
 

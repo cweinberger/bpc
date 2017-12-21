@@ -50,28 +50,23 @@ See each endpoint for details on required authorization.
 
 ## Table of contents
 
-* [`GET /rsvp`](#get-rsvp)
-* [`POST /rsvp`](#post-rsvp)
 * [`POST /ticket/app`](#post-ticketapp)
 * [`POST /ticket/user`](#post-ticketuser)
 * [`POST /ticket/reissue`](#post-ticketreissue)
+* [`GET /rsvp`](#get-rsvp)
+* [`POST /rsvp`](#post-rsvp)
 * [`GET /me`](#get-me)
 * [`GET /permissions/{scope}`](#get-permissionsscope)
 * [`GET /permissions/{user}/{scope}`](#get-permissionsuserscope)
 * [`POST /permissions/{user}/{scope}`](#post-permissionsuserscope)
 * [`PATCH /permissions/{user}/{scope}`](#patch-permissionsuserscope)
-* [`GET /permissions/{provider}/{email}/{scope}`](#get-permissionsprovideremailscope)
-* [`POST /permissions/{provider}/{email}/{scope}`](#post-permissionsprovideremailscope)
+* [`GET /gigya`](#get-gigya)
 * [`GET /users`](#get-users)
 * [`GET /users/{id}`](#get-usersid)
 * [`DELETE /users/{id}`](#delete-usersid)
-* [`GET /users/exists`](#get-usersexists)
 * [`POST /users/register`](#post-usersregister)
 * [`POST /users/update`](#post-usersupdate)
 * [`POST /users/resetpassword`](#post-usersresetpassword)
-* [`GET /users/search`](#get-userssearch)
-* [`GET /gigya/search`](#get-gigyasearch)
-* [`GET /gigya/exists`](#get-gigyaexists)
 * [`POST /validate`](#post-validate)
 * [`GET /applications`](#get-applications)
 * [`POST /applications`](#post-applications)
@@ -90,44 +85,6 @@ See each endpoint for details on required authorization.
 * [`GET /healthcheck`](#get-healthcheck)
 * [`GET /version`](#get-version)
 
-
-
-
-## [GET /rsvp]
-
-* Query parameters: See [Joi validation object](../server/rsvp/index.js#L19)
-
-If the user is validated and have a grant to the application, an RSVP is returned.
-If `returnUrl` is specific, the user will be redirected to this URL with `rsvp` in the querystring.
-
-
-
-## [POST /rsvp]
-
-* Query parameters: _None_
-* Payload: See [Joi validation object](../server/rsvp/index.js#L19)
-
-Same as the equivalent GET request (see above).
-The RSVP will be in the response body and `X-RSVP_TOKEN` header.
-
-Example body request
-```
-    {
-        "app":"bt_test",
-        "provider":"gigya",
-        "email":"btdk-test+123123@berlingskemedia.dk",
-        "UID":"07f73e5305cc4db9ab8433e8ecf05ab2",
-        "UIDSignature":"E2wHxyDxS1sclDCtGjM846P83Wc=",
-        "signatureTimestamp":"1507038287"
-    }
- ```
-
-Example body response
-```
-{
-  "rsvp": "Fe26.2**f96a370461056be06cf92a784769da1bae6c0841b4770688d7a6dceb563c5a8b*308GtffxSBzwmf82fJtTRw*GsSHy4V6Bth2cX-3ZxwLgXsQg2TlHiNQyL5lyflyYMzGEdKTSRhB8GCo-j0VumwD0eZfYY5_8ceYX6ir2wGqE5FQvQC88tKrPqQcXcMWGS-4VzCttBGVlPW2ZE7KB6E0**ab7318ddf0db6165f755c863e14bf5e720fe4483736ac858cbcb6dee69461de6*bZUM8A9vJ0Rk8PT0Nfa4v3rcdCFoganYHHE48_wXo30"
-}
-```
 
 
 ## [POST /ticket/app]
@@ -170,13 +127,13 @@ Example body response:
 ## [POST /ticket/user]
 
 * Payload:
-  * `rsvp`: RSVP from user
+  * `rsvp`: RSVP from user. To get an RSVP, see [`GET /rsvp`](#get-rsvp)
 * Required ticket type: `app`
 * Required scope: _None_
 
 This the request is valid, a user ticket is returned.
 
-
+See [ticket](../README.md#ticket) for more information.
 
 
 
@@ -212,6 +169,44 @@ Example body response:
 
 
 
+## [GET /rsvp]
+
+* Query parameters: See [Joi validation object](../server/rsvp/index.js#L19)
+
+An RSVP is used to aquire a user ticket. If the user is validated and have a grant to the application, an RSVP is returned, which can be exchanged by the app for a user ticket.
+If `returnUrl` is specific, the user will be redirected to this URL with `rsvp` in the querystring.
+
+
+
+## [POST /rsvp]
+
+* Query parameters: _None_
+* Payload: See [Joi validation object](../server/rsvp/index.js#L19)
+
+Same as the equivalent GET request (see above).
+The RSVP will be in the response body and `X-RSVP_TOKEN` header.
+
+Example body request
+```
+    {
+        "app":"bt_test",
+        "provider":"gigya",
+        "email":"btdk-test+123123@berlingskemedia.dk",
+        "UID":"07f73e5305cc4db9ab8433e8ecf05ab2",
+        "UIDSignature":"E2wHxyDxS1sclDCtGjM846P83Wc=",
+        "signatureTimestamp":"1507038287"
+    }
+ ```
+
+Example body response
+```
+{
+  "rsvp": "Fe26.2**f96a370461056be06cf92a784769da1bae6c0841b4770688d7a6dceb563c5a8b*308GtffxSBzwmf82fJtTRw*GsSHy4V6Bth2cX-3ZxwLgXsQg2TlHiNQyL5lyflyYMzGEdKTSRhB8GCo-j0VumwD0eZfYY5_8ceYX6ir2wGqE5FQvQC88tKrPqQcXcMWGS-4VzCttBGVlPW2ZE7KB6E0**ab7318ddf0db6165f755c863e14bf5e720fe4483736ac858cbcb6dee69461de6*bZUM8A9vJ0Rk8PT0Nfa4v3rcdCFoganYHHE48_wXo30"
+}
+```
+
+
+
 ## [GET /me]
 
 * Query parameters: _None_
@@ -224,23 +219,30 @@ Returns user profile data.
 
 
 
-
 ## [GET /permissions/{scope}]
 
-* Query parameters: _None_
+* Query parameters: field=value
 * Required ticket type: `user`
 * Required scope: `{params.scope}`
 
 Gets the user permissions. The user is the ticket, with which the request has been signed.
 
+If a querystring is given, specific fields can be queried for at value.
+If valid, the HTTP response code is 200.
+If invalid, the HTTP response code is 404.
 
+Example query:
+
+```
+GET /permissions/berlingske?bdk_apps=yes
+```
 
 
 
 
 ## [GET /permissions/{user}/{scope}]
 
-* Query parameters: _None_
+* Query parameters: field=value
 * Required ticket type: `app`
 * Required scope: `{params.scope}`, `admin`
 
@@ -327,41 +329,30 @@ The resulting data will be like:
 ```
 
 
-## [GET /permissions/{provider}/{email}/{scope}]
+## GET /gigya
 
-* Query parameters: _None_
+* Query parameters:
+  * `id`: string
+  * `email`: string
+  * `UID`: string
 * Required ticket type: `app`
-* Required scope: `{params.scope}`, `admin`
+* Required scope: _None_
 
-
-Gets the user permissions. The parameter `provider` is either _gigya_ or _google_ and `email` must be an email address.
-
-
-## [POST /permissions/{provider}/{email}/{scope}]
-
-* Query parameters: _None_
-* Required ticket type: `app`
-* Required scope: `{params.scope}`, `admin`
-
-Sets the user permissions. The parameter `provider` is either _gigya_ or _google_ and `email` must be an email address.
-
-
-
+Returns Gigya email and UID if found in BPC.
 
 
 
 ## [GET /users]
 
 * Query parameters:
+  * `id`: A valid email address
   * `email`: A valid email address
-  * `provider`: 'gigya' (default) or 'google'
 * Required ticket type: `any`
 * Required scope: `admin`, `users`
 
 Returns a list of all users currently created in BPC. Deleted users are omitted.
 
-
-
+Used for admin purpose.
 
 
 
@@ -373,176 +364,17 @@ Returns a list of all users currently created in BPC. Deleted users are omitted.
 
 Looks up the user with the given id (UID).
 
-
-
+Used for admin purpose.
 
 
 
 ## [DELETE /users/{id}]
 
-**TEMPORARY**: This endpoint will eventually be removed.
-Instead, in the future, users are deleted directly in Gigya and webhooks will call BPC to mark them as deleted.
-
 * Query parameters: _None_
 * Required ticket type: `any`
 * Required scope: `admin`, `users`
 
-Deletes the user with the given id (UID). This call will attempt to delete the
-user from Gigya, and if successful, mark the local user as deleted.
-
-
-
-
-## [GET /users/exists]
-
-**OBSOLETE**: Use endpoint `GET /gigya/exists` instead.
-
-
-
-
-## [POST /users/register]
-
-**TEMPORARY**: This endpoint will eventually be removed.
-Only Drupal SSO is allowed to use this endpoint.
-To create a user, use the corresponding enpoint on Drupal SSO.
-Instead, in the future, users must be created using the Gigya API.
-
-* Query parameters: _None_
-* Required ticket type: `any`
-* Required scope: `admin`, `users`
-
-Registers a new Gigya user account.
-
-Example POST request:
-
-```
-{
-  "email": "johndoe@berlingskemedia.dk",
-  "password": "my-secret-password",
-  "profile": {
-    "firstName": "John",
-    "lastName": "Doe"
-  },
-  "data": {
-    "terms": true
-  }
-}
-```
-
-Returns the user object as stored in Gigya.
-
-Profile fields are directly matched to their corresponding whitelisted fields in
-Gigya. Please note the restrictions here; only a limited set of fields are
-allowed.
-
-
-
-## [POST /users/update]
-
-**TEMPORARY**: This endpoint will eventually be removed.
-Instead, in the future, user profile updates must be made using the Gigya Web SDK.
-
-
-
-## POST /users/resetpassword
-
-**TEMPORARY**: This endpoint will eventually be removed.
-Instead, in the future, user password reset must be made using the Gigya API.
-
-
-
-## [GET /users/search]
-
-**OBSOLETE**: Use endpoint `GET /gigya/search` instead.
-
-
-
-## GET /gigya/search
-
-**TEMPORARY**: This endpoint will eventually be removed.
-Instead, in the future, to search must be made using the Gigya API.
-
-* Query parameters:
-  * `query` - SQL-style Gigya query to search by
-* Required ticket type: `any`
-* Required scope: `admin`, `users`
-
-Returns all Gigya results matching the query. Note that Gigya has an upper limit
-of 5000 accounts in the result set, which also takes effect in the API.
-
-Example query: `SELECT * FROM accounts WHERE profile.email = "johndoe@berlingskemedia.dk"`
-
-Example result:
-
-```
-{
-  "results": [
-    {
-      "data": {},
-      "lastUpdatedTimestamp": 1490603944224,
-      "socialProviders": "site",
-      "password": { ... },
-      "iRank": 0,
-      "created": "2017-03-27T08:39:04.181Z",
-      "lastLoginTimestamp": 1490603944318,
-      "oldestDataUpdated": "2017-03-27T08:39:04.224Z",
-      "isLockedOut": false,
-      "profile": { ... },
-      "isVerified": false,
-      "createdTimestamp": 1490603944181,
-      "identities": [ ... ],
-      "lastUpdated": "2017-03-27T08:39:04.224Z",
-      "emails": { ... },
-      "isRegistered": true,
-      "regSource": "",
-      "lastLoginLocation": { ... },
-      "isActive": true,
-      "lastLogin": "2017-03-27T08:39:04.318Z",
-      "oldestDataUpdatedTimestamp": 1490603944224,
-      "UID": "64d9620306bd400088dc2e4235a0fe79",
-      "registered": "2017-03-27T08:39:04.238Z",
-      "rbaPolicy": { ... },
-      "loginIDs": { ... },
-      "registeredTimestamp": 1490603944238,
-      "loginProvider": "site"
-    }
-  ],
-  "objectsCount": 1,
-  "totalCount": 1,
-  "statusCode": 200,
-  "errorCode": 0,
-  "statusReason": "OK",
-  "callId": "c940815ac3434663b9e82db99add5d74",
-  "time": "2017-03-27T09:27:13.940Z"
-}
-```
-
-
-## GET /gigya/exists
-
-**TEMPORARY**: This endpoint will eventually be removed.
-Instead, in the future, requests to check if emails exists must be made using the Gigya API.
-
-* Query parameters:
-  * `email` - email address to check
-* Required ticket type: `any`
-* Required scope: `admin`, `users`
-
-Checks with Gigya if the given email address is taken or not.
-
-Example result:
-
-```
-{
-  "isAvailable": false,
-  "statusCode": 200,
-  "errorCode": 0,
-  "statusReason": "OK",
-  "callId": "ca9726cd04174c2c9e1a0686c9dd79f5",
-  "time": "2017-03-27T10:44:47.274Z"
-}
-```
-
+Used for admin purpose.
 
 
 

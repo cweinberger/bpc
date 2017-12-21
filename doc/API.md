@@ -61,13 +61,13 @@ See each endpoint for details on required authorization.
 * [`POST /permissions/{user}/{scope}`](#post-permissionsuserscope)
 * [`PATCH /permissions/{user}/{scope}`](#patch-permissionsuserscope)
 * [`GET /gigya`](#get-gigya)
+* [`POST /validate`](#post-validate)
 * [`GET /users`](#get-users)
 * [`GET /users/{id}`](#get-usersid)
 * [`DELETE /users/{id}`](#delete-usersid)
 * [`POST /users/register`](#post-usersregister)
 * [`POST /users/update`](#post-usersupdate)
 * [`POST /users/resetpassword`](#post-usersresetpassword)
-* [`POST /validate`](#post-validate)
 * [`GET /applications`](#get-applications)
 * [`POST /applications`](#post-applications)
 * [`GET /applications/{id}`](#get-applicationsid)
@@ -213,8 +213,7 @@ Example body response
 * Required ticket type: `user`
 * Required scope: _None_
 
-Returns user profile data.
-
+Returns all scope data allowed by ticket.
 
 
 
@@ -342,42 +341,6 @@ Returns Gigya email and UID if found in BPC.
 
 
 
-## [GET /users]
-
-* Query parameters:
-  * `id`: A valid email address
-  * `email`: A valid email address
-* Required ticket type: `any`
-* Required scope: `admin`, `users`
-
-Returns a list of all users currently created in BPC. Deleted users are omitted.
-
-Used for admin purpose.
-
-
-
-## [GET /users/{id}]
-
-* Query parameters: _None_
-* Required ticket type: `any`
-* Required scope: `admin`, `users`
-
-Looks up the user with the given id (UID).
-
-Used for admin purpose.
-
-
-
-## [DELETE /users/{id}]
-
-* Query parameters: _None_
-* Required ticket type: `any`
-* Required scope: `admin`, `users`
-
-Used for admin purpose.
-
-
-
 ## [POST /validate]
 
 * Query parameters: _None_
@@ -414,6 +377,43 @@ Example payload:
 ```
 
 If the validation succeeds, BPC responds with a `200 OK`. If else a `401 Unauthorized`.
+
+
+
+
+## [GET /users]
+
+* Query parameters:
+  * `id`: A valid email address
+  * `email`: A valid email address
+* Required ticket type: `any`
+* Required scope: `admin`, `users`
+
+Returns a list of all users currently created in BPC. Deleted users are omitted.
+
+Used for admin purpose.
+
+
+
+## [GET /users/{id}]
+
+* Query parameters: _None_
+* Required ticket type: `any`
+* Required scope: `admin`, `users`
+
+Looks up the user with the given id (UID).
+
+Used for admin purpose.
+
+
+
+## [DELETE /users/{id}]
+
+* Query parameters: _None_
+* Required ticket type: `any`
+* Required scope: `admin`, `users`
+
+Used for admin purpose.
 
 
 

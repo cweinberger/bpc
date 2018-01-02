@@ -75,7 +75,7 @@ module.exports.register = function (server, options, next) {
 
         Applications.createApp(request.payload)
         .then(app => {
-          Applications.assignAdminScope(app, ticket)
+          Applications.assignAdminScopeToApp(app, ticket)
           return Promise.resolve(app);
         })
         .then(app => reply(app))
@@ -287,6 +287,37 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+  server.route({
+    method: 'GET',
+    path: '/{id}/admins',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin:{params.id}', 'admin:*'],
+          entity: 'user'
+        }
+      },
+      cors: stdCors
+    },
+    handler: function (request, reply) {
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+
+        if (err) {
+          console.error(err);
+          return reply(err);
+        }
+
+        const query = {
+           app: ticket.app,
+           scope: 'admin:'.concat(request.params.id)
+        };
+
+        MongoDB.collection('grants').find(
+          query, {fields: {_id: 0}}
+        ).toArray(reply);
+      });
+    }
+  });
 
   server.route({
     method: 'POST',
@@ -311,24 +342,45 @@ module.exports.register = function (server, options, next) {
           return reply(err);
         }
 
-        Applications.assignAdminScopeToUser(request.params.id, request.payload, ticket)
-        .then(res => {
-          if(res.result.n === 1) {
-
-            EventLog.logUserEvent(
-              request.params.id,
-              'Added Admin Scope to User',
-              {scope: adminScope, byUser: ticket.user}
-            );
-
-            reply({'status': 'ok'});
-
-          } else {
-
-            reply(Boom.badRequest());
-
-          }
+        const query = Object.assign(request.payload, {
+           app: ticket.app
         });
+
+        MongoDB.collection('grants').findOne(
+          query, {fields: {_id: 0}}
+        ).then(grant => {
+          if (grant === null) {
+            grant = Object.assign(request.payload, {
+               app: ticket.app
+            });
+            Applications.createAppGrant(grant)
+            .then(newGrant => assignAdminScopeToGrant(newGrant));
+          } else {
+            assignAdminScopeToGrant(grant);
+          }
+        })
+        .catch(err => reply(err));
+
+        function assignAdminScopeToGrant(grant){
+          Applications.assignAdminScopeToGrant(request.params.id, grant, ticket)
+          .then(res => {
+            if(res.result.n === 1) {
+
+              EventLog.logUserEvent(
+                request.params.id,
+                'Added Admin Scope to User',
+                {app: request.params.id, byUser: ticket.user}
+              );
+
+              reply({'status': 'ok'});
+
+            } else {
+
+              reply(Boom.badRequest());
+
+            }
+          });
+        }
       });
     }
   });
@@ -357,14 +409,18 @@ module.exports.register = function (server, options, next) {
           return reply(err);
         }
 
-        Applications.removeAdminScopeFromUser(request.params.id, request.payload, ticket)
+        if (ticket.user === request.payload.user){
+          return reply(Boom.forbidden('You cannot remove yourself'));
+        }
+
+        Applications.removeAdminScopeFromGrant(request.params.id, request.payload, ticket)
         .then(res => {
           if(res.result.n === 1) {
 
             EventLog.logUserEvent(
               request.params.id,
               'Pulled Admin Scope from User',
-              {scope: 'admin:'.concat(request.params.id), byUser: ticket.user}
+              {app: request.params.id, byUser: ticket.user}
             );
 
             reply({'status': 'ok'});

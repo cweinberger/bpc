@@ -20,9 +20,9 @@ module.exports = {
   createApp,
   updateApp,
   deleteAppById,
-  assignAdminScope,
-  assignAdminScopeToUser,
-  removeAdminScopeFromUser,
+  assignAdminScopeToApp,
+  assignAdminScopeToGrant,
+  removeAdminScopeFromGrant,
   createAppGrant,
   updateAppGrant
 };
@@ -52,9 +52,6 @@ function findAppById(id) {
 
 /**
  * Creates a new application
- *
- * Since the creating user should probably have admin rights over his new
- * application, this function might be combined with assignAdminScope().
  *
  * @param {Object} Application object to create
  * @return {Promise} Promise providing the created app
@@ -144,7 +141,7 @@ function deleteAppById(id, userTicket) {
  * @return {Promise} Provides a Boolean True if the operation succeeded,
  *   False otherwise
  */
-function assignAdminScope(app, ticket) {
+function assignAdminScopeToApp(app, ticket) {
 
   const consoleScope = 'admin:'.concat(app.id);
   const ops = [
@@ -172,12 +169,12 @@ function assignAdminScope(app, ticket) {
 }
 
 
-function assignAdminScopeToUser(app, grant, ticket) {
+function assignAdminScopeToGrant(app, grant, ticket) {
   return adminScopeUser(app, grant, ticket, false);
 }
 
 
-function removeAdminScopeFromUser(app, grant, ticket) {
+function removeAdminScopeFromGrant(app, grant, ticket) {
   return adminScopeUser(app, grant, ticket, true);
 }
 
@@ -191,9 +188,9 @@ function adminScopeUser(app, grant, ticket, pull = false) {
   const adminScope = { scope: 'admin:'.concat(app) };
 
   if(pull){
-    update.$pull =  adminScope;
+    update.$pull = adminScope;
   } else {
-    update.$addToSet =  adminScope;
+    update.$addToSet = adminScope;
   }
 
   return MongoDB.collection('grants')

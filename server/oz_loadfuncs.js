@@ -46,6 +46,15 @@ function loadGrantFunc(id, next) {
   .then(grant => {
     return findApplication(grant.app)
     .then(app => {
+
+      // We test the scope of the grant now, so we don't get the internal server error:
+      // Boom.internal('Grant scope is not a subset of the application scope');
+      // in oz/lib/ticket.js
+      // Theoretically this should not occur. But errors can be made in the database.
+      if(app.scope && grant.scope && !Oz.scope.isSubset(app.scope, grant.scope)) {
+        return Promise.reject(Boom.unauthorized('Invalid grant scope'));
+      }
+
       return Promise.all([
         extendGrant(grant, app),
         buildExt(grant, app)

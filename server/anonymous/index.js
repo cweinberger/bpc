@@ -5,15 +5,16 @@ const Oz = require('oz');
 const Boom = require('boom');
 const Joi = require('joi');
 const MongoDB = require('./../mongo/mongodb_client');
+const OzLoadFuncs = require('./../oz_loadfuncs');
 
-const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
+const ENCRYPTIONPASSWORD = OzLoadFuncs.strategyOptions.oz.encryptionPassword;
 
 const corsRules = {
   credentials: true,
   origin: ['*'],
   // access-control-allow-methods: POST
   headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-  exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+  exposedHeaders: ['WWW-Authenticate', 'Server-Authorization', 'X-AUID-GENERATED'],
   maxAge: 86400
 };
 
@@ -71,6 +72,22 @@ module.exports.register = function (server, options, next) {
     handler: createAnonymousTicket
   });
 
+  server.route({
+    method: 'DELETE',
+    path: '/',
+    config: {
+      auth: false,
+      cors: corsRules,
+      state: {
+        parse: false, // parse and store in request.state
+        failAction: 'error' // may also be 'ignore' or 'log'
+      }
+    },
+    handler: function(request, reply) {
+      return reply().unstate('auid');
+    }
+  });
+
   next();
 };
 
@@ -83,26 +100,36 @@ module.exports.register.attributes = {
 
 function createAnonymousTicket(request, reply) {
   let data = Object.assign({}, request.query, request.payload, request.state);
+  let auid_generated = false;
 
-  if (!data.auid || !validUUID(data.auid.replace('auid**', ''))) {
+  if (!data.auid || !validAUID(data.auid)) {
+
     data.auid = 'auid**' + generateUUID();
+    auid_generated = true;
+
     // Setting the cookie
     reply.state('auid', data.auid);
   }
 
   // The client wants a redirect. We don't need the ticket in this case. We got the auid cookie already.
   if (request.query.returnUrl) {
-    return reply.redirect(request.query.returnUrl);
+    return reply
+    .redirect(request.query.returnUrl)
+    .header('X-AUID-GENERATED', auid_generated ? 'true' : 'false');
   }
 
   // The client has not given an app. This means we cannot issue a ticket. But the auid cookie is still relevant.
   if (!data.app) {
     // If we have a referrer, we redirect to that.
     if (request.info.referrer) {
-      return reply.redirect(request.info.referrer);
+      return reply
+      .redirect(request.info.referrer)
+      .header('X-AUID-GENERATED', auid_generated ? 'true' : 'false');
     // Otherwise a simple 200 OK with the user id.
     } else {
-      return reply({user: data.auid});
+      return reply
+      .response({user: data.auid})
+      .header('X-AUID-GENERATED', auid_generated ? 'true' : 'false');
     }
   }
 
@@ -121,7 +148,10 @@ function createAnonymousTicket(request, reply) {
       scope: ['anonymous']
     };
 
-    grant.exp = Oz.hawk.utils.now() + (60000 * 60 * 24 * 350);
+    const oneHour = 1000 * 60 * 60;
+    const oneYear = oneHour * 24 * 354;
+    grant.exp = Oz.hawk.utils.now() + oneHour;
+    // grant.exp = Oz.hawk.utils.now() + oneYear;
 
     grant.id = 'agid**' + new Buffer(JSON.stringify(grant)).toString('base64');
 
@@ -130,7 +160,8 @@ function createAnonymousTicket(request, reply) {
         console.error(err);
         return reply(err);
       } else {
-        return reply(ticket);
+        return reply(ticket)
+        .header('X-AUID-GENERATED', auid_generated ? 'true' : 'false');
       }
     });
   })
@@ -171,6 +202,12 @@ function generateUUID () {
   });
 }
 
+function validAUID(input) {
+  if (!input.startsWith('auid**')){
+    return false;
+  }
+  return validUUID(input.replace('auid**', ''));
+}
 
 function validUUID(input) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input);

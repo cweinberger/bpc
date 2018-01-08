@@ -88,6 +88,20 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+  server.route({
+    method: 'GET',
+    path: '/exists',
+    config: {
+      auth: false,
+      cors: corsRules,
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'error' // may also be 'ignore' or 'log'
+      }
+    },
+    handler: hasAnonymousUserId
+  });
+
   next();
 };
 
@@ -99,16 +113,28 @@ module.exports.register.attributes = {
 
 
 function createAnonymousTicket(request, reply) {
-  let data = Object.assign({}, request.query, request.payload, request.state);
+  let app_id = request.method === 'get' ? request.query.app : request.payload.app;
+  let auid = request.state.auid;
   let auid_generated = false;
 
-  if (!data.auid || !validAUID(data.auid)) {
+  console.log('host', request.info.host);
+  console.log('hostname', request.info.hostname);
+  console.log('referrer', request.info.referrer);
+  console.log('origin', request.headers.origin);
 
-    data.auid = 'auid**' + generateUUID();
+  if (request.headers['user-agent']){
+    if(/Safari/.test(request.headers['user-agent']) && request.headers.origin !== undefined) {
+      if(!auid){
+        return reply().code(204);
+      }
+    }
+  }
+
+  if (!auid || !validAUID(auid)) {
+    auid = 'auid**' + generateUUID();
     auid_generated = true;
-
     // Setting the cookie
-    reply.state('auid', data.auid);
+    reply.state('auid', auid);
   }
 
   // The client wants a redirect. We don't need the ticket in this case. We got the auid cookie already.
@@ -118,8 +144,8 @@ function createAnonymousTicket(request, reply) {
     .header('X-AUID-GENERATED', auid_generated ? 'true' : 'false');
   }
 
-  // The client has not given an app. This means we cannot issue a ticket. But the auid cookie is still relevant.
-  if (!data.app) {
+  // The client has not given an app id. This means we cannot issue a ticket. But the auid cookie is still relevant.
+  if (!app_id) {
     // If we have a referrer, we redirect to that.
     if (request.info.referrer) {
       return reply
@@ -128,12 +154,12 @@ function createAnonymousTicket(request, reply) {
     // Otherwise a simple 200 OK with the user id.
     } else {
       return reply
-      .response({user: data.auid})
+      .response({user: auid})
       .header('X-AUID-GENERATED', auid_generated ? 'true' : 'false');
     }
   }
 
-  return findApplication({ app: data.app })
+  return findApplication(app_id)
   .then(app => {
 
     // We are fixing/preventing the scope on an anonymous ticket to be anything else than "anonymous"
@@ -143,7 +169,7 @@ function createAnonymousTicket(request, reply) {
     // But can be parsed in loadGrantFunc using the id.
     let grant = {
       app: app.id,
-      user: data.auid,
+      user: auid,
       exp: null,
       scope: ['anonymous']
     };
@@ -171,7 +197,7 @@ function createAnonymousTicket(request, reply) {
 }
 
 
-function findApplication({app}) {
+function findApplication(app) {
   return MongoDB.collection('applications')
   .findOne(
     { id: app },
@@ -211,4 +237,13 @@ function validAUID(input) {
 
 function validUUID(input) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input);
+}
+
+
+function hasAnonymousUserId(request, reply) {
+  if(request.state.auid){
+    reply();
+  } else {
+    reply().code(204);
+  }
 }

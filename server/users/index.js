@@ -251,11 +251,14 @@ module.exports.register = function (server, options, next) {
     handler: (request, reply) => {
 
       let user = request.payload;
+      console.log('user', user);
       const userQuery = {
         query: 'select UID from accounts where loginIDs.emails = "' + user.email + '" '
       };
+      console.log('userQuery', userQuery);
 
       Gigya.callApi('/accounts.search', userQuery).then(data => {
+        console.log('data', data.body);
         if (data.body.results === undefined || data.body.results.length === 0) {
           EventLog.logUserEvent(null, 'User not found', {email: user.email});
           return reply(Boom.notFound("User " + user.email + " not found"));

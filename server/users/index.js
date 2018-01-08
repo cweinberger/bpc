@@ -253,7 +253,7 @@ module.exports.register = function (server, options, next) {
       let user = request.payload;
       console.log('user', user);
       const userQuery = {
-        query: 'select UID from accounts where loginIDs.emails = "' + user.email + '" '
+        query: 'select UID from accounts where loginIDs.emails contains "' + user.email + '" '
       };
       console.log('userQuery', userQuery);
 

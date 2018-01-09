@@ -43,7 +43,7 @@ describe('anonymous users - integration tests', () => {
 
       bpc_helper.request({
         method: 'GET',
-        url: `/ticket/anonymous?app=${app.id}`
+        url: `/au/ticket?app=${app.id}`
       }, null)
       .then(response => {
         expect(response.statusCode).to.be.equal(200);
@@ -73,7 +73,7 @@ describe('anonymous users - integration tests', () => {
 
       bpc_helper.request({
         method: 'GET',
-        url: `/ticket/anonymous?app=${test_data.applications.app_with_profile_scope.id}`
+        url: `/au/ticket?app=${test_data.applications.app_with_profile_scope.id}`
       }, null)
       .then(response => {
         expect(response.statusCode).to.be.equal(401);
@@ -142,7 +142,7 @@ describe('anonymous users - integration tests', () => {
 
         bpc_helper.request({
           method: 'GET',
-          url: `/ticket/anonymous?app=${app.id}`,
+          url: `/au/ticket?app=${app.id}`,
           headers: headers
         }, null)
         .then(response => {
@@ -167,7 +167,7 @@ describe('anonymous users - integration tests', () => {
       });
 
       it('getting permissions using the anonymous ticket', (done) => {
-        bpc_helper.request({ method: 'GET', url: '/permissions/anonymous'}, anonymousUserTicket)
+        bpc_helper.request({ method: 'GET', url: '/au/audata'}, anonymousUserTicket)
         .then(response => {
           expect(response.statusCode).to.equal(200);
           expect(response.result.buy_model).to.equal('A');

@@ -123,7 +123,13 @@ function createAnonymousTicket(request, reply) {
   console.log('origin', request.headers.origin);
 
   if (request.headers['user-agent']){
-    if(/Safari/.test(request.headers['user-agent']) && request.headers.origin !== undefined) {
+
+    const hasOrigin = request.headers.origin !== undefined;
+    const hasSafari = /Safari/.test(request.headers['user-agent']);
+    const hasChrome = /Chrome/.test(request.headers['user-agent']);
+
+    // Browser is Safari and is an ajax-request
+    if(hasSafari && !hasChrome && hasOrigin) {
       if(!auid){
         return reply().code(204);
       }

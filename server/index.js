@@ -41,7 +41,7 @@ server.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
 
 server.register(Scarecrow, function(err) {
   server.auth.strategy('oz', 'oz', true, OzLoadFuncs.strategyOptions);
-  server.register(Anonymous, { routes: { prefix: '/ticket/anonymous' } }, cb);
+  server.register(Anonymous, { routes: { prefix: '/au' } }, cb);
   server.register(Health, cb);
   server.register(Rsvp, { routes: { prefix: '/rsvp' } }, cb);
   server.register(Applications, { routes: { prefix: '/applications' } }, cb);

@@ -35,7 +35,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/',
+    path: '/ticket',
     config: {
       auth: false,
       cors: corsRules,
@@ -53,28 +53,10 @@ module.exports.register = function (server, options, next) {
     handler: createAnonymousTicket
   });
 
-  server.route({
-    method: 'POST',
-    path: '/',
-    config: {
-      auth: false,
-      cors: corsRules,
-      state: {
-        parse: true, // parse and store in request.state
-        failAction: 'error' // may also be 'ignore' or 'log'
-      },
-      validate: {
-        payload: {
-          app: Joi.string().required()
-        }
-      }
-    },
-    handler: createAnonymousTicket
-  });
 
   server.route({
     method: 'DELETE',
-    path: '/',
+    path: '/ticket',
     config: {
       auth: false,
       cors: corsRules,
@@ -90,7 +72,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/exists',
+    path: '/ticket/exists',
     config: {
       auth: false,
       cors: corsRules,
@@ -101,6 +83,35 @@ module.exports.register = function (server, options, next) {
     },
     handler: hasAnonymousUserId
   });
+
+  server.route({
+    method: 'GET',
+    path: '/audata',
+    config: {
+      auth: {
+        access: {
+          scope: ['anonymous'],
+          entity: 'user' // <-- Important. Apps cannot request permissions with specifying what {user} to get
+        }
+      },
+      cors: corsRules,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply){
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
+        if (err) {
+          return reply(err)
+        }
+
+        getPermissions(ticket)
+        .then(result => reply(result))
+        .catch(err => reply(err));
+      });
+    }
+  })
 
   next();
 };
@@ -253,3 +264,51 @@ function hasAnonymousUserId(request, reply) {
     reply().code(204);
   }
 }
+
+
+function getPermissions({user}) {
+
+  if (!user) {
+    return Promise.reject(Boom.badRequest('user missing'));
+  }
+
+  const filter = {
+    id: user
+  };
+
+  const update = {
+    $currentDate: {
+      'lastFetched': { $type: "date" }
+    },
+    $setOnInsert: {
+      type: 'anonymous'
+    },
+    $set: {
+      'expiresAt': new Date(new Date().setMonth(new Date().getMonth() + 6))
+    }
+  };
+
+  const options = {
+    upsert: true,
+    projection: {
+      _id: 0,
+      'dataScopes.anonymous': 1
+    }
+  };
+
+  return MongoDB.collection('users').findOneAndUpdate(filter, update, options)
+  .then(result => {
+    if (result.n === 0 || result.value === null) {
+      return Promise.resolve(null);
+    }
+
+    const user = result.value;
+
+    if (user.dataScopes === undefined || user.dataScopes === null) {
+      return Promise.resolve(null);
+    } else {
+      return Promise.resolve(user.dataScopes.anonymous);
+    }
+
+  });
+};

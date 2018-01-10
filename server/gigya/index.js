@@ -224,6 +224,14 @@ function accountDeletedEventHandler(event) {
 
 function upsertUser (accountInfo) {
 
+  if (!accountInfo.profile){
+    console.warn('accountInfo has no profile');
+    console.warn('accountInfo', accountInfo);
+  } else if (!accountInfo.profile.email){
+    console.warn('profile has no email');
+    console.warn('profile', accountInfo.profile);
+  }
+
   const selector = {
     $or: [
       { id: accountInfo.profile.email.toLowerCase() },

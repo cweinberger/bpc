@@ -37,7 +37,7 @@ describe('gigya notifications after permissions - integration tests', () => {
   });
 
   before(done => {
-    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '4'})
+    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '4', include: 'profile,emails'})
     .resolves({body: {UID: '4', profile: { email: '4@test.nl'}}});
 
     done();

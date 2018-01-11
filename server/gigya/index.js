@@ -195,14 +195,22 @@ function accountCreatedEventHandler(event) {
 
 
 function accountRegisteredEventHandler(event) {
-  return Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid })
-  .then(result => upsertUser(result.body));
+  return getAccountInfo(event.data.uid)
+  .then(result => upsertUser(event.data.uid, result.body));
 }
 
 
 function accountUpdatedEventHandler(event) {
-  return Gigya.callApi('/accounts.getAccountInfo', { UID: event.data.uid })
-  .then(result => upsertUser(result.body));
+  return getAccountInfo(event.data.uid)
+  .then(result => upsertUser(event.data.uid, result.body));
+}
+
+
+function getAccountInfo(uid) {
+  return Gigya.callApi('/accounts.getAccountInfo', {
+    UID: uid,
+    include: 'profile,emails'
+  });
 }
 
 
@@ -222,7 +230,7 @@ function accountDeletedEventHandler(event) {
 }
 
 
-function upsertUser (accountInfo) {
+function upsertUser (uid, accountInfo) {
 
   if (!accountInfo.profile){
     console.warn('accountInfo has no profile');

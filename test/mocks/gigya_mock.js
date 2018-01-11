@@ -28,6 +28,8 @@ module.exports.reset = function () {
   .forEach(accountInfo => {
     callApiStub.withArgs('/accounts.getAccountInfo', { UID: accountInfo.body.UID })
     .resolves(accountInfo);
+    callApiStub.withArgs('/accounts.getAccountInfo', { UID: accountInfo.body.UID, include: 'profile,emails' })
+    .resolves(accountInfo);
   });
 }
 

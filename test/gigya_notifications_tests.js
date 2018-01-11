@@ -25,13 +25,13 @@ describe('gigya notifications - functional tests', () => {
   });
 
   before(done => {
-    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '1'})
+    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '1', include: 'profile,emails'})
     .resolves({body: {UID: '1', profile: { email: '1@test.nl'}}});
 
-    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '2'})
+    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '2', include: 'profile,emails'})
     .resolves({body: {UID: '2', profile: { email: '2@test.nl'}}});
 
-    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '3'})
+    Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '3', include: 'profile,emails'})
     .resolves({body: {UID: '3', profile: { email: '3@test.nl'}}});
 
     done();

@@ -312,6 +312,9 @@ _Note: The mock database doesn't currently support features from MongoDB 3.2._
 _Please be aware of this when writing your own tests._
 
 
+To use a live MongoDB, set the connectionstring in the environment variable `MONGODB_CONNECTION_TESTING`.
+
+
 ## Environment Variable Reference
 
 BPC supports the following environment variables:

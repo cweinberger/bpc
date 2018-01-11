@@ -7,7 +7,7 @@ var MongoClient;
 var mongoDbConnection;
 
 const mongoDbConnectionTesting = process.env.MONGODB_CONNECTION_TESTING;
-module.exports.isMock = mongoDbConnectionTesting === undefined;
+module.exports.isMock = mongoDbConnectionTesting === undefined || mongoDbConnectionTesting.length === 0;
 
 if(module.exports.isMock) {
   MongoClient = require('mongo-mock').MongoClient;

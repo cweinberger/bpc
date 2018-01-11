@@ -46,9 +46,14 @@ function createGigyaRsvp(data) {
   return Gigya.callApi('/accounts.exchangeUIDSignature', exchangeUIDSignatureParams)
   .then(result => Gigya.callApi('/accounts.getAccountInfo', { UID: data.UID }))
   .then(result => {
+
+    if (!result.body.profile || !result.body.profile.email) {
+      return Promise.reject(Boom.unauthorized('User has no email'));
+    }
+
     return Promise.all([
       findApplication({ app: data.app, provider: data.provider }),
-      findGrant({ user: result.body.profile.email, app: data.app })
+      findGrant({ user: result.body.profile.email.toLowerCase(), app: data.app })
     ])
     .then(results => createRsvp(results[0], results[1], result.body.profile.email));
   });
@@ -61,7 +66,7 @@ function createGoogleRsvp(data) {
   .then(result => {
     return Promise.all([
       findApplication({ app: data.app, provider: data.provider }),
-      findGrant({ user: result.email, app: data.app })
+      findGrant({ user: result.email.toLowerCase(), app: data.app })
     ])
     .then(results => createRsvp(results[0], results[1], result.email));
   });

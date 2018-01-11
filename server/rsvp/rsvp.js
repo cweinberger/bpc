@@ -64,6 +64,11 @@ function createGoogleRsvp(data) {
   // Verify the user with Google.
   return Google.tokeninfo(data)
   .then(result => {
+
+    if (!result.email) {
+      return Promise.reject(Boom.unauthorized('User has no email'));
+    }
+
     return Promise.all([
       findApplication({ app: data.app, provider: data.provider }),
       findGrant({ user: result.email.toLowerCase(), app: data.app })

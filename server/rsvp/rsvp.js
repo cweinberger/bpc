@@ -55,7 +55,7 @@ function createGigyaRsvp(data) {
       findApplication({ app: data.app, provider: data.provider }),
       findGrant({ user: result.body.profile.email.toLowerCase(), app: data.app })
     ])
-    .then(results => createRsvp(results[0], results[1], result.body.profile.email));
+    .then(results => createRsvp(results[0], results[1], result.body.profile.email.toLowerCase()));
   });
 }
 
@@ -68,7 +68,7 @@ function createGoogleRsvp(data) {
       findApplication({ app: data.app, provider: data.provider }),
       findGrant({ user: result.email.toLowerCase(), app: data.app })
     ])
-    .then(results => createRsvp(results[0], results[1], result.email));
+    .then(results => createRsvp(results[0], results[1], result.email.toLowerCase()));
   });
 }
 

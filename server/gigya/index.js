@@ -196,13 +196,13 @@ function accountCreatedEventHandler(event) {
 
 function accountRegisteredEventHandler(event) {
   return getAccountInfo(event.data.uid)
-  .then(result => upsertUser(event.data.uid, result.body));
+  .then(result => upsertUser(result.body));
 }
 
 
 function accountUpdatedEventHandler(event) {
   return getAccountInfo(event.data.uid)
-  .then(result => upsertUser(event.data.uid, result.body));
+  .then(result => upsertUser(result.body));
 }
 
 
@@ -230,10 +230,16 @@ function accountDeletedEventHandler(event) {
 }
 
 
-function upsertUser (uid, accountInfo) {
+function upsertUser (accountInfo) {
 
+  // We have cases where the profile does not have an email
+  if (!accountInfo.profile || !accountInfo.profile.email){
+    // We are resolving, because we don't need a lot of errors in the log because of these users.
+    return Promise.resolve('User has no email');
+  }
   const selector = {
     $or: [
+      { 'gigya.UID': accountInfo.UID },
       { id: accountInfo.profile.email.toLowerCase() },
       { email: accountInfo.profile.email.toLowerCase() },
       { id: accountInfo.UID }
@@ -243,7 +249,10 @@ function upsertUser (uid, accountInfo) {
   const set = {
     gigya: {
       UID: accountInfo.UID,
-      email: accountInfo.profile.email.toLowerCase()
+      loginProvider: accountInfo.loginProvider,
+      // profile: accountInfo.profile,
+      // emails: [].concat(accountInfo.emails.verified, accountInfo.emails.unverified),
+      email: accountInfo.profile.email
     }
   };
 
@@ -266,6 +275,9 @@ function upsertUser (uid, accountInfo) {
     $setOnInsert: setOnInsert
   };
 
+  // It's important to do the upsert operation.
+  // Permissions can be created by other services, before the user was registered with gigya.
+  // In this case we are adding gigya details to the existing user.
   const options = {
     upsert: true
   };

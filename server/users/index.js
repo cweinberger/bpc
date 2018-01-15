@@ -261,13 +261,15 @@ module.exports.register = function (server, options, next) {
           return reply(Boom.notFound("User " + user.email + " not found"));
         }
 
+        const mail_for_audit = user.email;
+
         delete user.email;
         user.uid = data.body.results[0].UID;
 
         Gigya.callApi('/accounts.setAccountInfo', user)
         .then(data => reply(data.body ? data.body : {status: 'ok'}))
         .catch(err => {
-          EventLog.logUserEvent(null, 'User update failed', {email: user.email});
+          EventLog.logUserEvent(null, 'User update failed', {email: mail_for_audit, id: user.id});
           return reply(err);
         });
       }).catch(err => {

@@ -30,7 +30,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['admin', 'users'],
+          scope: ['admin'],
           entity: 'any'
         }
       },
@@ -63,7 +63,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth:  {
         access: {
-          scope: ['admin', 'users'],
+          scope: ['admin'],
           entity: 'any'
         }
       },
@@ -328,7 +328,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth:  {
         access: {
-          scope: ['admin', 'users'],
+          scope: ['admin'],
           entity: 'any'
         }
       },
@@ -366,7 +366,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['admin', 'users'],
+          scope: ['admin'],
           entity: 'any'
         }
       },

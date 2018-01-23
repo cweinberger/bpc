@@ -36,7 +36,16 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function (request, reply) {
-      Applications.findAll().then(res => reply(res), err => reply(err));
+      MongoDB.collection('applications').find(
+        {},
+        {
+          _id: 0,
+          id: 1,
+          scope: 1
+        }
+      ).sort({id: 1})
+      .toArray()
+      .then(res => reply(res), err => reply(err));
     }
   });
 
@@ -57,7 +66,7 @@ module.exports.register = function (server, options, next) {
           _id: Joi.strip(),
           key: Joi.strip(),
           id: Joi.string().required(),
-          scope: Applications.scopeValidation,
+          scope: scopeValidation,
           algorithm: Joi.string(),
           delegate: Joi.boolean(),
           callbackurl: Joi.string().uri(),
@@ -67,8 +76,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
 
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization,
-          (err, ticket) => {
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
         if (err) {
           return reply(Boom.wrap(err));
         }
@@ -97,7 +105,7 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function (request, reply) {
-      Applications.findAppById(request.params.id)
+      MongoDB.collection('applications').findOne({id: request.params.id})
       .then(app => reply(app ? app : Boom.notFound()))
       .catch(err => reply(Boom.wrap(err)));
     }
@@ -118,7 +126,7 @@ module.exports.register = function (server, options, next) {
           _id: Joi.strip(),
           key: Joi.strip(),
           id: Joi.strip(),
-          scope: Applications.scopeValidation,
+          scope: scopeValidation,
           algorithm: Joi.string(),
           delegate: Joi.boolean(),
           callbackurl: Joi.string().uri(),
@@ -146,8 +154,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function (request, reply) {
 
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization,
-          (err, ticket) => {
+      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
         if (err) {
           return reply(Boom.wrap(err));
         }
@@ -209,7 +216,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.string().required(),
           exp: Joi.date().timestamp('unix').raw().allow(null),
-          scope: Applications.scopeValidation
+          scope: scopeValidation
         }
       }
     },
@@ -245,7 +252,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.strip(),
           exp: Joi.date().timestamp('unix').raw().allow(null),
-          scope: Applications.scopeValidation
+          scope: scopeValidation
         }
       }
     },
@@ -287,6 +294,7 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+
   server.route({
     method: 'GET',
     path: '/{id}/admins',
@@ -318,6 +326,7 @@ module.exports.register = function (server, options, next) {
       });
     }
   });
+
 
   server.route({
     method: 'POST',
@@ -454,3 +463,12 @@ const appAdminPayloadValidation = Joi.object().keys({
   exp: Joi.strip(),
   scope: Joi.strip()
 }).or('id', 'user');
+
+
+const scopeValidation = Joi.array().items(
+  // Scopes starting with 'admin' e.g. admin:app are not allowed because
+  // they are reserved.
+  Joi.string()
+    .regex(/^(?!admin).*$/, { name: 'admin', invert: false })
+    .invalid([])
+);

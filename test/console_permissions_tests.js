@@ -40,7 +40,6 @@ describe('console - functional tests:', () => {
 
   describe('superadmin', () => {
 
-    var console_superadmin_google_user = test_data.users.console_superadmin_google_user;
     var console_superadmin_google_user__console_grant = test_data.grants.console_superadmin_google_user__console_grant;
     var console_superadmin_google_user__console_ticket;
 
@@ -67,7 +66,6 @@ describe('console - functional tests:', () => {
 
 
   describe('non superadmin', () => {
-    var console_google_user = test_data.users.console_google_user;
     var console_google_user__console_grant = test_data.grants.console_google_user__console_grant;
     var console_google_user_ticket;
 

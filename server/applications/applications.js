@@ -8,15 +8,6 @@ const crypto = require('crypto');
 
 
 module.exports = {
-  scopeValidation: Joi.array().items(
-    // Scopes starting with 'admin' e.g. admin:app are not allowed because
-    // they are reserved.
-    Joi.string()
-      .regex(/^(?!admin).*$/, { name: 'admin', invert: false })
-      .invalid([])
-  ),
-  findAll,
-  findAppById,
   createApp,
   updateApp,
   deleteAppById,
@@ -27,27 +18,6 @@ module.exports = {
   updateAppGrant
 };
 
-
-
-/**
- * Returns all applications, sorted by id
- *
- * @return {Promise}
- */
-function findAll() {
-  return MongoDB.collection('applications').find().sort({id: 1}).toArray();
-}
-
-
-/**
- * Returns a single application, located by its id
- *
- * @param {String} Id
- * @return {Promise} Promise providing the application, if found
- */
-function findAppById(id) {
-  return MongoDB.collection('applications').findOne({id: id});
-}
 
 
 /**
@@ -67,14 +37,14 @@ function createApp(input) {
     settings: input.settings || {}
   };
 
-    // Ensure that the id is unique before creating the application.
-    return convertToUniqueid(app.id)
-    .then(uniqueId => {
-      app.id = uniqueId;
-      return app;
-    })
-    .then(app => MongoDB.collection('applications').insertOne(app))
-    .then(res => app);
+  // Ensure that the id is unique before creating the application.
+  return convertToUniqueid(app.id)
+  .then(uniqueId => {
+    app.id = uniqueId;
+    return app;
+  })
+  .then(app => MongoDB.collection('applications').insertOne(app))
+  .then(res => app);
 }
 
 
@@ -108,17 +78,17 @@ function updateApp(id, input) {
  */
 function deleteAppById(id, userTicket) {
 
-  const consoleScope = 'admin:'.concat(id);
+  const adminScope = 'admin:'.concat(id);
   const ops = [
     MongoDB.collection('applications').remove({ id: id }),
     MongoDB.collection('grants').remove({ app: id } ),
     MongoDB.collection('applications').update(
-      { id: userTicket.app }, { $pull: { scope: consoleScope } }
+      { id: userTicket.app }, { $pull: { scope: adminScope } }
     ),
     MongoDB.collection('grants')
     .update(
       { app: userTicket.app },
-      { $pull: { scope: consoleScope } },
+      { $pull: { scope: adminScope } },
       { multi: true }
     )
   ];
@@ -143,19 +113,19 @@ function deleteAppById(id, userTicket) {
  */
 function assignAdminScopeToApp(app, ticket) {
 
-  const consoleScope = 'admin:'.concat(app.id);
+  const adminScope = 'admin:'.concat(app.id);
   const ops = [
     // Adding the 'admin:' scope to console app, so that users can be admins.
     MongoDB.collection('applications')
     .update(
       { id: ticket.app },
-      { $addToSet: { scope: consoleScope } }
+      { $addToSet: { scope: adminScope } }
     ),
     // Adding scope 'admin:' to the grant of user that created the application.
     MongoDB.collection('grants')
     .update(
       { id: ticket.grant },
-      { $addToSet: { scope: consoleScope } }
+      { $addToSet: { scope: adminScope } }
     )
   ];
 
@@ -185,12 +155,12 @@ function adminScopeUser(app, grant, ticket, pull = false) {
   });
 
   var update = {};
-  const adminScope = { scope: 'admin:'.concat(app) };
+  const adminScope = 'admin:'.concat(app);
 
   if(pull){
-    update.$pull = adminScope;
+    update.$pull = { scope: adminScope };
   } else {
-    update.$addToSet = adminScope;
+    update.$addToSet = { scope: adminScope };
   }
 
   return MongoDB.collection('grants')

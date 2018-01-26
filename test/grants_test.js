@@ -85,7 +85,6 @@ describe('grants tests', () => {
 
       bpc_helper.request({ url: '/applications/invalid-app/grants', method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
       .then(response => {
-
         expect(response.statusCode).to.equal(400);
         done();
       })

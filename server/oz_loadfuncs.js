@@ -16,57 +16,6 @@ const MongoDB = require('./mongo/mongodb_client');
 const Permissions = require('./permissions/permissions');
 
 
-// Here we are creating the app ticket
-function loadAppFunc(id, callback) {
-  MongoDB.collection('applications').findOne({id:id}, {fields: {_id: 0}}, function(err, app) {
-    if (err) {
-      return callback(err);
-    } else if (app === null){
-      callback(Boom.unauthorized('Unknown application'));
-    } else {
-      callback(null, app);
-    }
-  });
-};
-
-
-// Here we are creating the user ticket
-function loadGrantFunc(id, next) {
-
-  let gettingGrant;
-
-  if (id.startsWith('agid**')) {
-    gettingGrant = parseAgid(id);
-  } else {
-    gettingGrant = findGrant(id);
-  }
-
-  gettingGrant
-  .then(grant => validateGrant(grant))
-  .then(grant => {
-    return findApplication(grant.app)
-    .then(app => {
-
-      // We test the scope of the grant now, so we don't get the internal server error:
-      // Boom.internal('Grant scope is not a subset of the application scope');
-      // in oz/lib/ticket.js
-      // Theoretically this should not occur. But errors can be made in the database.
-      if(app.scope && grant.scope && !Oz.scope.isSubset(app.scope, grant.scope)) {
-        return Promise.reject(Boom.unauthorized('Invalid grant scope'));
-      }
-
-      return Promise.all([
-        extendGrant(grant, app),
-        buildExt(grant, app)
-      ])
-      .then(result => next(null, result[0], result[1]));
-    })
-    .catch(err => next(err));
-  })
-  .catch(err => next(err));
-};
-
-
 module.exports.strategyOptions = {
   oz: {
     encryptionPassword: ENCRYPTIONPASSWORD,
@@ -88,12 +37,25 @@ module.exports.strategyOptions = {
 
 
 module.exports.parseAuthorizationHeader = function (requestHeaderAuthorization, callback) {
-  var id = requestHeaderAuthorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
-  if (id === undefined || id === null || id === ''){
-    return callback(Boom.unauthorized('Authorization Hawk ticket not found'));
-  }
 
-  Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
+  return new Promise((resolve, reject) => {
+    if(callback === undefined){
+      callback = function(err, ticket) {
+        if(err) {
+          reject(err);
+        } else {
+          resolve(ticket);
+        }
+      };
+    }
+
+    var id = requestHeaderAuthorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
+    if (id === undefined || id === null || id === ''){
+      return callback(Boom.unauthorized('Authorization Hawk ticket not found'));
+    }
+
+    Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
+  });
 };
 
 
@@ -110,6 +72,99 @@ module.exports.grantIsExpired = function (grant) {
 const grantIsExpired = module.exports.grantIsExpired;
 
 
+
+// Here we are creating the app ticket
+function loadAppFunc(id, callback) {
+
+  if(callback === undefined){
+    callback = function(){};
+  }
+
+  return MongoDB.collection('applications')
+  .findOne({id:id}, {fields: {_id: 0}})
+  .then(app => {
+    if (app === null){
+      return callback(Boom.unauthorized('Unknown application'));
+    }
+
+    callback(null, app);
+    return Promise.resolve(app);
+
+    // // Dynamically adding the admin:{id} scope
+    // app.scope.push('admin:'.concat(app.id));
+    //
+    // if(app.scope.indexOf('admin:*') > -1) {
+    //
+    //   // This is a superadmin app. So we find all the id's so we can add the admin:{id} scopes
+    //   return MongoDB.collection('applications').find({ id:{ $ne: id }}, {_id: 0, id:1})
+    //   .toArray()
+    //   .then(otherApps => appendAllAdminScopes(app, otherApps))
+    //   .then(app => {
+    //     callback(null, app);
+    //     return Promise.resolve(app);
+    //   });
+    //
+    // } else {
+    //
+    //   callback(null, app);
+    //   return Promise.resolve(app);
+    //
+    // }
+    //
+    // function appendAllAdminScopes(mainApp, apps){
+    //   const adminScopes = apps.map(otherApp => 'admin:'.concat(otherApp.id));
+    //   mainApp.scope = mainApp.scope.concat(adminScopes);
+    //   return Promise.resolve(mainApp);
+    // }
+  })
+  .catch(err => {
+    callback(err);
+    return Promise.reject(err);
+  });
+};
+
+
+// Here we are creating the user ticket
+function loadGrantFunc(id, next) {
+
+  let gettingGrant;
+
+  if (id.startsWith('agid**')) {
+    gettingGrant = parseAgid(id);
+  } else {
+    gettingGrant = findGrant(id);
+  }
+
+  gettingGrant
+  .then(grant => validateGrant(grant))
+  .then(grant => {
+    return loadAppFunc(grant.app)
+    .then(app => {
+
+      // We test the scope of the grant now, so we don't get the internal server error:
+      // Boom.internal('Grant scope is not a subset of the application scope');
+      // in oz/lib/ticket.js
+      // Theoretically this should not occur. But errors can be made in the database.
+      if(app.scope && grant.scope && !Oz.scope.isSubset(app.scope, grant.scope)) {
+        return Promise.reject(Boom.unauthorized('Invalid grant scope'));
+      }
+
+      return Promise.all([
+
+        setDuration(grant, app)
+        .then(grant => addMissingScopes(grant, app)),
+
+        buildExt(grant, app)
+
+      ])
+      .then(result => next(null, result[0], result[1]));
+    })
+    .catch(err => next(err));
+  })
+  .catch(err => next(err));
+};
+
+
 function parseAgid(id){
   return new Promise((resolve, reject) => {
     try {
@@ -120,11 +175,6 @@ function parseAgid(id){
       reject(ex);
     }
   });
-}
-
-
-function findApplication(id){
-  return MongoDB.collection('applications').findOne({ id: id }, { fields: { _id: 0, scope: 1, settings: 1 } });
 }
 
 
@@ -144,7 +194,7 @@ function validateGrant(grant){
 }
 
 
-function extendGrant(grant, app) {
+function setDuration(grant, app) {
 
   let ticketDuration = app.settings && app.settings.ticketDuration
     // The app can set the default ticket duration.
@@ -156,13 +206,20 @@ function extendGrant(grant, app) {
 
   // If the users grant does not have an expiration
   //   or if grant expires later than the calculated ticket expiration
-  // Else we can just keep the grant/ticket expiration as-is
   if (!grant.exp || ticketExpiration < grant.exp) {
     grant.exp = ticketExpiration;
+  } else {
+    // Else we can just keep the grant/ticket expiration as-is
   }
 
-  // Adding all the missing app scopes to the ticket - unless they are and admin:scope
-  // Note: We want the scope "admin" (reserved scope of the console app) to be added to the ticket.
+  return Promise.resolve(grant);
+}
+
+
+function addMissingScopes(grant, app) {
+
+  // Adding all the missing app scopes to the ticket - unless they are an admin:{id}
+  // Note: But we want the scope "admin", which is a reserved scope of the console app, to be added.
   var missingScopes = app.scope.filter(function (appScope){
     return appScope.indexOf('admin:') === -1 && grant.scope.indexOf(appScope) === -1;
   });

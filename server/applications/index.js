@@ -3,12 +3,7 @@
 
 const Boom = require('boom');
 const Joi = require('joi');
-const Oz = require('oz');
-const OzLoadFuncs = require('./../oz_loadfuncs');
-const crypto = require('crypto');
-const MongoDB = require('./../mongo/mongodb_client');
 const Applications = require('./applications');
-const EventLog = require('./../audit/eventlog');
 
 
 module.exports.register = function (server, options, next) {
@@ -35,18 +30,7 @@ module.exports.register = function (server, options, next) {
       },
       cors: stdCors
     },
-    handler: function (request, reply) {
-      MongoDB.collection('applications').find(
-        {},
-        {
-          _id: 0,
-          id: 1,
-          scope: 1
-        }
-      ).sort({id: 1})
-      .toArray()
-      .then(res => reply(res), err => reply(err));
-    }
+    handler: Applications.getApplications
   });
 
 
@@ -74,23 +58,7 @@ module.exports.register = function (server, options, next) {
         }
       }
     },
-    handler: function (request, reply) {
-
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
-        if (err) {
-          return reply(Boom.wrap(err));
-        }
-
-        Applications.createApp(request.payload)
-        .then(app => {
-          Applications.assignAdminScopeToApp(app, ticket)
-          return Promise.resolve(app);
-        })
-        .then(app => reply(app))
-        .catch(err => reply(Boom.wrap(err)));
-      });
-
-    }
+    handler: Applications.postApplication
   });
 
 
@@ -104,11 +72,7 @@ module.exports.register = function (server, options, next) {
       },
       cors: stdCors
     },
-    handler: function (request, reply) {
-      MongoDB.collection('applications').findOne({id: request.params.id})
-      .then(app => reply(app ? app : Boom.notFound()))
-      .catch(err => reply(Boom.wrap(err)));
-    }
+    handler: Applications.getApplication
   });
 
 
@@ -134,11 +98,7 @@ module.exports.register = function (server, options, next) {
         }
       }
     },
-    handler: function (request, reply) {
-      Applications.updateApp(request.params.id, request.payload)
-      .then(res => reply({'status':'ok'}))
-      .catch(err => reply(Boom.wrap(err)));
-    }
+    handler: Applications.putApplication
   });
 
 
@@ -152,18 +112,7 @@ module.exports.register = function (server, options, next) {
       },
       cors: stdCors
     },
-    handler: function (request, reply) {
-
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
-        if (err) {
-          return reply(Boom.wrap(err));
-        }
-
-        Applications.deleteAppById(request.params.id, ticket);
-        return reply({'status': 'ok'});
-
-      });
-    }
+    handler: Applications.deleteApplication
   });
 
 
@@ -185,16 +134,7 @@ module.exports.register = function (server, options, next) {
         }
       }
     },
-    handler: function (request, reply) {
-
-      const query = Object.assign(request.query, {
-         app: request.params.id
-      });
-
-      MongoDB.collection('grants').find(
-        query, {fields: {_id: 0}}
-      ).toArray(reply);
-    }
+    handler: Applications.getApplicationGrants
   });
 
 
@@ -220,17 +160,7 @@ module.exports.register = function (server, options, next) {
         }
       }
     },
-    handler: function (request, reply) {
-
-      const grant = Object.assign(request.payload, {
-        app: request.params.id
-      });
-
-      Applications.createAppGrant(grant)
-      .then(grant => reply(grant))
-      .catch(err => reply(err));
-
-    }
+    handler: Applications.postApplicationNewGrant
   });
 
 
@@ -256,18 +186,7 @@ module.exports.register = function (server, options, next) {
         }
       }
     },
-    handler: function (request, reply) {
-
-      const grant = Object.assign(request.payload, {
-        id: request.params.grantId,
-        app: request.params.id
-      });
-
-      Applications.updateAppGrant(grant)
-      .then(grant => reply({'status':'ok'}))
-      .catch(err => reply(err));
-
-    }
+    handler: Applications.postApplicationGrant
   });
 
 
@@ -283,15 +202,7 @@ module.exports.register = function (server, options, next) {
       },
       cors: stdCors
     },
-    handler: function (request, reply) {
-
-      MongoDB.collection('grants').removeOne({
-        id: request.params.grantId, app: request.params.id
-      })
-      .then(result => reply({'status':'ok'}))
-      .catch(err => reply(err));
-
-    }
+    handler: Applications.deleteApplicationGrant
   });
 
 
@@ -307,24 +218,7 @@ module.exports.register = function (server, options, next) {
       },
       cors: stdCors
     },
-    handler: function (request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
-
-        if (err) {
-          console.error(err);
-          return reply(err);
-        }
-
-        const query = {
-           app: ticket.app,
-           scope: 'admin:'.concat(request.params.id)
-        };
-
-        MongoDB.collection('grants').find(
-          query, {fields: {_id: 0}}
-        ).toArray(reply);
-      });
-    }
+    handler: Applications.getApplicationAdmins
   });
 
 
@@ -343,55 +237,7 @@ module.exports.register = function (server, options, next) {
         payload: appAdminPayloadValidation
       }
     },
-    handler: function (request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
-
-        if (err) {
-          console.error(err);
-          return reply(err);
-        }
-
-        const query = Object.assign(request.payload, {
-           app: ticket.app
-        });
-
-        MongoDB.collection('grants').findOne(
-          query, {fields: {_id: 0}}
-        ).then(grant => {
-          if (grant === null) {
-            grant = Object.assign(request.payload, {
-               app: ticket.app
-            });
-            Applications.createAppGrant(grant)
-            .then(newGrant => assignAdminScopeToGrant(newGrant));
-          } else {
-            assignAdminScopeToGrant(grant);
-          }
-        })
-        .catch(err => reply(err));
-
-        function assignAdminScopeToGrant(grant){
-          Applications.assignAdminScopeToGrant(request.params.id, grant, ticket)
-          .then(res => {
-            if(res.result.n === 1) {
-
-              EventLog.logUserEvent(
-                request.params.id,
-                'Added Admin Scope to User',
-                {app: request.params.id, byUser: ticket.user}
-              );
-
-              reply({'status': 'ok'});
-
-            } else {
-
-              reply(Boom.badRequest());
-
-            }
-          });
-        }
-      });
-    }
+    handler: Applications.postApplicationMakeAdmin
   });
 
 
@@ -410,38 +256,7 @@ module.exports.register = function (server, options, next) {
         payload: appAdminPayloadValidation
       }
     },
-    handler: function (request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
-
-        if (err) {
-          console.error(err);
-          return reply(err);
-        }
-
-        if (ticket.user === request.payload.user){
-          return reply(Boom.forbidden('You cannot remove yourself'));
-        }
-
-        Applications.removeAdminScopeFromGrant(request.params.id, request.payload, ticket)
-        .then(res => {
-          if(res.result.n === 1) {
-
-            EventLog.logUserEvent(
-              request.params.id,
-              'Pulled Admin Scope from User',
-              {app: request.params.id, byUser: ticket.user}
-            );
-
-            reply({'status': 'ok'});
-
-          } else {
-
-            reply(Boom.badRequest());
-
-          }
-        });
-      });
-    }
+    handler: Applications.postApplicationRemoveAdmin
   });
 
   next();

@@ -3,9 +3,8 @@
 
 const Oz = require('oz');
 const Boom = require('boom');
-const Crypto = require('crypto');
+const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
-const Applications = require('./../applications/applications');
 const Gigya = require('./../gigya/gigya_client');
 const Google = require('./../google/google_client');
 const OzLoadFuncs = require('./../oz_loadfuncs');
@@ -131,13 +130,15 @@ function createRsvp(app, grant, user){
 
     // Creating new clean grant
     grant = {
+      id: crypto.randomBytes(20).toString('hex'),
       app: app.id,
       user: user,
-      scope: []
+      scope: [],
+      exp: null
     };
 
-    // Generates the grant.id and saves the grant
-    Applications.createAppGrant(grant);
+    // Saves the grant
+    MongoDB.collection('grants').insertOne(grant);
 
   }
 

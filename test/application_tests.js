@@ -1,10 +1,6 @@
 /* jshint node: true */
 'use strict';
 
-// Bootstrap the testing harness.
-const sinon = require('sinon');
-const crypto = require('crypto');
-const Boom = require('boom');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
 const MongoDB = require('./mocks/mongodb_mock');
@@ -17,8 +13,10 @@ describe('application tests', () => {
 
   const consoleApp = test_data.applications.console;
   var consoleAppTicket;
+
   const consoleGrant = test_data.grants.console_google_user__console_grant;
   var consoleUserTicket;
+
   const consoleSuperAdminGrant = test_data.grants.console_superadmin_google_user__console_grant;
   var consoleSuperAdminUserTicket;
 
@@ -289,7 +287,6 @@ describe('application tests', () => {
 
       bpc_helper.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
       .then(response => {
-
         expect(response.statusCode).to.equal(200);
         done();
 

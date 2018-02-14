@@ -3,278 +3,366 @@
 
 const Boom = require('boom');
 const Joi = require('joi');
+const OzLoadFuncs = require('./../oz_loadfuncs');
 const MongoDB = require('./../mongo/mongodb_client');
 const crypto = require('crypto');
-
+const EventLog = require('./../audit/eventlog');
 
 module.exports = {
-  scopeValidation: Joi.array().items(
-    // Scopes starting with 'admin' e.g. admin:app are not allowed because
-    // they are reserved.
-    Joi.string()
-      .regex(/^(?!admin).*$/, { name: 'admin', invert: false })
-      .invalid([])
-  ),
-  findAll,
-  findAppById,
-  createApp,
-  updateApp,
-  deleteAppById,
-  assignAdminScopeToApp,
-  assignAdminScopeToGrant,
-  removeAdminScopeFromGrant,
-  createAppGrant,
-  updateAppGrant
+
+  getApplications: function (request, reply) {
+    MongoDB.collection('applications').find(
+      {},
+      {
+        _id: 0,
+        id: 1,
+        scope: 1
+      }
+    ).sort({id: 1})
+    .toArray()
+    .then(res => reply(res), err => reply(err));
+  },
+
+
+  postApplication: function (request, reply) {
+
+    let app = {
+      id: request.payload.id,
+      key: crypto.randomBytes(25).toString('hex'),
+      algorithm: 'sha256',
+      scope: makeArrayUnique(request.payload.scope),
+      delegate: request.payload.delegate ? request.payload.delegate : false,
+      settings: request.payload.settings || {}
+    };
+
+    // Ensure that the id is unique before creating the application.
+    convertToUniqueid(app.id)
+    .then(uniqueId => {
+      app.id = uniqueId;
+      return Promise.resolve();
+    })
+    .then(() => MongoDB.collection('applications').insertOne(app))
+    .then(res => {
+
+      if (res.result.ok === 1){
+        reply(app);
+        return Promise.resolve();
+      } else {
+        reply(Boom.badRequest('app could not be created'));
+        return Promise.reject();
+      }
+
+    })
+    .then(() => OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization))
+    .then(ticket => {
+
+      const ops_phase2 = [
+        // Adding the admin:{id} scope to the application of the ticket issuer
+        MongoDB.collection('applications')
+        .update(
+          { id: ticket.app },
+          { $addToSet: { scope: 'admin:'.concat(app.id) } }
+        ),
+        // Adding the admin:{id} scope to the grant of the ticket owner
+        MongoDB.collection('grants')
+        .update(
+          { id: ticket.grant },
+          { $addToSet: { scope: 'admin:'.concat(app.id) } }
+        )
+      ];
+
+      return Promise.all(ops_phase2);
+
+    })
+    .catch(err => {
+      console.error(err);
+    });
+  },
+
+
+  getApplication: function (request, reply) {
+    MongoDB.collection('applications').findOne({id: request.params.id})
+    .then(app => reply(app ? app : Boom.notFound()))
+    .catch(err => reply(Boom.wrap(err)));
+  },
+
+
+  putApplication: function (request, reply) {
+    MongoDB.collection('applications')
+    .updateOne(
+      { id: request.params.id },
+      { $set: request.payload }
+    )
+    .then(res => reply({'status':'ok'}))
+    .catch(err => reply(Boom.wrap(err)));
+  },
+
+
+  deleteApplication: function (request, reply) {
+
+    const ops = [
+      // Remove the application
+      MongoDB.collection('applications').remove({ id: request.params.id }),
+      // Remove all grants to that application
+      MongoDB.collection('grants').remove({ app: request.params.id } )
+    ];
+
+    return Promise.all(ops)
+    .then(res => {
+      // We reply "ok" if the command was successfull.
+      if (res[0].result.n === 1) {
+        reply({'status': 'ok'});
+        return Promise.resolve();
+      } else if (res[0].result.n === 0) {
+        reply(Boom.notFound());
+        return Promise.resolve();
+      } else {
+        reply(Boom.badRequest());
+        return Promise.reject(res[0]);
+      }
+
+    })
+    .then(() => OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization))
+    .then(ticket => {
+
+      // At this point we have already deleted the app and told the user it went ok.
+      // Now we are just cleaning up in the console/admin app and grants.
+
+      const ops_phase2 = [
+        // Removing  the admin:{id} scope from the application of the ticket issuer
+        MongoDB.collection('applications')
+        .updateOne(
+          { id: ticket.app },
+          { $pull: { scope: 'admin:'.concat(request.params.id) } }
+        ),
+
+        // Removing the admin:{id} scope from the grant of the ticket owner
+        MongoDB.collection('grants')
+        .update(
+          { app: ticket.app },
+          { $pull: { scope: 'admin:'.concat(request.params.id) } },
+          { multi: true }
+        )
+      ];
+
+      return Promise.all(ops_phase2);
+
+    })
+    .catch(err => {
+      console.error(err);
+    });
+  },
+
+
+  getApplicationGrants: function (request, reply) {
+    const query = Object.assign(request.query, {
+       app: request.params.id
+    });
+
+    MongoDB.collection('grants').find(
+      query, {fields: {_id: 0}}
+    ).toArray(reply);
+  },
+
+
+  postApplicationNewGrant: function (request, reply) {
+    const grant = Object.assign(request.payload, {
+      id: crypto.randomBytes(20).toString('hex'),
+      app: request.params.id
+    });
+
+    const operations = [
+      MongoDB.collection('applications')
+      .findOne({id: grant.app}),
+
+      MongoDB.collection('grants')
+      .count({user: grant.user, app: grant.app}, {limit:1})
+    ];
+
+    return Promise.all(operations)
+    .then(results => {
+      let app = results[0];
+      let existingGrant = results[1];
+
+      if(existingGrant > 0){
+        return Promise.reject(Boom.conflict());
+      }
+
+      if (!app){
+        return Promise.reject(Boom.badRequest('invalid app'))
+      }
+
+      // Keep only the scopes allowed in the app scope.
+      grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
+      grant.scope = makeArrayUnique(grant.scope);
+
+      MongoDB.collection('grants').insertOne(grant)
+      .then(res => reply(grant))
+      .catch(err => {
+        console.error(err);
+        reply(Boom.badRequest());
+      });
+
+    })
+    .catch(err => reply(err));
+  },
+
+
+  postApplicationGrant: function (request, reply) {
+    const grant = Object.assign(request.payload, {
+      id: request.params.grantId,
+      app: request.params.id
+    });
+
+    MongoDB.collection('applications')
+    .findOne({id: grant.app})
+    .then(app => {
+
+      if (!app) {
+        return Promise.reject(Boom.badRequest('invalid app'))
+      }
+
+      grant.scope = makeArrayUnique(grant.scope);
+      // Keep only the scopes allowed in the app scope.
+      grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
+
+      MongoDB.collection('grants')
+      .updateOne(
+        {id: grant.id},
+        {$set: grant}
+      )
+      .then(res => reply({'status':'ok'}))
+      .catch(err => {
+        console.error(err);
+        reply(Boom.badRequest());
+      });
+
+    })
+    .catch(err => reply(err));
+  },
+
+
+  deleteApplicationGrant: function (request, reply) {
+    MongoDB.collection('grants').removeOne({
+      id: request.params.grantId, app: request.params.id
+    })
+    .then(result => reply({'status':'ok'}))
+    .catch(err => reply(err));
+  },
+
+
+  getApplicationAdmins: function (request, reply) {
+    OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization)
+    .then(ticket => {
+
+      const query = {
+         app: ticket.app,
+         scope: 'admin:'.concat(request.params.id)
+      };
+
+      MongoDB.collection('grants').find(
+        query, {fields: {_id: 0}}
+      ).toArray(reply);
+    })
+    .catch(err => reply(err));
+  },
+
+
+  postApplicationMakeAdmin: function (request, reply) {
+    OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization)
+    .then(ticket => {
+
+      const query = Object.assign(request.payload, {
+         app: ticket.app
+      });
+
+      const newGrant = Object.assign(request.payload, {
+        id: crypto.randomBytes(20).toString('hex'),
+        app: ticket.app
+      });
+
+      const update = {
+        $addToSet: { scope: 'admin:'.concat(request.params.id) },
+        $setOnInsert: newGrant
+      };
+
+      const options = {
+        upsert: true
+      };
+
+      MongoDB.collection('grants')
+      .updateOne(query, update, options)
+      .then(res => {
+        if(res.result.n === 1) {
+
+          EventLog.logUserEvent(
+            request.params.id,
+            'Added Admin Scope to User',
+            {app: request.params.id, byUser: ticket.user}
+          );
+
+          reply({'status': 'ok'});
+
+        } else {
+
+          reply(Boom.badRequest());
+
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        reply(Boom.badRequest());
+      });
+    })
+    .catch(err => reply(err));
+  },
+
+
+  postApplicationRemoveAdmin: function (request, reply) {
+    OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization)
+    .then(ticket => {
+
+      if (ticket.user === request.payload.user){
+        return Promise.reject(Boom.forbidden('You cannot remove yourself'));
+      }
+
+      const query = Object.assign(request.payload, {
+        app: ticket.app
+      });
+
+      const update = {
+        $pull: { scope: 'admin:'.concat(request.params.id) }
+      };
+
+      MongoDB.collection('grants')
+      .updateOne(query, update)
+      .then(res => {
+        if(res.result.n === 1) {
+
+          EventLog.logUserEvent(
+            request.params.id,
+            'Pulled Admin Scope from User',
+            {app: request.params.id, byUser: ticket.user}
+          );
+
+          reply({'status': 'ok'});
+
+        } else {
+
+          reply(Boom.badRequest());
+
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        reply(Boom.badRequest());
+      });
+    })
+    .catch(err => reply(err));
+  }
 };
 
 
-
-/**
- * Returns all applications, sorted by id
- *
- * @return {Promise}
- */
-function findAll() {
-  return MongoDB.collection('applications').find().sort({id: 1}).toArray();
-}
-
-
-/**
- * Returns a single application, located by its id
- *
- * @param {String} Id
- * @return {Promise} Promise providing the application, if found
- */
-function findAppById(id) {
-  return MongoDB.collection('applications').findOne({id: id});
-}
-
-
-/**
- * Creates a new application
- *
- * @param {Object} Application object to create
- * @return {Promise} Promise providing the created app
- */
-function createApp(input) {
-
-  let app = {
-    id: input.id,
-    key: crypto.randomBytes(25).toString('hex'),
-    algorithm: 'sha256',
-    scope: makeArrayUnique(input.scope),
-    delegate: input.delegate ? input.delegate : false,
-    settings: input.settings || {}
-  };
-
-    // Ensure that the id is unique before creating the application.
-    return convertToUniqueid(app.id)
-    .then(uniqueId => {
-      app.id = uniqueId;
-      return app;
-    })
-    .then(app => MongoDB.collection('applications').insertOne(app))
-    .then(res => app);
-}
-
-
-/**
- * Updates a single application by overwriting its fields with the provided ones
- *
- * @param {String} App id
- * @param {Object} App object
- * @return {Promise} Promise providing the updated app
- */
-function updateApp(id, input) {
-
-  return MongoDB.collection('applications')
-  .updateOne(
-    {id:id},
-    {$set: input},
-    {returnNewDocument: true}
-  );
-
-}
-
-
-/**
- * Deletes an application and updates (ie. removes) scopes and grants
- *
- * This operation requires the user ticket.
- *
- * @param {String} App id
- * @param {Object} User ticket
- * @return {Promise} Provides a bool True if app was deleted, False otherwise
- */
-function deleteAppById(id, userTicket) {
-
-  const consoleScope = 'admin:'.concat(id);
-  const ops = [
-    MongoDB.collection('applications').remove({ id: id }),
-    MongoDB.collection('grants').remove({ app: id } ),
-    MongoDB.collection('applications').update(
-      { id: userTicket.app }, { $pull: { scope: consoleScope } }
-    ),
-    MongoDB.collection('grants')
-    .update(
-      { app: userTicket.app },
-      { $pull: { scope: consoleScope } },
-      { multi: true }
-    )
-  ];
-
-  return Promise.all(ops)
-    .then(res => Promise.resolve(res[0].result.n > 0))
-    .catch(err => {
-      console.error(err);
-      return Promise.reject(err);
-    });
-
-}
-
-
-/**
- * Assigns admin scope to an existing app
- *
- * @param {Object} Existing app to assign admin scope for
- * @param {Object} Ticket of user who is creating the application
- * @return {Promise} Provides a Boolean True if the operation succeeded,
- *   False otherwise
- */
-function assignAdminScopeToApp(app, ticket) {
-
-  const consoleScope = 'admin:'.concat(app.id);
-  const ops = [
-    // Adding the 'admin:' scope to console app, so that users can be admins.
-    MongoDB.collection('applications')
-    .update(
-      { id: ticket.app },
-      { $addToSet: { scope: consoleScope } }
-    ),
-    // Adding scope 'admin:' to the grant of user that created the application.
-    MongoDB.collection('grants')
-    .update(
-      { id: ticket.grant },
-      { $addToSet: { scope: consoleScope } }
-    )
-  ];
-
-  return Promise.all(ops)
-  .then(res => Promise.resolve(res[0].n === 1))
-  .catch(err => {
-    console.error(err);
-    return Promise.reject(err);
-  });
-
-}
-
-
-function assignAdminScopeToGrant(app, grant, ticket) {
-  return adminScopeUser(app, grant, ticket, false);
-}
-
-
-function removeAdminScopeFromGrant(app, grant, ticket) {
-  return adminScopeUser(app, grant, ticket, true);
-}
-
-
-function adminScopeUser(app, grant, ticket, pull = false) {
-  const query = Object.assign(grant, {
-    app: ticket.app
-  });
-
-  var update = {};
-  const adminScope = { scope: 'admin:'.concat(app) };
-
-  if(pull){
-    update.$pull = adminScope;
-  } else {
-    update.$addToSet = adminScope;
-  }
-
-  return MongoDB.collection('grants')
-  .updateOne(query, update);
-}
-
-
-/**
- * Creates an application grant
- *
- * @param {String} App id
- * @param {Object} Grant to create
- * @return {Promise} Promise providing the created grant
- */
-function createAppGrant(grant) {
-
-  if(!grant.app || !grant.user){
-    return Promise.reject(Boom.badRequest('attribute app or user missing'));
-  }
-
-  grant.id = crypto.randomBytes(20).toString('hex');
-  grant.scope = makeArrayUnique(grant.scope);
-
-  const operations = [
-    MongoDB.collection('applications')
-    .findOne({id: grant.app}),
-
-    MongoDB.collection('grants')
-    .count({user: grant.user, app: grant.app}, {limit:1})
-  ];
-
-  return Promise.all(operations)
-  .then(results => {
-    let app = results[0];
-    let existingGrant = results[1];
-
-    if(existingGrant > 0){
-      return Promise.reject(Boom.conflict());
-    }
-
-    if (!app){
-      return Promise.reject(Boom.badRequest('invalid app'))
-    }
-
-    // Keep only the scopes allowed in the app scope.
-    grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
-    return MongoDB.collection('grants').insertOne(grant)
-    .then(res => grant);
-
-  });
-
-}
-
-
-/**
- * Updates an app's grant
- *
- * @param {String} App id
- * @param {Object} Grant
- * @return {Promise} Promise providing the updated grant
- */
-function updateAppGrant(grant) {
-
-  return MongoDB.collection('applications')
-  .findOne({id: grant.app})
-  .then(app => {
-
-    if (!app) {
-      return Promise.reject(Boom.badRequest('invalid app'))
-    }
-
-    grant.scope = makeArrayUnique(grant.scope);
-    // Keep only the scopes allowed in the app scope.
-    grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
-
-    return MongoDB.collection('grants')
-    .update(
-      {id: grant.id},
-      {$set: grant}
-    );
-
-  });
-
-}
 
 /**
  * Given an application id, this function simply returns the same id if that id
@@ -286,8 +374,13 @@ function updateAppGrant(grant) {
  */
 function convertToUniqueid(id) {
 
-  return MongoDB.collection('applications').find({id: {$regex: '^'.concat(id)}},
-      {_id: 0, id: 1}).toArray().then((apps) => {
+  return MongoDB.collection('applications')
+  .find(
+    {id: {$regex: '^'.concat(id)}},
+    {_id: 0, id: 1}
+  )
+  .toArray()
+  .then((apps) => {
 
     const ids = apps.map(app => app.id);
     let uniqueId = id,

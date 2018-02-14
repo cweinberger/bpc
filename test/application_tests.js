@@ -1,19 +1,24 @@
 /* jshint node: true */
 'use strict';
 
-// Bootstrap the testing harness.
-const sinon = require('sinon');
-const crypto = require('crypto');
-const Boom = require('boom');
 const test_data = require('./data/test_data');
+const bpc_helper = require('./helpers/bpc_helper');
 const MongoDB = require('./mocks/mongodb_mock');
-const Applications = require('./../server/applications/applications');
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
 
 
-describe('application unit tests', () => {
+describe('application tests', () => {
+
+  const consoleApp = test_data.applications.console;
+  var consoleAppTicket;
+
+  const consoleGrant = test_data.grants.console_google_user__console_grant;
+  var consoleUserTicket;
+
+  const consoleSuperAdminGrant = test_data.grants.console_superadmin_google_user__console_grant;
+  var consoleSuperAdminUserTicket;
 
 
   before(done => {
@@ -25,15 +30,60 @@ describe('application unit tests', () => {
   });
 
 
-  describe('findAll()', () => {
+  // Getting the consoleAppTicket
+  before(done => {
+    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, consoleApp)
+    .then(response => {
+      expect(response.statusCode).to.equal(200);
+      consoleAppTicket = response.result;
+    })
+    .then(done)
+    .catch(done);
+  });
+
+
+  // Getting the consoleUserTicket
+  before(done => {
+    bpc_helper.generateRsvp(consoleApp, consoleGrant)
+    .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+    .then(response => {
+      expect(response.statusCode).to.equal(200);
+      consoleUserTicket = response.result;
+      done();
+    });
+  });
+
+
+  // Getting the consoleSuperAdminUserTicket
+  before(done => {
+    bpc_helper.generateRsvp(consoleApp, consoleSuperAdminGrant)
+    .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+    .then(response => {
+      expect(response.statusCode).to.equal(200);
+      consoleSuperAdminUserTicket = response.result;
+      done();
+    });
+  });
+
+
+
+  describe('get the list', () => {
 
     it('returns at least one app', done => {
 
-      Applications.findAll()
-      .then(apps => {
+      if(MongoDB.isMock){
+        return done();
+      }
 
-        expect(apps).to.be.an.array();
-        expect(apps).not.to.be.empty();
+      bpc_helper.request({ url: '/applications' }, consoleUserTicket)
+      .then(response => {
+
+        expect(response.statusCode).to.equal(200);
+        expect(response.result).to.be.an.array();
+        expect(response.result).not.to.be.empty();
+        response.result.forEach(function(app){
+          expect(app.key).to.not.exist();
+        });
 
         done();
 
@@ -43,15 +93,29 @@ describe('application unit tests', () => {
   });
 
 
-  describe('findAppById()', () => {
+  describe('get app by id', () => {
+
+    it('returns 403 for normal admin user', done => {
+
+      bpc_helper.request({ url: '/applications/valid-app' }, consoleUserTicket)
+      .then(response => {
+
+        expect(response.statusCode).to.equal(403);
+        done();
+
+      })
+      .catch(done);
+    });
+
 
     it('returns the correct app', done => {
 
-      Applications.findAppById('valid-app')
-      .then(app => {
+      bpc_helper.request({ url: '/applications/valid-app' }, consoleSuperAdminUserTicket)
+      .then(response => {
 
-        expect(app).to.be.an.object();
-        expect(app).to.part.include({
+        expect(response.statusCode).to.equal(200);
+        expect(response.result).to.be.an.object();
+        expect(response.result).to.part.include({
           id: 'valid-app', key: 'something_long_and_random'
         });
 
@@ -64,41 +128,39 @@ describe('application unit tests', () => {
 
     it('returns empty response for invalid app ids', done => {
 
-      Applications.findAppById('invalid-app')
-      .then(app => {
+      bpc_helper.request({ url: '/applications/invalid-app' }, consoleSuperAdminUserTicket)
+      .then(response => {
 
-        expect(app).to.be.null();
-
+        expect(response.statusCode).to.equal(404);
         done();
 
       })
       .catch(done);
 
     });
-
   });
 
 
-  describe('createApp()', () => {
 
-    it('inserts an app into the "applications" collection', done => {
+  describe('create', () => {
 
-      const newApp = {
-        id: 'new-app',
-        scope: [
-          'admin',
-        ],
-        delegate: false,
-        algorithm: 'sha256'
-      };
+    const newApp = {
+      id: 'new-app',
+      scope: [ 'funscope' ],
+      delegate: false,
+      algorithm: 'sha256'
+    };
 
-      Applications.createApp(newApp)
-      .then(app => {
+    it('create new app by console user', done => {
 
-        expect(app.id).to.equal(newApp.id);
-        expect(app.scope).to.equal(newApp.scope);
-        expect(app.delegate).to.equal(newApp.delegate);
-        expect(app.algorithm).to.equal(newApp.algorithm);
+      bpc_helper.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      .then(response => {
+
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.id).to.equal(newApp.id);
+        expect(response.result.scope).to.equal(newApp.scope);
+        expect(response.result.delegate).to.equal(newApp.delegate);
+        expect(response.result.algorithm).to.equal(newApp.algorithm);
 
         return Promise.resolve();
       })
@@ -114,23 +176,51 @@ describe('application unit tests', () => {
     });
 
 
+    it('console user can get own app', done => {
+
+      if(MongoDB.isMock){
+        return done();
+      }
+
+      // Getting a new ticket, since the old ticket does not have the new admin:new-app scope
+      bpc_helper.generateRsvp(consoleApp, consoleGrant)
+      .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+      .then(response => {
+        var newConsoleUserTicket = response.result;
+
+        expect(response.result.scope).to.include('admin:new-app');
+
+        bpc_helper.request({ url: '/applications/new-app' }, newConsoleUserTicket)
+        .then(response => {
+
+          expect(response.statusCode).to.equal(200);
+          expect(response.result.id).to.equal(newApp.id);
+          expect(response.result.scope).to.equal(newApp.scope);
+          done();
+        })
+        .catch(done);
+      })
+      .catch(done);
+    });
+
+
     it('creates a new id when app id is taken', done => {
 
       const newApp = {
         id: 'valid-app',
-        scope: [
-          'admin',
-        ],
+        scope: [],
         delegate: false,
         key: 'something_long_and_random',
         algorithm: 'sha256'
       };
 
-      Applications.createApp(newApp).then(app => {
+      bpc_helper.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      .then(response => {
 
-        expect(app).to.be.an.object();
-        expect(app.id).to.not.be.empty();
-        expect(app.id).to.not.equal('valid-app'); // Different id's.
+        expect(response.statusCode).to.equal(200);
+        expect(response.result).to.be.an.object();
+        expect(response.result.id).to.not.be.empty();
+        expect(response.result.id).to.not.equal('valid-app'); // Different id's.
 
         done();
 
@@ -140,7 +230,7 @@ describe('application unit tests', () => {
   });
 
 
-  describe('updateApp()', () => {
+  describe('update', () => {
 
     // TODO: Test is currently skipped due to lacking support in mongo-mock:
     // findOneAndUpdate().
@@ -178,36 +268,60 @@ describe('application unit tests', () => {
   });
 
 
-  describe('deleteAppById()', () => {
 
-    it('fails for nonexisting app id', done => {
+  describe('delete', () => {
 
-      Applications.deleteAppById('nonexisting-app', {app: 'nonexisting-app'})
-      .then(isRemoved => {
+    it('nonexisting app forbidden for regular console app user', done => {
 
-        expect(isRemoved).to.be.a.boolean();
-        expect(isRemoved).to.be.false();
+      bpc_helper.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleUserTicket)
+      .then(response => {
+
+        expect(response.statusCode).to.equal(403);
         done();
 
-      })
-      .catch(done);
-
+      });
     });
 
 
+    it(' nonexisting app for superadmin user return not found', done => {
 
-    it('removes all traces of the app', done => {
+      bpc_helper.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(404);
+        done();
 
-      Applications.deleteAppById('delete-me-app', {app: 'delete-me-app'})
-      .then(isRemoved => {
+      });
+    });
+
+
+    it('existing app forbidden for non-admin console app user', done => {
+
+      bpc_helper.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleUserTicket)
+      .then(response => {
+
+        expect(response.statusCode).to.equal(403);
+        done();
+
+      });
+    });
+
+
+    it('superadmin delete app', done => {
+
+      if(MongoDB.isMock){
+        return done();
+      }
+
+      bpc_helper.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
+      .then(response => {
+
+        expect(response.statusCode).to.equal(200);
 
         Promise.all([
           MongoDB.collection('applications').findOne({id: 'delete-me-app'}),
           MongoDB.collection('grants').findOne({app: 'delete-me-app'})
         ]).then(res => {
 
-          expect(isRemoved).to.be.a.boolean();
-          expect(isRemoved).to.be.true();
           expect(res).to.be.an.array();
           expect(res).to.have.length(2);
           expect(res[0]).to.be.null();
@@ -218,119 +332,6 @@ describe('application unit tests', () => {
         .catch(done);
 
       });
-    });
-  });
-
-
-
-  describe('createAppGrant()', () => {
-
-    it('fails for nonexisting app id', done => {
-
-      const grant = {
-        app: 'invalid-app',
-        user: 'mkoc@berlingskemedia.dk',
-        scope: [
-          'admin',
-          'admin:*',
-          'business:all',
-          'bt:all'
-        ]
-      };
-
-      Applications.createAppGrant(grant)
-      .then(grant => {
-        done(new Error('Grant must not be issued'))
-      }).catch(err => {
-        expect(err).to.exist();
-        done();
-      });
-    });
-
-    it('only keeps the app scopes', done => {
-
-      const grant = {
-        app: 'valid-app',
-        user: 'mkoc@berlingskemedia.dk',
-        scope: [
-          'admin',
-          'admin:*',
-          'business:all',
-          'bt:all',
-          'aok:all' // This one is not in the app, hence should not be in grant.
-        ]
-      };
-
-      Applications.createAppGrant(grant)
-      .then(() => MongoDB.collection('grants').findOne({app:'valid-app', user: 'mkoc@berlingskemedia.dk'}))
-      .then(grant => {
-
-        expect(grant).to.be.an.object();
-        expect(grant.scope).to.be.an.array();
-        expect(grant.scope).to.have.length(4);
-        expect(grant.scope).not.to.contain('aok:all');
-
-        done();
-
-      })
-      .catch(done);
-    });
-  });
-
-
-  describe('updateAppGrant()', () => {
-
-    it('fails for nonexisting app id', done => {
-
-      const grant = {
-        app: 'invalid-app',
-        user: 'mkoc@berlingskemedia.dk',
-        scope: [
-          'admin',
-          'admin:*',
-          'business:all',
-          'bt:all'
-        ]
-      };
-
-      Applications.updateAppGrant(grant)
-      .then(grant => {
-        done(new Error('Grant must not be issued'));
-      }).catch(err => {
-        expect(err).to.exist();
-        done();
-      });
-    });
-
-    it('only keeps the app scopes', done => {
-
-      const grant = {
-        app: 'valid-app',
-        user: 'mkoc@berlingskemedia.dk',
-        scope: [
-          'admin',
-          'admin:*',
-          'business:all',
-          'bt:all',
-          'b:all', // This one is not in the app, hence should not be in grant.
-          'aok:all' // This one is not in the app, hence should not be in grant.
-        ]
-      };
-
-      Applications.updateAppGrant(grant)
-      .then(() => MongoDB.collection('grants').findOne({app:'valid-app', user: 'mkoc@berlingskemedia.dk'}))
-      .then(grant => {
-
-        expect(grant).to.be.an.object();
-        expect(grant.scope).to.be.an.array();
-        expect(grant.scope).to.have.length(4);
-        expect(grant.scope).not.to.contain('b:all');
-        expect(grant.scope).not.to.contain('aok:all');
-
-        done();
-
-      })
-      .catch(done);
     });
   });
 });

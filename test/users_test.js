@@ -53,7 +53,7 @@ describe('users - functional tests', () => {
 
 describe('users - integration tests', () => {
 
-  let app = test_data.applications.app_with_users_scope;
+  let app = test_data.applications.app_with_admin_scope;
   let appTicket;
 
   before(done => {

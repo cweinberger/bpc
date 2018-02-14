@@ -3,89 +3,6 @@
 
 module.exports = {
 
-  applications: {
-    console: {
-      id: 'console',
-      scope: ['admin', 'admin:*', 'admin:console'],
-      key: 'j4h2kj4h32lkh432lkh4dk32ljh4lk32djh4lkj32h4',
-      algorithm: 'sha256'
-    },
-    bt: {
-      id: 'bt',
-      scope: ['bt'],
-      key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
-      algorithm: 'sha256'
-    },
-    berlingske: {
-      id: 'berlingske',
-      scope: ['berlingske'],
-      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
-      algorithm: 'sha256'
-    },
-    valid_app: {
-      id: 'valid-app',
-      scope: [
-        'admin',
-        'admin:*',
-        'business:all',
-        'bt:all'
-      ],
-      delegate: false,
-      key: 'something_long_and_random',
-      algorithm: 'sha256'
-    },
-    delete_me_app: {
-      id: 'delete-me-app',
-      scope: [
-        'admin',
-        'admin:*',
-        'admin:gdfgfd',
-        'admin:uyutyutu'
-      ],
-      delegate: false,
-      key: 'something_long_and_random',
-      algorithm: 'sha256'
-    },
-    app_with_disallowAutoCreationGrants: {
-      id: 'app_with_disallowAutoCreationGrants',
-      scope: [],
-      delegate: false,
-      key: 'something_long_and_random',
-      algorithm: 'sha256',
-      settings: {
-        disallowAutoCreationGrants: true
-      }
-    },
-    app_with_users_scope: {
-      id: 'app_with_users_scope',
-      scope: ['users'],
-      key: '908345kojte9kgjef08934j5lkjgfed890435lkjgle',
-      algorithm: 'sha256'
-    },
-    app_with_profile_scope: {
-      id: 'app_with_profile_scope',
-      scope: ['profile'],
-      key: '908345kojte9kgjef08934j5lkjgfed890435lkjglz',
-      algorithm: 'sha256'
-    },
-    app_with_anonymous_scope: {
-      id: 'app_with_anonymous_scope',
-      scope: ['anonymous', 'anothernotanonynmousscope'],
-      key: '90835fgfgfjtregjefre34jvcxvxkjfed89043lkgle',
-      algorithm: 'sha256',
-      settings: {
-        allowAnonymousUsers: true
-      }
-    },
-    app_with_gigya_provider: {
-      id: 'app_with_gigya_provider',
-      scope: [],
-      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
-      algorithm: 'sha256',
-      settings: { provider: 'gigya'}
-    },
-  },
-
   users: {
     simple_first_user: {
       id: '3218736128736123215732',
@@ -125,18 +42,6 @@ module.exports = {
         }
       }
     },
-    console_superadmin_google_user: {
-      id: '1111111111111111111111',
-      email: 'console_admin@berlingskemedia.dk',
-      lastLogin: new Date(),
-      dataScopes: {}
-    },
-    console_google_user: {
-      id: '2222222222222222222222',
-      email: 'console_user@berlingskemedia.dk',
-      lastLogin: new Date(),
-      dataScopes: {}
-    },
     mkoc_user: {
       id: '117880216634946654515',
       email: 'mkoc@berlingskemedia.dk',
@@ -147,6 +52,82 @@ module.exports = {
       lastLogin: new Date(),
       dataScopes: {}
     }
+  },
+
+  applications: {
+    console: {
+      id: 'console',
+      scope: ['admin', 'admin:*'],
+      key: 'j4h2kj4h32lkh432lkh4dk32ljh4lk32djh4lkj32h4',
+      algorithm: 'sha256'
+    },
+    bt: {
+      id: 'bt',
+      scope: ['bt'],
+      key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
+      algorithm: 'sha256'
+    },
+    berlingske: {
+      id: 'berlingske',
+      scope: ['berlingske'],
+      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
+      algorithm: 'sha256'
+    },
+    valid_app: {
+      id: 'valid-app',
+      scope: [
+        'business:all',
+        'bt:all'
+      ],
+      delegate: false,
+      key: 'something_long_and_random',
+      algorithm: 'sha256'
+    },
+    delete_me_app: {
+      id: 'delete-me-app',
+      scope: [],
+      delegate: false,
+      key: 'something_long_and_random',
+      algorithm: 'sha256'
+    },
+    app_with_disallowAutoCreationGrants: {
+      id: 'app_with_disallowAutoCreationGrants',
+      scope: [],
+      delegate: false,
+      key: 'something_long_and_random',
+      algorithm: 'sha256',
+      settings: {
+        disallowAutoCreationGrants: true
+      }
+    },
+    app_with_admin_scope: {
+      id: 'app_with_admin_scope',
+      scope: ['admin'],
+      key: '908345kojte9kgjef08934j5lkjgfed890435lkjgle',
+      algorithm: 'sha256'
+    },
+    app_with_profile_scope: {
+      id: 'app_with_profile_scope',
+      scope: ['profile'],
+      key: '908345kojte9kgjef08934j5lkjgfed890435lkjglz',
+      algorithm: 'sha256'
+    },
+    app_with_anonymous_scope: {
+      id: 'app_with_anonymous_scope',
+      scope: ['anonymous', 'anothernotanonynmousscope'],
+      key: '90835fgfgfjtregjefre34jvcxvxkjfed89043lkgle',
+      algorithm: 'sha256',
+      settings: {
+        allowAnonymousUsers: true
+      }
+    },
+    app_with_gigya_provider: {
+      id: 'app_with_gigya_provider',
+      scope: [],
+      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
+      algorithm: 'sha256',
+      settings: { provider: 'gigya'}
+    },
   },
 
   grants: {

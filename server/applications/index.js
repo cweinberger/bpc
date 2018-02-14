@@ -272,12 +272,12 @@ module.exports.register.attributes = {
 
 const appAdminPayloadValidation = Joi.object().keys({
   _id: Joi.strip(),
-  id: Joi.string(),
+  id: Joi.strip(),
   app: Joi.strip(),
-  user: Joi.string(),
+  user: Joi.string().required(),
   exp: Joi.strip(),
   scope: Joi.strip()
-}).or('id', 'user');
+});
 
 
 const scopeValidation = Joi.array().items(

@@ -283,11 +283,11 @@ describe('application tests', () => {
     });
 
 
-    it(' nonexisting app succeeds for superadmin user', done => {
+    it(' nonexisting app for superadmin user return not found', done => {
 
       bpc_helper.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
       .then(response => {
-        expect(response.statusCode).to.equal(200);
+        expect(response.statusCode).to.equal(404);
         done();
 
       });

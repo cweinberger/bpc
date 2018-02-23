@@ -173,9 +173,9 @@ function handleEvents(events){
       case "accountUpdated":
       return accountUpdatedEventHandler(event);
       break;
-      // case "accountLoggedIn":
-      //   accountLoggedInEventHandler(event);
-      //   break;
+      case "accountLoggedIn":
+      return accountLoggedInEventHandler(event);
+      break;
       case "accountDeleted":
       return accountDeletedEventHandler(event);
       break;
@@ -206,17 +206,10 @@ function accountUpdatedEventHandler(event) {
 }
 
 
-function getAccountInfo(uid) {
-  return Gigya.callApi('/accounts.getAccountInfo', {
-    UID: uid,
-    include: 'profile,emails'
-  });
-}
-
 
 function accountLoggedInEventHandler(event) {
-  // Do nothing
-  return Promise.resolve();
+  return getAccountInfo(event.data.uid)
+  .then(result => upsertUser(result.body));
 }
 
 
@@ -226,6 +219,14 @@ function accountDeletedEventHandler(event) {
   .catch(err => {
     EventLog.logUserEvent(event.data.uid, 'Deleting user Failed');
     console.error(err);
+  });
+}
+
+
+function getAccountInfo(uid) {
+  return Gigya.callApi('/accounts.getAccountInfo', {
+    UID: uid,
+    include: 'profile,emails'
   });
 }
 

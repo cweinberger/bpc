@@ -48,10 +48,11 @@ describe('gigya notifications after permissions - integration tests', () => {
     done();
   });
 
+
   it('setting permissions for a new user', done => {
     const permissions_request = {
       method: 'POST',
-      url: '/permissions/gigya/4@test.nl/profile',
+      url: '/permissions/4@test.nl/profile',
       headers: {},
       payload: {
         "sso-id": "12345"

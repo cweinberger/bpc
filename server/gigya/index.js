@@ -241,8 +241,8 @@ function upsertUser (accountInfo) {
   const selector = {
     $or: [
       { 'gigya.UID': accountInfo.UID },
-      { id: accountInfo.profile.email.toLowerCase() },
       { email: accountInfo.profile.email.toLowerCase() },
+      { id: accountInfo.profile.email.toLowerCase() },
       { id: accountInfo.UID }
     ]
   };

@@ -7,9 +7,9 @@ const MongoDB = require('./../mongo/mongodb_client');
 function stdFilter(user){
   return {
     $or: [
-      { id: user },
+      { 'gigya.UID': user },
       { email: user.toLowerCase() },
-      { 'gigya.UID': user }
+      { id: user }
     ]
   };
 }

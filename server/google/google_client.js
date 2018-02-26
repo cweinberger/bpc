@@ -2,7 +2,7 @@
 'use strict';
 
 if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
-  module.exports = require('../../test/mocks/google_mock.js');
+  module.exports = require('../../test/helpers/google_stub.js');
   return;
 }
 

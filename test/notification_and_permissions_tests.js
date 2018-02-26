@@ -5,8 +5,8 @@
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./mocks/mongodb_mock');
-const Gigya = require('./mocks/gigya_mock');
+const MongoDB = require('./helpers/mongodb_mock');
+const Gigya = require('./helpers/gigya_stub');
 const gigya_helper = require('./helpers/gigya_helper');
 
 

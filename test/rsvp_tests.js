@@ -7,9 +7,9 @@ const Oz = require('oz');
 const rewire = require('rewire');
 const sinon = require('sinon');
 const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./mocks/mongodb_mock');
-const Gigya = require('./mocks/gigya_mock');
-const Google = require('./mocks/google_mock');
+const MongoDB = require('./helpers/mongodb_mock');
+const Gigya = require('./helpers/gigya_stub');
+const Google = require('./helpers/google_stub');
 const Rsvp = require('./../server/rsvp/rsvp');
 const OzLoadFuncs = require('./../server/oz_loadfuncs');
 

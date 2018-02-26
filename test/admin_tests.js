@@ -3,7 +3,7 @@
 
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./mocks/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_mock');
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
@@ -137,7 +137,7 @@ describe('admin tests', () => {
     });
 
 
-    it('refresh console ticket to get new admin:app scope', done => {      
+    it('refresh console ticket to get new admin:app scope', done => {
       bpc_helper.generateRsvp(consoleApp, consoleGrant)
       .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
       .then(response => {

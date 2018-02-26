@@ -5,8 +5,8 @@
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-const Gigya = require('./mocks/gigya_mock');
-const MongoDB = require('./mocks/mongodb_mock');
+const Gigya = require('./helpers/gigya_stub');
+const MongoDB = require('./helpers/mongodb_mock');
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();

@@ -301,6 +301,8 @@ mockup database instead if a lab test script is exported by the modules parent.
 
 The test assertions are written using `code` library. See [API reference](https://github.com/hapijs/code/blob/master/API.md).
 
+For spies, stubs and mocks, we use [Sinon.JS](http://sinonjs.org/releases/v4.4.2/).
+
 Once these minor prerequisites are in place, simply run this command from the
 command line, while in the BPC root directory;
 

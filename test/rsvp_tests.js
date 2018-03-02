@@ -73,12 +73,12 @@ describe('rsvp unit tests', () => {
     });
 
     before(done => {
-      Gigya.callApi.resolves({body: {profile: {email: 'some@email.com'}}});
+      Gigya.callApi.resolves({body: {UID: '123', profile: {email: 'some@email.com'}}});
       done();
     });
 
     before(done => {
-      Google.tokeninfo.resolves({body: {profile: {email: 'some@email.com'}}});
+      Google.tokeninfo.resolves({body: {UID: '123', profile: {email: 'some@email.com'}}});
       done();
     });
 
@@ -147,6 +147,7 @@ describe('rsvp unit tests', () => {
       });
     });
 
+
     it('returns a RSVP for a valid app id (Gigya)', done => {
       Rsvp.create({
         provider: 'gigya',
@@ -177,7 +178,7 @@ describe('rsvp unit tests', () => {
     });
 
     before(done => {
-      Gigya.callApi.resolves({body: {profile: {email: 'userwithnopreviousgrant@email.com'}}});
+      Gigya.callApi.resolves({body: {UID: 'userwithnopreviousgrant', profile: {email: 'userwithnopreviousgrant@email.com'}}});
       done();
     });
 
@@ -328,7 +329,7 @@ describe('rsvp integration test - google', () => {
 
   before(done => {
     Google.tokeninfo //.withArgs({id_token: 'random_id_token_hdjshjdhs', access_token: 'random_access_token_kfjsdhkjfhsdwe'})
-    .resolves({ID: 'doensnotexistsatgoogle', email: 'doensnotexists@testgoogle.nl'});
+    .resolves({user_id: 'doesnotexistsatgoogle', email: 'doensnotexists@testgoogle.nl'});
     done();
   });
 
@@ -341,7 +342,7 @@ describe('rsvp integration test - google', () => {
   it('get rsvp for a google user', done => {
     let payload = {
       provider: 'google',
-      ID: 'doensnotexistsatgoogle',
+      ID: 'doesnotexistsatgoogle',
       email: 'doensnotexists@testgoogle.nl',
       app: 'valid-app',
       id_token: 'random_id_token_hdjshjdhs',
@@ -360,7 +361,7 @@ describe('rsvp integration test - google', () => {
   it('get rsvp for a google user', done => {
     let payload = {
       provider: 'google',
-      ID: 'doensnotexistsatgoogle',
+      ID: 'doesnotexistsatgoogle',
       email: 'doensnotexists@testgoogle.nl',
       app: 'app_with_gigya_provider',
       id_token: 'random_id_token_nmvbcnm',

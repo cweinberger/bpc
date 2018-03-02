@@ -111,11 +111,7 @@ module.exports.register = function (server, options, next) {
 
       if (Object.keys(request.query).length > 0) {
 
-        Permissions.count({
-          user: request.params.user,
-          scope: request.params.scope
-        },
-        request.query)
+        Permissions.count(request.params, request.query)
         .then(result => {
           if(result === 1) {
             reply({ status: 'OK' });
@@ -127,7 +123,7 @@ module.exports.register = function (server, options, next) {
 
       } else {
 
-        Permissions.get({ user: request.params.user, scope: request.params.scope })
+        Permissions.get(request.params)
         .then(dataScopes => reply(dataScopes[request.params.scope]
           ? dataScopes[request.params.scope]
           : {}))
@@ -159,11 +155,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.set({
-        user: request.params.user,
-        scope: request.params.scope,
-        payload: request.payload
-      })
+      Permissions.set(request.params, request.payload)
       .then(result => reply({'status': 'ok'}))
       .catch(err => reply(err));
     }
@@ -235,11 +227,7 @@ module.exports.register = function (server, options, next) {
 
       if (Object.keys(request.query).length > 0) {
 
-        Permissions.count({
-          user: request.params.user,
-          scope: request.params.scope
-        },
-        request.query)
+        Permissions.count(request.params, request.query)
         .then(result => {
           if(result === 1) {
             reply({ status: 'OK' });
@@ -251,10 +239,7 @@ module.exports.register = function (server, options, next) {
 
       } else {
 
-        Permissions.get({
-          user: request.params.user,
-          scope: request.params.scope
-        })
+        Permissions.get(request.params)
         .then(dataScopes => reply(dataScopes[request.params.scope]
           ? dataScopes[request.params.scope]
           : {}))
@@ -290,11 +275,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      Permissions.set({
-        user: request.params.user,
-        scope: request.params.scope,
-        payload: request.payload
-      })
+      Permissions.set(request.params, request.payload)
       .then(result => reply({'status': 'ok'}))
       .catch(err => reply(err));
     }

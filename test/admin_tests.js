@@ -37,8 +37,8 @@ describe('admin tests', () => {
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleAppTicket = response.result;
+      done();
     })
-    .then(done)
     .catch(done);
   });
 

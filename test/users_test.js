@@ -130,6 +130,18 @@ describe('users - integration tests', () => {
   });
 
 
+  it('get Gigya email from UID', done => {
+    bpc_helper.request({url: '/gigya?UID=3218736128736123215732'}, appTicket)
+    .then((response) => {
+      expect(response.statusCode).to.equal(200);
+      expect(response.result.UID).to.equal('3218736128736123215732');
+      expect(response.result.email).to.equal('first_user@berlingskemedia.dk');
+      done();
+    })
+    .catch(done);
+  });
+
+
   it('get Gigya UID from email', done => {
     bpc_helper.request({url: '/gigya?email=first_user@berlingskemedia.dk'}, appTicket)
     .then((response) => {
@@ -140,6 +152,7 @@ describe('users - integration tests', () => {
     })
     .catch(done);
   });
+  
 
   it('invalid trying to GET /gigya with no query params', done => {
     bpc_helper.request({url: '/gigya'}, appTicket)

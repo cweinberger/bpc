@@ -50,7 +50,7 @@ describe('permissions - functional tests', () => {
     });
 
     it('getting first user bt permissions by provider and uppercase email', (done) => {
-      bpc_helper.request({ url: '/permissions/gigya/FIRST_USER@berlingskemedia.dk/bt' }, appTicket)
+      bpc_helper.request({ url: '/permissions/FIRST_USER@berlingskemedia.dk/bt' }, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.bt_subscription_tier).to.equal('free');

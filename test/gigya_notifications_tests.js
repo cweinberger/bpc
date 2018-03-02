@@ -273,7 +273,6 @@ describe('gigya notifications', () => {
       })
       .then(() => MongoDB.collection('users').find({'gigya.UID': '5'}).toArray())
       .then(result => {
-        console.log('resA', result);
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
         expect(result[0].id).to.be.equal('5');
@@ -320,7 +319,6 @@ describe('gigya notifications', () => {
       })
       .then(() => MongoDB.collection('users').find({'gigya.UID': '5'}).toArray())
       .then(result => {
-        console.log('res', result);
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
         expect(result[0].id).to.be.equal('5');

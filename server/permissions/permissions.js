@@ -29,7 +29,7 @@ module.exports.set = function({user, scope}, payload) {
   // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
   let setOnInsert = {
     id: user.toLowerCase(),
-    // email: user.toLowerCase(),
+    email: user.toLowerCase(),
     createdAt: new Date()
     // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
   };
@@ -53,9 +53,7 @@ module.exports.set = function({user, scope}, payload) {
   }
 
   const update = {
-    $currentDate: {
-      'lastUpdated': { $type: "date" }
-    },
+    $currentDate: { 'lastUpdated': { $type: "date" } },
     $set: set,
     $setOnInsert: setOnInsert
   };

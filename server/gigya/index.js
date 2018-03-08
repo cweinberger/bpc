@@ -247,6 +247,8 @@ function upsertUser (accountInfo) {
 
   const set = {
     id: accountInfo.UID,
+    email: accountInfo.profile.email.toLowerCase(),
+    provider: 'gigya',
     gigya: {
       UID: accountInfo.UID,
       loginProvider: accountInfo.loginProvider,

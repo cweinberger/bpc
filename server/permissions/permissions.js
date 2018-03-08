@@ -2,6 +2,7 @@
 'use strict';
 
 const Boom = require('boom');
+const Joi = require('joi');
 const MongoDB = require('./../mongo/mongodb_client');
 
 function stdFilter(user){
@@ -10,7 +11,8 @@ function stdFilter(user){
       { 'gigya.UID': user },
       { 'gigya.email': user.toLowerCase() },
       { id: user },
-      { id: user.toLowerCase() }
+      { id: user.toLowerCase() },
+      { email: user.toLowerCase() }
     ]
   };
 }
@@ -25,11 +27,14 @@ module.exports.set = function({user, scope}, payload) {
 
   let set = {};
 
+  const valid_email = Joi.validate({ email: user }, {email: Joi.string().email()});
+
   // We are setting 'id' = 'user'.
   // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
   let setOnInsert = {
     id: user.toLowerCase(),
-    email: user.toLowerCase(),
+    email: valid_email.error === null ? user.toLowerCase() : null,
+    provider: '',
     createdAt: new Date()
     // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
   };

@@ -76,7 +76,7 @@ describe('gigya notifications - integration tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({$or: [{id: '4'}, {id: 'four@test.nl'}]}).toArray())
+      .then(() => MongoDB.collection('users').find({$or: [{id: '4'}, {id: 'four@test.nl'}, {id: 'FOUR@test.nl'}, {email: 'four@test.nl'}]}).toArray())
       .then(result => {
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
@@ -124,7 +124,7 @@ describe('gigya notifications - integration tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({$or: [{id: '4'}, {id: 'four@test.nl'}]}).toArray())
+      .then(() => MongoDB.collection('users').find({$or: [{id: '4'}, {id: 'four@test.nl'}, {id: 'FOUR@test.nl'}, {email: 'four@test.nl'}]}).toArray())
       .then(result => {
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
@@ -177,7 +177,7 @@ describe('gigya notifications - integration tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({$or: [{id: '4'}, {'gigya.UID': '4'}]}).toArray())
+      .then(() => MongoDB.collection('users').find({$or: [{id: '4'}, {'gigya.UID': '4'}, {id: 'four@test.nl'}, {id: 'FOUR@test.nl'}, {email: 'four@test.nl'}]}).toArray())
       .then(result => {
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
@@ -242,11 +242,12 @@ describe('gigya notifications - integration tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({$or: [{id: '6'}, {id: 'six@test.nl'}]}).toArray())
+      .then(() => MongoDB.collection('users').find({$or: [{id: '6'}, {id: 'six@test.nl'}, {id: 'SIX@test.nl'}, {email: 'six@test.nl'}]}).toArray())
       .then(result => {
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
         expect(result[0].id).to.equal('six@test.nl');
+        expect(result[0].email).to.equal('six@test.nl');
         expect(result[0].createdAt).to.be.a.date();
         expect(result[0].dataScopes.profile.some_value).to.equal("767676");
         return Promise.resolve();
@@ -289,11 +290,12 @@ describe('gigya notifications - integration tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({$or: [{id: '6'}, {id: 'six@test.nl'}]}).toArray())
+      .then(() => MongoDB.collection('users').find({$or: [{id: '6'}, {id: 'six@test.nl'}, {id: 'SIX@test.nl'}, {email: 'six@test.nl'}]}).toArray())
       .then(result => {
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
         expect(result[0].id).to.equal('6');
+        expect(result[0].email).to.equal('six@test.nl');
         expect(result[0].gigya.UID).to.equal('6');
         expect(result[0].gigya.email).to.equal('six@test.nl');
         return Promise.resolve();
@@ -322,7 +324,7 @@ describe('gigya notifications - integration tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({$or: [{id: '6'}, {id: 'six@test.nl'}]}).toArray())
+      .then(() => MongoDB.collection('users').find({$or: [{id: '6'}, {id: 'six@test.nl'}, {id: 'SIX@test.nl'}, {email: 'six@test.nl'}]}).toArray())
       .then(result => {
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
@@ -386,11 +388,12 @@ describe('gigya notifications - integration tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({$or: [{id: '7'}, {id: 'seven@test.nl'}]}).toArray())
+      .then(() => MongoDB.collection('users').find({$or: [{id: '7'}, {id: 'SEVEN@test.nl'}, {id: 'seven@test.nl'}, {email: 'seven@test.nl'}]}).toArray())
       .then(result => {
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
         expect(result[0].id).to.equal('seven@test.nl');
+        expect(result[0].email).to.equal('seven@test.nl');
         expect(result[0].createdAt).to.be.a.date();
         expect(result[0].dataScopes.profile.some_value).to.equal("788787");
         return Promise.resolve();
@@ -433,11 +436,12 @@ describe('gigya notifications - integration tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({$or: [{id: '7'}, {id: 'seven@test.nl'}]}).toArray())
+      .then(() => MongoDB.collection('users').find({$or: [{id: '7'}, {id: 'SEVEN@test.nl'}, {id: 'seven@test.nl'}, {email: 'seven@test.nl'}]}).toArray())
       .then(result => {
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
         expect(result[0].id).to.equal('7');
+        expect(result[0].email).to.equal('seven@test.nl');
         expect(result[0].gigya.UID).to.equal('7');
         expect(result[0].gigya.email).to.equal('seven@test.nl');
         return Promise.resolve();
@@ -466,11 +470,12 @@ describe('gigya notifications - integration tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({$or: [{id: '7'}, {id: 'seven@test.nl'}]}).toArray())
+      .then(() => MongoDB.collection('users').find({$or: [{id: '7'}, {id: 'SEVEN@test.nl'}, {id: 'seven@test.nl'}, {email: 'seven@test.nl'}]}).toArray())
       .then(result => {
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
         expect(result[0].id).to.equal('7');
+        expect(result[0].email).to.equal('seven@test.nl');
         expect(result[0].gigya.UID).to.equal('7');
         expect(result[0].gigya.email).to.equal('seven@test.nl');
         expect(result[0].dataScopes.profile.some_value).to.equal("new_value");

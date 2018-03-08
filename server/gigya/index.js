@@ -241,25 +241,25 @@ function upsertUser (accountInfo) {
   const selector = {
     $or: [
       { 'gigya.UID': accountInfo.UID },
-      { id: accountInfo.profile.email.toLowerCase() },
-      { email: accountInfo.profile.email.toLowerCase() },
-      { id: accountInfo.UID }
+      { id: accountInfo.UID },
+      { id: accountInfo.profile.email.toLowerCase() }
     ]
   };
 
   const set = {
+    id: accountInfo.UID,
+    email: accountInfo.profile.email.toLowerCase(),
+    provider: 'gigya',
     gigya: {
       UID: accountInfo.UID,
       loginProvider: accountInfo.loginProvider,
       // profile: accountInfo.profile,
       // emails: [].concat(accountInfo.emails.verified, accountInfo.emails.unverified),
-      email: accountInfo.profile.email
+      email: accountInfo.profile.email.toLowerCase()
     }
   };
 
   let setOnInsert = {
-    id: accountInfo.profile.email.toLowerCase(),
-    email: accountInfo.profile.email.toLowerCase(),
     createdAt: new Date(),
     dataScopes: {}
   };

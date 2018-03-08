@@ -85,7 +85,7 @@ describe('gigya notifications - functional tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({id: '1@test.nl'}).toArray())
+      .then(() => MongoDB.collection('users').find({id: '1'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0]).not.to.be.null();
@@ -93,7 +93,7 @@ describe('gigya notifications - functional tests', () => {
         expect(result[0].createdAt).to.be.a.date();
         return Promise.resolve();
       })
-      .then(() => MongoDB.collection('users').find({id: '2@test.nl'}).toArray())
+      .then(() => MongoDB.collection('users').find({id: '2'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0]).not.to.be.null();
@@ -152,12 +152,12 @@ describe('gigya notifications - functional tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({id: '1@test.nl'}).toArray())
+      .then(() => MongoDB.collection('users').find({id: '1'}).toArray())
       .then(result => {
         expect(result.length).to.equal(0);
         return Promise.resolve();
       })
-      .then(() => MongoDB.collection('deleted_users').find({id: '1@test.nl'}).toArray())
+      .then(() => MongoDB.collection('deleted_users').find({id: '1'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0].deletedAt).to.be.a.date();
@@ -209,7 +209,7 @@ describe('gigya notifications - functional tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({id: '3@test.nl'}).toArray())
+      .then(() => MongoDB.collection('users').find({id: '3'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0].email).to.equal('3@test.nl');

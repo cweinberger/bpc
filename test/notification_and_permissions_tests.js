@@ -114,11 +114,11 @@ describe('gigya notifications after permissions - integration tests', () => {
     .then(() => {
       return new Promise(resolve => setTimeout(resolve, 1000));
     })
-    .then(() => MongoDB.collection('users').find({email: '4@test.nl'}).toArray())
+    .then(() => MongoDB.collection('users').find({id: '4'}).toArray())
     .then(result => {
       expect(result).not.to.be.null();
       expect(result.length).to.equal(1);
-      expect(result[0].id).to.be.equal('4@test.nl');
+      expect(result[0].id).to.be.equal('4');
       expect(result[0].email).to.equal('4@test.nl');
       expect(result[0].gigya.UID).to.equal('4');
       expect(result[0].gigya.email).to.equal('4@test.nl');

@@ -7,9 +7,10 @@ const MongoDB = require('./../mongo/mongodb_client');
 function stdFilter(user){
   return {
     $or: [
+      { 'gigya.UID': user },
+      { 'gigya.email': user.toLowerCase() },
       { id: user },
-      { email: user.toLowerCase() },
-      { 'gigya.UID': user }
+      { id: user.toLowerCase() }
     ]
   };
 }
@@ -107,7 +108,7 @@ module.exports.set = function({user, scope, payload}) {
   // We are setting both 'id' and 'email' to the 'user'.
   // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
   let setOnInsert = {
-    id: user,
+    id: user.toLowerCase(),
     email: user.toLowerCase(),
     createdAt: new Date()
     // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
@@ -132,9 +133,7 @@ module.exports.set = function({user, scope, payload}) {
   }
 
   const update = {
-    $currentDate: {
-      'lastUpdated': { $type: "date" }
-    },
+    $currentDate: { 'lastUpdated': { $type: "date" } },
     $set: set,
     $setOnInsert: setOnInsert
   };

@@ -36,26 +36,25 @@ module.exports.register = function (server, options, next) {
       // I'm am in the transition of moving the keys.
       // So this is to be backwards compatible
 
-      if(request.query.id){
+      if(request.query.id) {
         query = {
           $or: [
             { id: request.query.id },
-            { email: request.query.id }
+            { 'gigya.UID': request.query.id }
           ]
         };
-      } else if (request.query.email){
-        let email = request.query.email.toLowerCase();
+      } else if (request.query.email) {
         query = {
           $or: [
-            { id: email },
-            { email: email }
+            { 'gigya.email': request.query.email.toLowerCase() },
+            { id: request.query.email }
           ]
         };
-      } else if (request.query.UID){
+      } else if (request.query.UID) {
         query = {
           $or: [
-            { id: request.query.UID },
-            { 'gigya.UID': request.query.UID }
+            { 'gigya.UID': request.query.UID },
+            { id: request.query.UID }
           ]
         };
       } else {
@@ -242,7 +241,7 @@ function upsertUser (accountInfo) {
     $or: [
       { 'gigya.UID': accountInfo.UID },
       { id: accountInfo.UID },
-      { id: accountInfo.profile.email.toLowerCase() }
+      { email: accountInfo.profile.email.toLowerCase() }
     ]
   };
 
@@ -283,7 +282,7 @@ function upsertUser (accountInfo) {
     upsert: true
   };
 
-  return MongoDB.collection('users').update(selector, operators, options);
+  return MongoDB.collection('users').updateOne(selector, operators, options);
 };
 
 

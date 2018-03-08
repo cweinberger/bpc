@@ -5,7 +5,7 @@
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./mocks/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_mock');
 // const Permissions = require('./../server/permissions');
 
 // Test shortcuts.
@@ -50,7 +50,7 @@ describe('permissions - functional tests', () => {
     });
 
     it('getting first user bt permissions by provider and uppercase email', (done) => {
-      bpc_helper.request({ url: '/permissions/gigya/FIRST_USER@berlingskemedia.dk/bt' }, appTicket)
+      bpc_helper.request({ url: '/permissions/FIRST_USER@berlingskemedia.dk/bt' }, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.bt_subscription_tier).to.equal('free');

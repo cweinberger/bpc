@@ -51,9 +51,13 @@ function createGigyaRsvp(data) {
     }
 
     return Promise.all([
-      findApplication({ app: data.app, provider: data.provider }),
+      findApplication(data),
+      // findApplication({ app: data.app, provider: data.provider }),
+      // findGrant({ user: result.body.UID, app: data.app })
       findGrant({ user: result.body.profile.email.toLowerCase(), app: data.app })
+      // findGrant({ $or: [ { user: result.body.UID }, { user: result.body.profile.email.toLowerCase() } ], app: data.app })
     ])
+    // .then(results => createRsvp(results[0], results[1], result.body.UID));
     .then(results => createRsvp(results[0], results[1], result.body.profile.email.toLowerCase()));
   });
 }
@@ -69,9 +73,13 @@ function createGoogleRsvp(data) {
     }
 
     return Promise.all([
-      findApplication({ app: data.app, provider: data.provider }),
+      findApplication(data),
+      // findApplication({ app: data.app, provider: data.provider }),
+      // findGrant({ user: result.user_id, app: data.app })
       findGrant({ user: result.email.toLowerCase(), app: data.app })
+      // findGrant({ $or: [ { user: result.user_id }, { user: result.email.toLowerCase() } ], app: data.app })
     ])
+    // .then(results => createRsvp(results[0], results[1], result.user_id));
     .then(results => createRsvp(results[0], results[1], result.email.toLowerCase()));
   });
 }
@@ -96,10 +104,10 @@ function findApplication({app, provider}) {
 }
 
 
-function findGrant({user, app}) {
+function findGrant(query) {
   return MongoDB.collection('grants')
   .findOne(
-    { user: user, app: app },
+    query,
     { fields: { _id: 0 } }
   )
   .then(grant => {

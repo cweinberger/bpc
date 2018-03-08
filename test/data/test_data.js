@@ -6,7 +6,6 @@ module.exports = {
   users: {
     simple_first_user: {
       id: '3218736128736123215732',
-      email: 'first_user@berlingskemedia.dk',
       gigya: {
         UID: '3218736128736123215732',
         email: 'first_user@berlingskemedia.dk'
@@ -25,7 +24,6 @@ module.exports = {
     },
     simple_second_user: {
       id: '5347895384975934842757',
-      email: 'second_user@berlingskemedia.dk',
       gigya: {
         UID: '5347895384975934842757',
         email: 'second_user@berlingskemedia.dk'
@@ -44,7 +42,6 @@ module.exports = {
     },
     mkoc_user: {
       id: '117880216634946654515',
-      email: 'mkoc@berlingskemedia.dk',
       gigya: {
         UID: '5347895384975934842757',
         email: 'mkoc@berlingskemedia.dk'

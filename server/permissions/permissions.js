@@ -2,6 +2,7 @@
 'use strict';
 
 const Boom = require('boom');
+const Joi = require('joi');
 const MongoDB = require('./../mongo/mongodb_client');
 
 function stdFilter(user){
@@ -10,10 +11,68 @@ function stdFilter(user){
       { 'gigya.UID': user },
       { 'gigya.email': user.toLowerCase() },
       { id: user },
-      { id: user.toLowerCase() }
+      { id: user.toLowerCase() },
+      { email: user.toLowerCase() }
     ]
   };
 }
+
+module.exports.set = function({user, scope}, payload) {
+
+  if (!user || !scope) {
+    return Promise.reject(Boom.badRequest('user or scope missing'));
+  }
+
+  const filter = stdFilter(user);
+
+  let set = {};
+
+  const valid_email = Joi.validate({ email: user }, {email: Joi.string().email()});
+
+  // We are setting 'id' = 'user'.
+  // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
+  let setOnInsert = {
+    id: user.toLowerCase(),
+    email: valid_email.error === null ? user.toLowerCase() : null,
+    provider: '',
+    createdAt: new Date()
+    // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
+  };
+
+
+  if (MongoDB.isMock) {
+
+    set.dataScopes = {};
+    set.dataScopes[scope] = payload;
+
+    // We are adding the $set onto $setOnInsert
+    //   because apparently mongo-mock does not use $set when inserting (upsert=true)
+    Object.assign(setOnInsert, set);
+
+  } else {
+
+    Object.keys(payload).forEach(function(field){
+      set['dataScopes.'.concat(scope,'.',field)] = payload[field];
+    });
+
+  }
+
+  const update = {
+    $currentDate: { 'lastUpdated': { $type: "date" } },
+    $set: set,
+    $setOnInsert: setOnInsert
+  };
+
+  const options = {
+    upsert: true
+    //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+    //  collation: <document>
+  };
+
+  return MongoDB.collection('users').updateOne(filter, update, options);
+};
+
+
 
 module.exports.get = function({user, scope}) {
 
@@ -91,62 +150,8 @@ module.exports.count = function({user, scope}, query) {
   });
 
   return MongoDB.collection('users').count(filter, {limit: 1});
-
 };
 
-
-module.exports.set = function({user, scope, payload}) {
-
-  if (!user || !scope) {
-    return Promise.reject(Boom.badRequest('user or scope missing'));
-  }
-
-  const filter = stdFilter(user);
-
-  let set = {};
-
-  // We are setting both 'id' and 'email' to the 'user'.
-  // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
-  let setOnInsert = {
-    id: user.toLowerCase(),
-    email: user.toLowerCase(),
-    createdAt: new Date()
-    // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
-  };
-
-
-  if (MongoDB.isMock) {
-
-    set.dataScopes = {};
-    set.dataScopes[scope] = payload;
-
-    // We are adding the $set onto $setOnInsert
-    //   because apparently mongo-mock does not use $set when inserting (upsert=true)
-    Object.assign(setOnInsert, set);
-
-  } else {
-
-    Object.keys(payload).forEach(function(field){
-      set['dataScopes.'.concat(scope,'.',field)] = payload[field];
-    });
-
-  }
-
-  const update = {
-    $currentDate: { 'lastUpdated': { $type: "date" } },
-    $set: set,
-    $setOnInsert: setOnInsert
-  };
-
-  const options = {
-    upsert: true
-    //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
-    //  collation: <document>
-  };
-
-  return MongoDB.collection('users').updateOne(filter, update, options);
-
-};
 
 
 module.exports.update = function({user, scope, payload}) {

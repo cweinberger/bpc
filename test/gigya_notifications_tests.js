@@ -5,8 +5,8 @@
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./mocks/mongodb_mock');
-const Gigya = require('./mocks/gigya_mock');
+const MongoDB = require('./helpers/mongodb_mock');
+const Gigya = require('./helpers/gigya_stub');
 const gigya_helper = require('./helpers/gigya_helper');
 
 
@@ -14,7 +14,7 @@ const gigya_helper = require('./helpers/gigya_helper');
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
 
 
-describe('gigya notifications - functional tests', () => {
+describe('gigya notifications', () => {
 
   before(done => {
     MongoDB.reset().then(done);
@@ -89,7 +89,7 @@ describe('gigya notifications - functional tests', () => {
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0]).not.to.be.null();
-        expect(result[0].email).to.equal('1@test.nl');
+        expect(result[0].gigya.email).to.equal('1@test.nl');
         expect(result[0].createdAt).to.be.a.date();
         return Promise.resolve();
       })
@@ -97,7 +97,7 @@ describe('gigya notifications - functional tests', () => {
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0]).not.to.be.null();
-        expect(result[0].email).to.equal('2@test.nl');
+        expect(result[0].gigya.email).to.equal('2@test.nl');
         expect(result[0].createdAt).to.be.a.date();
 
         done();
@@ -212,7 +212,6 @@ describe('gigya notifications - functional tests', () => {
       .then(() => MongoDB.collection('users').find({id: '3'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
-        expect(result[0].email).to.equal('3@test.nl');
         expect(result[0].gigya.UID).to.equal('3');
         expect(result[0].gigya.email).to.equal('3@test.nl');
 
@@ -221,5 +220,113 @@ describe('gigya notifications - functional tests', () => {
       .catch(done);
     });
 
+  });
+
+  describe('accountRegistered changes email accountUpdated', () => {
+
+
+    before(done => {
+      Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '5', include: 'profile,emails'})
+      .onFirstCall().resolves({body: {UID: '5', profile: { email: 'FIVE@test.nl'}}})
+      .onSecondCall().resolves({body: {UID: '5', profile: { email: 'five_o@test.nl'}}});
+      done();
+    });
+
+    after(done => {
+      Gigya.callApi.reset();
+      done();
+    });
+
+
+
+    it('getting accountRegistered', (done) => {
+
+      const notifications_request = {
+        method: 'POST',
+        url: '/gigya/notifications',
+        headers: {
+        },
+        payload: {
+          "events": [
+            {
+              "type": "accountRegistered",
+              "id": "b3e95b42-5788-49a7-842a-90c0f183d656",
+              "timestamp": 1450011477,
+              "data": {
+                "uid": "5"
+              }
+            }
+          ]
+        },
+        "nonce": "8693aa10-9c75-48c9-a959-6ef1ae2b6b54",
+        "timestamp": 1450011479
+      };
+
+      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+
+      bpc_helper.request(notifications_request, null)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => {
+        return new Promise(resolve => setTimeout(resolve, 1000));
+      })
+      .then(() => MongoDB.collection('users').find({'gigya.UID': '5'}).toArray())
+      .then(result => {
+        expect(result).not.to.be.null();
+        expect(result.length).to.equal(1);
+        expect(result[0].id).to.be.equal('5');
+        expect(result[0].gigya.UID).to.equal('5');
+        expect(result[0].gigya.email).to.equal('five@test.nl');
+        expect(result[0].createdAt).to.be.a.date();
+      })
+      .then(done)
+      .catch(done);
+    });
+
+
+    it('getting accountUpdated with a new email', (done) => {
+
+      const notifications_request = {
+        method: 'POST',
+        url: '/gigya/notifications',
+        headers: {
+        },
+        payload: {
+          "events": [
+            {
+              "type": "accountUpdated",
+              "id": "b3e95b42-5788-49a7-842a-90c0f183d656",
+              "timestamp": 1450011477,
+              "data": {
+                "uid": "5"
+              }
+            }
+          ]
+        },
+        "nonce": "8693aa10-9c75-48c9-a959-6ef1ae2b6b54",
+        "timestamp": 1450011479
+      };
+
+      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+
+      bpc_helper.request(notifications_request, null)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => {
+        return new Promise(resolve => setTimeout(resolve, 1000));
+      })
+      .then(() => MongoDB.collection('users').find({'gigya.UID': '5'}).toArray())
+      .then(result => {
+        expect(result).not.to.be.null();
+        expect(result.length).to.equal(1);
+        expect(result[0].id).to.be.equal('5');
+        expect(result[0].gigya.email).to.equal('five_o@test.nl');
+      })
+      .then(done)
+      .catch(done);
+
+    });
   });
 });

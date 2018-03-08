@@ -2,7 +2,7 @@
 'use strict';
 
 if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
-  module.exports = require('../../test/mocks/mongodb_mock');
+  module.exports = require('../../test/helpers/mongodb_mock');
   return;
 }
 

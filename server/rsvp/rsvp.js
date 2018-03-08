@@ -16,8 +16,7 @@ module.exports = {
   create: function (data) {
     if (data.provider === 'gigya') {
       // return createGigyaRsvp(data).then(callback);
-      // return createGigyaRsvp(data);
-      return Promise.resolve({rsvp: ''})
+      return createGigyaRsvp(data);
     } else if (data.provider === 'google') {
       return createGoogleRsvp(data);
     } else {

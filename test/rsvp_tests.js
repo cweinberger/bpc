@@ -16,7 +16,6 @@ const OzLoadFuncs = require('./../server/oz_loadfuncs');
 // Test shortcuts.
 const { expect, describe, it, before, beforeEach, after } = exports.lab = require('lab').script();
 
-return;
 
 describe('rsvp unit tests', () => {
 

@@ -6,6 +6,7 @@ module.exports = {
   users: {
     simple_first_user: {
       id: '3218736128736123215732',
+      email: 'first_user@berlingskemedia.dk',
       gigya: {
         UID: '3218736128736123215732',
         email: 'first_user@berlingskemedia.dk'
@@ -24,6 +25,7 @@ module.exports = {
     },
     simple_second_user: {
       id: '5347895384975934842757',
+      email: 'second_user@berlingskemedia.dk',
       gigya: {
         UID: '5347895384975934842757',
         email: 'second_user@berlingskemedia.dk'
@@ -38,6 +40,37 @@ module.exports = {
           berlingske_paywall: true,
           berlingske_subscription_tier: 'premium'
         }
+      }
+    },
+    simple_third_user: {
+      id: 'THIRD_USER@berlingskemedia.dk',
+      email: 'third_user@berlingskemedia.dk',
+      gigya: {
+        UID: '5347895384975934842758',
+        email: 'third_user@berlingskemedia.dk'
+      },
+      lastLogin: new Date(),
+      dataScopes: {
+        'bt': {
+          bt_paywall: true,
+          bt_subscription_tier: 'premium',
+          third_user: true
+        },
+        'berlingske': {
+          berlingske_paywall: true,
+          berlingske_subscription_tier: 'premium'
+        }
+      }
+    },
+    user_with_no_datascopes: {
+      id: 'user_with_no_datascopes',
+      email: 'user_with_no_datascopes@berlingskemedia.dk',
+      gigya: {
+        UID: '5347895384975934842759',
+        email: 'user_with_no_datascopes@berlingskemedia.dk'
+      },
+      lastLogin: new Date(),
+      dataScopes: {
       }
     },
     mkoc_user: {
@@ -125,6 +158,13 @@ module.exports = {
       algorithm: 'sha256',
       settings: { provider: 'gigya'}
     },
+    app_with_no_scopes: {
+      id: 'app_with_no_scopes',
+      scope: [],
+      key: 'fsdfsdfn7eyhsgdhjsgnweyi4t7syeir7bytise7rbe',
+      algorithm: 'sha256',
+      settings: { provider: 'gigya'}
+    }
   },
 
   grants: {
@@ -160,6 +200,12 @@ module.exports = {
       id: 'somerandomsdhjfkjlhsdfkjhsd',
       app: 'bt',
       user: 'first_user@berlingskemedia.dk',
+      scope: []
+    },
+    user_with_no_datascopes_grant: {
+      id: 'sdsadasdfvcxdfsfsd',
+      app: 'app_with_no_scopes',
+      user: 'user_with_no_datascopes@berlingskemedia.dk',
       scope: []
     }
   },

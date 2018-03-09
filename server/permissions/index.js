@@ -20,6 +20,25 @@ module.exports.register = function (server, options, next) {
   // TODO: Add audit trail for all requests in this plugin
   // TODO: Implement audit trail of what update was performed by what app.
 
+  server.route({
+    method: 'GET',
+    path: '/',
+    config: {
+      auth: {
+        access: {
+          entity: 'user' // <-- Important. Apps cannot request permissions with specifying what {user} to get
+        }
+      },
+      cors: stdCors,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: function(request, reply) {
+      reply({ status: 'OK' });
+    }
+  });
 
   server.route({
     method: 'GET',

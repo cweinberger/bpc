@@ -49,19 +49,12 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: false,
       cors: corsRules,
-      state: {
-        parse: true, // parse and store in request.state
-        failAction: 'error' // may also be 'ignore' or 'log'
-      },
       validate: {
         query: rsvpValidation
       }
     },
     handler: function (request, reply) {
-
-      let data = Object.assign({}, request.query, request.state);
-
-      Rsvp.create(data)
+      Rsvp.create(request.query)
       .then(result => {
         // After granting app access, the user returns to the app with the rsvp.
         // TODO: the returnUrl must be a setting on the App, and not part of the URL.
@@ -87,9 +80,7 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function (request, reply) {
-      let data = Object.assign({}, request.payload, request.state);
-
-      Rsvp.create(data)
+      Rsvp.create(request.payload)
       .then(result => reply(result).header('X-RSVP-TOKEN', result.rsvp))
       .catch(err => reply(err));
     }

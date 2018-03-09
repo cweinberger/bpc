@@ -51,8 +51,7 @@ function createGigyaRsvp(data) {
     }
 
     return Promise.all([
-      findApplication(data),
-      // findApplication({ app: data.app, provider: data.provider }),
+      findApplication({ app: data.app, provider: data.provider }),
       // findGrant({ user: result.body.UID, app: data.app })
       findGrant({ user: result.body.profile.email.toLowerCase(), app: data.app })
       // findGrant({ $or: [ { user: result.body.UID }, { user: result.body.profile.email.toLowerCase() } ], app: data.app })
@@ -73,8 +72,7 @@ function createGoogleRsvp(data) {
     }
 
     return Promise.all([
-      findApplication(data),
-      // findApplication({ app: data.app, provider: data.provider }),
+      findApplication({ app: data.app, provider: data.provider }),
       // findGrant({ user: result.user_id, app: data.app })
       findGrant({ user: result.email.toLowerCase(), app: data.app })
       // findGrant({ $or: [ { user: result.user_id }, { user: result.email.toLowerCase() } ], app: data.app })

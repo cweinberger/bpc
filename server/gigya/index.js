@@ -241,6 +241,7 @@ function upsertUser (accountInfo) {
     $or: [
       { 'gigya.UID': accountInfo.UID },
       { id: accountInfo.UID },
+      { id: accountInfo.profile.email.toLowerCase() },
       { email: accountInfo.profile.email.toLowerCase() }
     ]
   };

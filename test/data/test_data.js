@@ -93,7 +93,7 @@ module.exports = {
     },
     bt: {
       id: 'bt',
-      scope: ['bt'],
+      scope: ['bt', 'non_persisted_scope'],
       key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
       algorithm: 'sha256'
     },

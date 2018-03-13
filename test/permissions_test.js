@@ -209,6 +209,17 @@ describe('permissions - integration tests', () => {
       .then(done)
       .catch(done);
     });
+
+    it('validating scope that is not saved/persisten to the profile in MongoDB', (done) => {
+
+      bpc_helper.request({ url: '/permissions/non_persisted_scope'}, simple_first_user_ticket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        return Promise.resolve();
+      })
+      .then(done)
+      .catch(done);
+    });
   });
 
 
@@ -242,8 +253,17 @@ describe('permissions - integration tests', () => {
       .catch(done);
     });
 
+    it('getting third user by gigya UID', (done) => {
+      bpc_helper.request({ url: '/me' }, user_with_no_datascopes_ticket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        return Promise.resolve();
+      })
+      .then(done)
+      .catch(done);
+    });
 
-    it('getting third users permissions by gigya UID', (done) => {
+    it('getting third user permissions by gigya UID', (done) => {
       bpc_helper.request({ url: '/permissions' }, user_with_no_datascopes_ticket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
@@ -253,15 +273,5 @@ describe('permissions - integration tests', () => {
       .catch(done);
     });
 
-
-    it('getting third users permissions by gigya UID', (done) => {
-      bpc_helper.request({ url: '/me' }, user_with_no_datascopes_ticket)
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
-      })
-      .then(done)
-      .catch(done);
-    });
   });
 });

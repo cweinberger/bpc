@@ -76,50 +76,26 @@ const grantIsExpired = module.exports.grantIsExpired;
 // Here we are creating the app ticket
 function loadAppFunc(id, callback) {
 
-  if(callback === undefined){
-    callback = function(){};
-  }
-
   return MongoDB.collection('applications')
   .findOne({id:id}, {fields: {_id: 0}})
   .then(app => {
     if (app === null){
-      return callback(Boom.unauthorized('Unknown application'));
+      // This goes to the catch-block
+      return Promise.reject(Boom.unauthorized('Unknown application'));
     }
 
-    callback(null, app);
-    return Promise.resolve(app);
-
-    // // Dynamically adding the admin:{id} scope
-    // app.scope.push('admin:'.concat(app.id));
-    //
-    // if(app.scope.indexOf('admin:*') > -1) {
-    //
-    //   // This is a superadmin app. So we find all the id's so we can add the admin:{id} scopes
-    //   return MongoDB.collection('applications').find({ id:{ $ne: id }}, {_id: 0, id:1})
-    //   .toArray()
-    //   .then(otherApps => appendAllAdminScopes(app, otherApps))
-    //   .then(app => {
-    //     callback(null, app);
-    //     return Promise.resolve(app);
-    //   });
-    //
-    // } else {
-    //
-    //   callback(null, app);
-    //   return Promise.resolve(app);
-    //
-    // }
-    //
-    // function appendAllAdminScopes(mainApp, apps){
-    //   const adminScopes = apps.map(otherApp => 'admin:'.concat(otherApp.id));
-    //   mainApp.scope = mainApp.scope.concat(adminScopes);
-    //   return Promise.resolve(mainApp);
-    // }
+    if(callback !== undefined && typeof callback === 'function'){
+      return callback(null, app);
+    } else {
+      return Promise.resolve(app);
+    }
   })
   .catch(err => {
-    callback(err);
-    return Promise.reject(err);
+    if(callback !== undefined && typeof callback === 'function'){
+      return callback(err);
+    } else {
+      return Promise.reject(err);
+    }
   });
 };
 

@@ -9,9 +9,10 @@ function stdFilter(user){
   return {
     $or: [
       { id: user },
-      { email: user.toLowerCase() },
+      { id: user.toLowerCase() },
       { 'gigya.UID': user },
-      { id: user.toLowerCase() }
+      { 'gigya.email': user.toLowerCase() },
+      { email: user.toLowerCase() }
     ]
   };
 }

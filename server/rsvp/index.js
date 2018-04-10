@@ -16,29 +16,20 @@ const corsRules = {
 };
 
 const rsvpValidation = Joi.object().keys({
-  provider: Joi.string().valid('gigya', 'google').default('gigya'),
-  UID: Joi.string().when('provider', {
-    is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden()
-  }),
-  UIDSignature: Joi.string().when('provider', {
-    is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden()
-  }),
-  signatureTimestamp: Joi.string().when('provider', {
-    is: 'gigya', then: Joi.required(), otherwise: Joi.forbidden()
-  }),
-  ID: Joi.string().when('provider', {
-    is: 'google', then: Joi.required(), otherwise: Joi.forbidden()
-  }),
-  id_token: Joi.string().when('provider', {
-    is: 'google', then: Joi.required(), otherwise: Joi.forbidden()
-  }),
-  access_token: Joi.string().when('provider', {
-    is: 'google', then: Joi.required(), otherwise: Joi.forbidden()
-  }),
+  provider: Joi.strip(),
+  UID: Joi.string(),
+  UIDSignature: Joi.string(),
+  signatureTimestamp: Joi.string(),
+  ID: Joi.string(),
+  id_token: Joi.string(),
+  access_token: Joi.string(),
   email: Joi.strip(),
   app: Joi.string().required(),
   returnUrl: Joi.string().uri().optional()
-});
+})
+.xor('UID', 'ID')
+.with('UID', ['UIDSignature', 'signatureTimestamp'])
+.with('ID', ['id_token', 'access_token']);
 
 
 module.exports.register = function (server, options, next) {

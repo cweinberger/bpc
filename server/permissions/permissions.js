@@ -3,11 +3,13 @@
 
 const Boom = require('boom');
 const Joi = require('joi');
+const ObjectID = require('mongodb').ObjectID;
 const MongoDB = require('./../mongo/mongodb_client');
 
 function stdFilter(user){
   return {
     $or: [
+      { _id: new ObjectID(user) },
       { id: user },
       { id: user.toLowerCase() },
       { 'gigya.UID': user },

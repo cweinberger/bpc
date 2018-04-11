@@ -7,9 +7,19 @@ const ObjectID = require('mongodb').ObjectID;
 const MongoDB = require('./../mongo/mongodb_client');
 
 function stdFilter(user){
-  return {
+  return ObjectID.isValid(user)
+  ? {
     $or: [
       { _id: new ObjectID(user) },
+      { id: user },
+      { id: user.toLowerCase() },
+      { 'gigya.UID': user },
+      { 'gigya.email': user.toLowerCase() },
+      { email: user.toLowerCase() }
+    ]
+  }
+  : {
+    $or: [
       { id: user },
       { id: user.toLowerCase() },
       { 'gigya.UID': user },

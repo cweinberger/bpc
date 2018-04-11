@@ -3,6 +3,7 @@
 
 const Oz = require('oz');
 const Boom = require('boom');
+const Joi = require('joi');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
 const Gigya = require('./../gigya/gigya_client');
@@ -15,7 +16,7 @@ const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 module.exports = {
   create: function (data) {
 
-    return findApplication({ app: data.app })
+    return findApplication_v2({ id: data.app })
     .then(app => {
 
       const provider = app.settings && app.settings.provider ? app.settings.provider : 'gigya';
@@ -100,11 +101,22 @@ function createGoogleRsvp(data) {
 
 
 function validateGigyaSession(data) {
+  const exchangeUIDSignatureSchema = Joi.object().keys({
+    UID: Joi.string().required(),
+    UIDSignature: Joi.string().required(),
+    signatureTimestamp: Joi.string().required()
+  });
+
   const exchangeUIDSignatureParams = {
     UID: data.UID,
     UIDSignature: data.UIDSignature,
     signatureTimestamp: data.signatureTimestamp
   };
+
+  const validateResult = Joi.validate(exchangeUIDSignatureParams, exchangeUIDSignatureSchema);
+  if (validateResult.error){
+    return Promise.reject(Boom.badRequest(validateResult.error));
+  }
 
   return Gigya.callApi('/accounts.exchangeUIDSignature', exchangeUIDSignatureParams)
   .then(result => Gigya.callApi('/accounts.getAccountInfo', { UID: data.UID }))
@@ -122,6 +134,23 @@ function validateGigyaSession(data) {
 
 
 function validateGoogleSession(data) {
+  const tokeninfoSchemae = Joi.object().keys({
+    ID: Joi.string().required(),
+    id_token: Joi.string().required(),
+    access_token: Joi.string().required()
+  });
+
+  const tokeninfoParams = {
+    ID: data.ID,
+    id_token: data.id_token,
+    access_token: data.access_token
+  };
+
+  const validateResult = Joi.validate(tokeninfoParams, tokeninfoSchemae);
+  if (validateResult.error){
+    return Promise.reject(Boom.badRequest(validateResult.error));
+  }
+
   return Google.tokeninfo(data)
   .then(result => {
     if (!result.email) {
@@ -135,8 +164,7 @@ function validateGoogleSession(data) {
   });
 }
 
-
-function findApplication({app}) {
+function findApplication({app, provider}) {
   return MongoDB.collection('applications')
   .findOne(
     { id: app },
@@ -146,14 +174,13 @@ function findApplication({app}) {
       return Promise.reject(Boom.unauthorized('Unknown application'));
     } else if (app.settings && app.settings.disallowGrants){
       return Promise.reject(Boom.unauthorized('App disallow users'));
-    // } else if (app.settings && app.settings.provider && app.settings.provider !== provider){
-    //   return Promise.reject(Boom.unauthorized('Invalid provider for application'));
+    } else if (app.settings && app.settings.provider && app.settings.provider !== provider){
+      return Promise.reject(Boom.unauthorized('Invalid provider for application'));
     } else {
       return Promise.resolve(app);
     }
   });
 }
-
 
 function findGrant(query) {
   return MongoDB.collection('grants')
@@ -171,8 +198,25 @@ function findGrant(query) {
 }
 
 
+function findApplication_v2({id}) {
+  return MongoDB.collection('applications')
+  .findOne(
+    { id: id },
+    { fields: { _id: 0 } })
+  .then (app => {
+    if (app === null){
+      return Promise.reject(Boom.unauthorized('Unknown application'));
+    } else if (app.settings && app.settings.disallowGrants){
+      return Promise.reject(Boom.unauthorized('App disallow users'));
+    } else {
+      return Promise.resolve(app);
+    }
+  });
+}
+
+
+
 function findUser_v2(user) {
-  console.log('findUser_v2', user);
   return MongoDB.collection('users')
   .findOneAndUpdate(
     { provider: user.provider,
@@ -204,31 +248,9 @@ function findUser_v2(user) {
     }
   )
   .then(result => {
-    console.log('then', result);
+
     return Promise.resolve(result.value);
 
-    if(result.lastErrorObject.updatedExisting) {
-    } else {
-      new_user._id = result.insertedId;
-      return Promise.resolve(new_user);
-    }
-
-    if (!result) {
-
-      let new_user = Object.assign(user, {
-        createdAt: new Date(),
-        dataScopes: {}
-      });
-
-      return MongoDB.collection('users')
-      .insertOne(new_user)
-      .then(result => {
-        new_user._id = result.insertedId;
-        return Promise.resolve(new_user);
-      });
-    } else {
-      return Promise.resolve(result);
-    }
   })
   .catch(err => {
     console.error(err);

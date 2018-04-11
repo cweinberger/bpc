@@ -82,58 +82,13 @@ describe('rsvp unit tests', () => {
       done();
     });
 
-    it('throws an error for unsupported provider', done => {
-      Rsvp.create({
-        provider: 'illegal',
-        UID: '123',
-        email: 'some@email.com',
-        app: 'valid-app'
-      })
-      .then(rsvp => {
-        done(new Error('RSVP must not be issued'));
-      })
-      .catch(err => {
-        expect(err).to.exist();
-        done();
-      });
-    });
-
-    it('throws an error for mismatched emails (Gigya)', done => {
-      Rsvp.create({
-        provider: 'gigya',
-        UID: '123',
-        email: 'incorrect@domain.com'
-      })
-      .then(rsvp => {
-        done(new Error('RSVP must not be issued'));
-      })
-      .catch(err => {
-        expect(err).to.exist();
-        done();
-      });
-    });
-
-
-    it('throws an error for mismatched emails (Google)', done => {
-      Rsvp.create({
-        provider: 'google',
-        ID: '123',
-        email: 'incorrect@domain.com'
-      })
-      .then(rsvp => {
-        done(new Error('RSVP must not be issued'));
-      })
-      .catch(err => {
-        expect(err).to.exist();
-        done();
-      });
-    });
-
 
     it('fails for invalid app id (Gigya)', done => {
       Rsvp.create({
         provider: 'gigya',
         UID: '123',
+        UIDSignature:'UIDSignature_random',
+        signatureTimestamp:'signatureTimestamp_random',
         email: 'some@email.com',
         app: 'invalid-app'
       })
@@ -152,6 +107,8 @@ describe('rsvp unit tests', () => {
       Rsvp.create({
         provider: 'gigya',
         UID: '123',
+        UIDSignature:'UIDSignature_random',
+        signatureTimestamp:'signatureTimestamp_random',
         email: 'some@email.com',
         app: 'valid-app'
       })
@@ -198,6 +155,8 @@ describe('rsvp unit tests', () => {
       Rsvp.create({
         provider: 'gigya',
         UID: 'userwithnopreviousgrant',
+        UIDSignature:'UIDSignature_random',
+        signatureTimestamp:'signatureTimestamp_random',
         email: 'userwithnopreviousgrant@email.com',
         app: 'valid-app'
       })
@@ -209,10 +168,18 @@ describe('rsvp unit tests', () => {
         // Wating a second to make sure the grant is saved to MongoDB
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'valid-app'}))
+      .then(() => MongoDB.collection('users').findOne({id:'userwithnopreviousgrant'}))
+      .then(user => {
+        expect(user).to.not.be.null();
+        expect(user.email).to.be.equal('userwithnopreviousgrant@email.com');
+        expect(user.provider).to.be.equal('gigya');
+        return Promise.resolve(user);
+      })
+      .then(user => MongoDB.collection('grants').findOne({user: user._id, app: 'valid-app'}))
       .then(grant => {
         expect(grant).to.not.be.null();
         expect(grant.id).to.have.length(40);
+        expect(grant.app).to.be.equal('valid-app');
         done();
       })
       .catch(err => {
@@ -224,6 +191,8 @@ describe('rsvp unit tests', () => {
       Rsvp.create({
         provider: 'gigya',
         UID: 'userwithnopreviousgrant',
+        UIDSignature:'UIDSignature_random',
+        signatureTimestamp:'signatureTimestamp_random',
         email: 'userwithnopreviousgrant@email.com',
         app: 'app_with_disallowAutoCreationGrants'
       })
@@ -341,10 +310,9 @@ describe('rsvp integration test - google', () => {
 
   it('get rsvp for a google user', done => {
     let payload = {
-      provider: 'google',
       ID: 'doesnotexistsatgoogle',
       email: 'doensnotexists@testgoogle.nl',
-      app: 'valid-app',
+      app: 'valid-google-app',
       id_token: 'random_id_token_hdjshjdhs',
       access_token: 'random_access_token_kfjsdhkjfhsdwe'
     };
@@ -352,13 +320,13 @@ describe('rsvp integration test - google', () => {
     bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
     .then(response => {
       expect(response.statusCode).to.be.equal(200);
-      expect(response.result.rsvp).to.have.length(334);
+      expect(response.result.rsvp.length).to.be.within(300,360);
       done();
     })
     .catch(done);
   });
 
-  it('get rsvp for a google user', done => {
+  it('get rsvp for a google user but app is using gigya', done => {
     let payload = {
       provider: 'google',
       ID: 'doesnotexistsatgoogle',
@@ -370,7 +338,7 @@ describe('rsvp integration test - google', () => {
 
     bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
     .then(response => {
-      expect(response.statusCode).to.be.equal(401);
+      expect(response.statusCode).to.be.equal(400);
       done();
     })
     .catch(done);

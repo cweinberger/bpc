@@ -217,6 +217,19 @@ function findApplication_v2({id}) {
 
 
 function findUser_v2(user) {
+  if (MongoDB.isMock) {
+    const temp_user = {
+      _id: crypto.randomBytes(20).toString('hex'),
+      id: user.id,
+      email: user.email,
+      provider: user.provider,
+      createdAt: new Date(),
+      dataScopes: {}
+    };
+    MongoDB.collection('users').insert(temp_user);
+    return Promise.resolve(temp_user);
+  }
+
   return MongoDB.collection('users')
   .findOneAndUpdate(
     { provider: user.provider,

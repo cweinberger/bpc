@@ -8,16 +8,7 @@ const MongoDB = require('./../mongo/mongodb_client');
 
 function stdFilter(user){
   return ObjectID.isValid(user)
-  ? {
-    $or: [
-      { _id: new ObjectID(user) },
-      { id: user },
-      { id: user.toLowerCase() },
-      { 'gigya.UID': user },
-      { 'gigya.email': user.toLowerCase() },
-      { email: user.toLowerCase() }
-    ]
-  }
+  ? { _id: new ObjectID(user) }
   : {
     $or: [
       { id: user },
@@ -123,7 +114,8 @@ module.exports.get = function({user, scope}) {
     projection: projection
   };
 
-  return MongoDB.collection('users').findOneAndUpdate(filter, update, options)
+  return MongoDB.collection('users')
+  .findOneAndUpdate(filter, update, options)
   .then(result => {
     if (result.n === 0 || result.value === null) {
       return Promise.reject(Boom.notFound());
@@ -161,12 +153,13 @@ module.exports.count = function({user, scope}, query) {
     }
   });
 
-  return MongoDB.collection('users').count(filter, {limit: 1});
+  return MongoDB.collection('users')
+  .count(filter, {limit: 1});
 };
 
 
 
-module.exports.update = function({user, scope, payload}) {
+module.exports.update = function({app, user, scope, payload}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
@@ -198,7 +191,8 @@ module.exports.update = function({user, scope, payload}) {
     returnOriginal: false
   };
 
-  return MongoDB.collection('users').findOneAndUpdate(filter, update, options);
+  return MongoDB.collection('users')
+  .findOneAndUpdate(filter, update, options);
 
   function disallowedUpdateOperators(operator) {
     return [

@@ -101,15 +101,11 @@ module.exports.register = function (server, options, next) {
       }
     },
     handler: function(request, reply){
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket){
-        if (err) {
-          return reply(err)
-        }
-
-        getAnonymousPermissions(ticket)
-        .then(result => reply(result))
-        .catch(err => reply(err));
-      });
+      const ticket = request.auth.credentials;
+      
+      getAnonymousPermissions(ticket)
+      .then(result => reply(result))
+      .catch(err => reply(err));
     }
   })
 

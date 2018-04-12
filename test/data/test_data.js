@@ -95,7 +95,10 @@ module.exports = {
       id: 'bt',
       scope: ['bt', 'non_persisted_scope'],
       key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        includeScopeInPrivatExt: true
+      }
     },
     berlingske: {
       id: 'berlingske',
@@ -111,7 +114,10 @@ module.exports = {
       ],
       delegate: false,
       key: 'something_long_and_random',
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        includeScopeInPrivatExt: true
+      }
     },
     valid_google_app: {
       id: 'valid-google-app',

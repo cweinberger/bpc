@@ -46,7 +46,7 @@ module.exports.set = function({user, scope}, payload) {
   let setOnInsert = {
     id: user.toLowerCase(),
     email: valid_email.error === null ? user.toLowerCase() : null,
-    provider: '',
+    provider: null,
     createdAt: new Date()
     // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
   };

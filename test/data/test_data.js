@@ -113,6 +113,19 @@ module.exports = {
       key: 'something_long_and_random',
       algorithm: 'sha256'
     },
+    valid_google_app: {
+      id: 'valid-google-app',
+      scope: [
+        'business:all',
+        'bt:all'
+      ],
+      delegate: false,
+      key: 'something_long_and_random',
+      algorithm: 'sha256',
+      settings: {
+        provider: 'google'
+      }
+    },
     delete_me_app: {
       id: 'delete-me-app',
       scope: [],
@@ -156,14 +169,18 @@ module.exports = {
       scope: [],
       key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
       algorithm: 'sha256',
-      settings: { provider: 'gigya'}
+      settings: {
+        provider: 'gigya'
+      }
     },
     app_with_no_scopes: {
       id: 'app_with_no_scopes',
       scope: [],
       key: 'fsdfsdfn7eyhsgdhjsgnweyi4t7syeir7bytise7rbe',
       algorithm: 'sha256',
-      settings: { provider: 'gigya'}
+      settings: {
+        provider: 'gigya'
+      }
     }
   },
 

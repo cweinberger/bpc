@@ -3,10 +3,22 @@
 
 const Boom = require('boom');
 const Joi = require('joi');
+const ObjectID = require('mongodb').ObjectID;
 const MongoDB = require('./../mongo/mongodb_client');
 
 function stdFilter(user){
-  return {
+  return ObjectID.isValid(user)
+  ? {
+    $or: [
+      { _id: new ObjectID(user) },
+      { id: user },
+      { id: user.toLowerCase() },
+      { 'gigya.UID': user },
+      { 'gigya.email': user.toLowerCase() },
+      { email: user.toLowerCase() }
+    ]
+  }
+  : {
     $or: [
       { id: user },
       { id: user.toLowerCase() },
@@ -34,7 +46,7 @@ module.exports.set = function({user, scope}, payload) {
   let setOnInsert = {
     id: user.toLowerCase(),
     email: valid_email.error === null ? user.toLowerCase() : null,
-    provider: '',
+    provider: null,
     createdAt: new Date()
     // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
   };

@@ -49,7 +49,7 @@ module.exports.register = function (server, options, next) {
 
       const ticket = request.auth.credentials;
 
-      Permissions.get(ticket)
+      Permissions.findPermissions(ticket)
       .then(reply)
       .catch(reply);
 

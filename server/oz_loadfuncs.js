@@ -217,7 +217,7 @@ function buildExt(grant, app){
       }
     };
 
-    return Permissions.get(grant)
+    return Permissions.findPermissions(grant)
     .then(dataScopes => {
       if (dataScopes === null) {
         return Promise.resolve(null);

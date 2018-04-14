@@ -6,6 +6,124 @@ const Joi = require('joi');
 const ObjectID = require('mongodb').ObjectID;
 const MongoDB = require('./../mongo/mongodb_client');
 
+
+module.exports = {
+
+  findPermissions: findPermissions,
+
+  getPermissions: function(request, reply) {
+    const ticket = request.auth.credentials;
+
+    findPermissions(ticket)
+    .then(reply)
+    .catch(reply);
+  },
+
+  getPermissionsScope: function(request, reply) {
+
+    const ticket = request.auth.credentials;
+
+    // Should we query the database or look in the private part of the ticket?
+    // When the app setting includeScopeInPrivatExt is set to true, we can validate the users scope by looking in ticket.ext.private.
+    // But we need to find out how we should handle any changes to the scope (by POST/PATCH). Should we then reissue the ticket with new ticket.ext.private?
+    if (true) {
+
+      if (Object.keys(request.query).length > 0) {
+
+        countPermissions({
+          user: ticket.user,
+          scope: request.params.scope
+        },
+        request.query)
+        .then(result => {
+          if(result === 1) {
+            reply({ status: 'OK' });
+          } else {
+            reply(Boom.notFound());
+          }
+        })
+        .catch(err => reply(err));
+
+      } else {
+
+        findPermissions({
+          user: ticket.user,
+          scope: request.params.scope
+        })
+        .then(dataScopes => reply(dataScopes[request.params.scope]
+          ? dataScopes[request.params.scope]
+          : {}))
+        .catch(err => reply(err));
+      }
+
+
+    } else {
+
+      if (ticket.ext.private === undefined || ticket.ext.private[request.params.scope] === undefined){
+        reply(Boom.forbidden());
+      }
+
+      // We only want to reply the permissions within the requested scope
+      var scopePermissions = Object.assign({}, ticket.ext.private[request.params.scope]);
+
+      reply(scopePermissions);
+    }
+  },
+
+  getPermissionsUserScope: function(request, reply) {
+// console.log('fdfdfd', request.auth.credentials.app);
+    if (Object.keys(request.query).length > 0) {
+
+      countPermissions(request.params, request.query)
+      .then(result => {
+        if(result === 1) {
+          reply({ status: 'OK' });
+        } else {
+          reply(Boom.notFound());
+        }
+      })
+      .catch(err => reply(err));
+
+    } else {
+
+      findPermissions(request.params)
+      .then(dataScopes => reply(dataScopes[request.params.scope]
+        ? dataScopes[request.params.scope]
+        : {}))
+      .catch(err => reply(err));
+
+    }
+  },
+
+  postPermissionsUserScope: function(request, reply) {
+
+    setPermissions(request.params, request.payload)
+    .then(result => reply({'status': 'ok'}))
+    .catch(err => reply(err));
+
+  },
+
+  patchPermissionsUserScope: function(request, reply) {
+
+    updatePermissions({
+      app: request.auth.credentials.app,
+      user: request.params.user,
+      scope: request.params.scope,
+      payload: request.payload
+    })
+    .then(result => {
+      if (result.value === null || result.n === 0) {
+        reply(Boom.notFound());
+      } else {
+        reply(result.value.dataScopes[request.params.scope]);
+      }
+    })
+    .catch(err => reply(Boom.badRequest(err.message)));
+  }
+
+};
+
+
 function stdFilter(user){
   return ObjectID.isValid(user)
   ? { _id: new ObjectID(user) }
@@ -20,7 +138,7 @@ function stdFilter(user){
   };
 }
 
-module.exports.set = function({user, scope}, payload) {
+function setPermissions({user, scope}, payload) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
@@ -30,7 +148,7 @@ module.exports.set = function({user, scope}, payload) {
 
   let set = {};
 
-  const valid_email = Joi.validate({ email: user }, {email: Joi.string().email()});
+  const valid_email = Joi.validate({ email: user }, { email: Joi.string().email() });
 
   // We are setting 'id' = 'user'.
   // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
@@ -77,7 +195,7 @@ module.exports.set = function({user, scope}, payload) {
 
 
 
-module.exports.get = function({user, scope}) {
+function findPermissions({user, scope}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
@@ -133,7 +251,7 @@ module.exports.get = function({user, scope}) {
 };
 
 
-module.exports.count = function({user, scope}, query) {
+function countPermissions({user, scope}, query) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
@@ -159,7 +277,7 @@ module.exports.count = function({user, scope}, query) {
 
 
 
-module.exports.update = function({app, user, scope, payload}) {
+function updatePermissions({app, user, scope, payload}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));

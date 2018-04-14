@@ -278,7 +278,11 @@ function findGrant_v2({app, user}) {
   return MongoDB.collection('grants')
   .findOne(
     { app: app.id,
-      $or: [ {user: user.id}, {user: user.email} ]
+      $or: [
+        {user: user._id},
+        {user: user.id},
+        {user: user.email}
+      ]
     }
   )
   .then(grant => {
@@ -286,7 +290,7 @@ function findGrant_v2({app, user}) {
     if (grant) {
 
       // Converting to new grant.user value
-      grant.user = user._id;
+      grant.user = user.id;
       MongoDB.collection('grants').save(grant);
 
       if (OzLoadFuncs.grantIsExpired(grant)) {
@@ -297,10 +301,10 @@ function findGrant_v2({app, user}) {
 
     } else {
 
-      // Trying to find a grant the new way - by using user._id
+      // Trying to find a grant the new way - by using user.id
 
       return MongoDB.collection('grants')
-      .findOne({ app: app.id, user: user._id })
+      .findOne({ app: app.id, user: user.id })
       .then(grant => {
 
         if(grant) {
@@ -322,7 +326,7 @@ function findGrant_v2({app, user}) {
             grant = {
               id: crypto.randomBytes(20).toString('hex'),
               app: app.id,
-              user: user._id,
+              user: user.id,
               scope: [],
               exp: null
             };

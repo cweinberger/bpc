@@ -32,9 +32,9 @@ module.exports = {
 
         countPermissions({
           user: ticket.user,
-          scope: request.params.scope
-        },
-        request.query)
+          scope: request.params.scope,
+          query: request.query
+        })
         .then(result => {
           if(result === 1) {
             reply({ status: 'OK' });
@@ -71,33 +71,72 @@ module.exports = {
   },
 
   getPermissionsUserScope: function(request, reply) {
-// console.log('fdfdfd', request.auth.credentials.app);
-    if (Object.keys(request.query).length > 0) {
 
-      countPermissions(request.params, request.query)
-      .then(result => {
-        if(result === 1) {
-          reply({ status: 'OK' });
+    // DENNNE HVIS user ER EN EMAIL
+    const input_is_email = Joi.validate({ email: request.params.user }, { email: Joi.string().email() });
+    if(input_is_email.error === null) {
+
+      console.log('input_is_email B', request.params.user);
+      console.log('app', request.auth.credentials.app);
+      MongoDB.collection('applications')
+      .findOne(
+        { id: request.auth.credentials.app },
+        { fields: { 'settings.provider': 1 } })
+      .then(res => {
+        if(res.settings && res.settings.provider) {
+          execute({ provider: res.settings.provider });
         } else {
-          reply(Boom.notFound());
+          execute({ provider: null });
         }
       })
-      .catch(err => reply(err));
-
     } else {
-
-      findPermissions(request.params)
-      .then(dataScopes => reply(dataScopes[request.params.scope]
-        ? dataScopes[request.params.scope]
-        : {}))
-      .catch(err => reply(err));
-
+      execute({ provider: null });
     }
+
+    function execute({provider}){
+      if (Object.keys(request.query).length > 0) {
+
+        countPermissions({
+          user: request.params.user,
+          scope: request.params.scope,
+          query: request.query
+        })
+        .then(result => {
+          if(result === 1) {
+            reply({ status: 'OK' });
+          } else {
+            reply(Boom.notFound());
+          }
+        })
+        .catch(err => reply(err));
+
+      } else {
+
+        findPermissions({
+          user: request.params.user,
+          scope: request.params.scope
+        })
+        .then(dataScopes => reply(dataScopes[request.params.scope]
+          ? dataScopes[request.params.scope]
+          : {}))
+          .catch(err => reply(err));
+
+        }
+    }
+
   },
 
   postPermissionsUserScope: function(request, reply) {
 
-    setPermissions(request.params, request.payload)
+    // DENNNE HVIS user ER EN EMAIL
+
+    const input_is_email = Joi.validate({ email: request.params.user }, { email: Joi.string().email() });
+
+    setPermissions({
+      user: request.params.user,
+      scope: request.params.scope,
+      permissions: request.payload
+    })
     .then(result => reply({'status': 'ok'}))
     .catch(err => reply(err));
 
@@ -105,11 +144,15 @@ module.exports = {
 
   patchPermissionsUserScope: function(request, reply) {
 
+    // DENNNE HVIS user ER EN EMAIL
+
+    const input_is_email = Joi.validate({ email: request.params.user }, { email: Joi.string().email() });
+
     updatePermissions({
       app: request.auth.credentials.app,
       user: request.params.user,
       scope: request.params.scope,
-      payload: request.payload
+      permissions: request.payload
     })
     .then(result => {
       if (result.value === null || result.n === 0) {
@@ -124,27 +167,13 @@ module.exports = {
 };
 
 
-function stdFilter(user){
-  return ObjectID.isValid(user)
-  ? { _id: new ObjectID(user) }
-  : {
-    $or: [
-      { id: user },
-      { id: user.toLowerCase() },
-      { 'gigya.UID': user },
-      { 'gigya.email': user.toLowerCase() },
-      { email: user.toLowerCase() }
-    ]
-  };
-}
-
-function setPermissions({user, scope}, payload) {
+function setPermissions({user, scope, permissions}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  const filter = stdFilter(user);
+  const filter = stdFilter({ input: user });
 
   let set = {};
 
@@ -152,6 +181,7 @@ function setPermissions({user, scope}, payload) {
 
   // We are setting 'id' = 'user'.
   // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
+  // Otherwise, getting an RSVP also updates the id to Gigya UID or Google ID
   let setOnInsert = {
     id: user.toLowerCase(),
     email: valid_email.error === null ? user.toLowerCase() : null,
@@ -164,7 +194,7 @@ function setPermissions({user, scope}, payload) {
   if (MongoDB.isMock) {
 
     set.dataScopes = {};
-    set.dataScopes[scope] = payload;
+    set.dataScopes[scope] = permissions;
 
     // We are adding the $set onto $setOnInsert
     //   because apparently mongo-mock does not use $set when inserting (upsert=true)
@@ -172,8 +202,8 @@ function setPermissions({user, scope}, payload) {
 
   } else {
 
-    Object.keys(payload).forEach(function(field){
-      set['dataScopes.'.concat(scope,'.',field)] = payload[field];
+    Object.keys(permissions).forEach(function(field){
+      set['dataScopes.'.concat(scope,'.',field)] = permissions[field];
     });
 
   }
@@ -190,7 +220,8 @@ function setPermissions({user, scope}, payload) {
     //  collation: <document>
   };
 
-  return MongoDB.collection('users').updateOne(filter, update, options);
+  return MongoDB.collection('users')
+  .updateOne(filter, update, options);
 };
 
 
@@ -201,7 +232,7 @@ function findPermissions({user, scope}) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  const filter = stdFilter(user);
+  const filter = stdFilter({ input: user });
 
   const update = {
     $currentDate: {
@@ -251,7 +282,7 @@ function findPermissions({user, scope}) {
 };
 
 
-function countPermissions({user, scope}, query) {
+function countPermissions({user, scope, query}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
@@ -261,7 +292,7 @@ function countPermissions({user, scope}, query) {
     return Promise.reject(Boom.badRequest('scope must be a string'));
   }
 
-  let filter = stdFilter(user);
+  let filter = stdFilter({ input: user });
 
   Object.keys(query).forEach(key => {
     try {
@@ -277,26 +308,26 @@ function countPermissions({user, scope}, query) {
 
 
 
-function updatePermissions({app, user, scope, payload}) {
+function updatePermissions({app, user, scope, permissions}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  const filter = stdFilter(user);
+  const filter = stdFilter({ input: user });
 
   let update = {
     '$currentDate': {}
   };
 
-  Object.keys(payload).filter(disallowedUpdateOperators).forEach(operator => {
+  Object.keys(permissions).filter(disallowedUpdateOperators).forEach(operator => {
     update[operator] = {};
-    Object.keys(payload[operator]).forEach(field => {
-      update[operator]['dataScopes.'.concat(scope,'.',field)] = payload[operator][field];
+    Object.keys(permissions[operator]).forEach(field => {
+      update[operator]['dataScopes.'.concat(scope,'.',field)] = permissions[operator][field];
     });
   });
 
-  // This must come after payload to make sure it cannot be set by the application
+  // This must come after permissions to make sure it cannot be set by the application
   update['$currentDate']['lastUpdated'] = { $type: "date" };
 
   let projection = {
@@ -320,3 +351,42 @@ function updatePermissions({app, user, scope, payload}) {
     ].indexOf(operator) === -1;
   }
 };
+
+
+function stdFilter({input}){
+  return ObjectID.isValid(input)
+  ? { _id: new ObjectID(input) }
+  : { $or:
+      [
+        { id: input },
+        { id: input.toLowerCase() },
+        { 'gigya.UID': input },
+        { 'gigya.email': input.toLowerCase() },
+        { email: input.toLowerCase() }
+      ]
+    };
+}
+
+
+function providerFilter({input, provider}){
+  return
+  { $and:
+    [
+      { $or:
+        [
+          { provider: provider },
+          { provider: null }
+        ]
+      },
+      { $or:
+        [
+          { id: input },
+          { id: input.toLowerCase() },
+          { 'gigya.UID': input },
+          { 'gigya.email': input.toLowerCase() },
+          { email: input.toLowerCase() }
+        ]
+      }
+    ]
+  };
+}

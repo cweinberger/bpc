@@ -155,7 +155,8 @@ function parseAgid(id){
 
 
 function findGrant(id){
-  return MongoDB.collection('grants').findOne({id: id}, {fields: {_id: 0}});
+  return MongoDB.collection('grants')
+  .findOne({ id: id }, { fields: { _id: 0 }});
 }
 
 

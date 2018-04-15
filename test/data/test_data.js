@@ -111,7 +111,10 @@ module.exports = {
       id: 'console',
       scope: ['admin', 'admin:*'],
       key: 'j4h2kj4h32lkh432lkh4dk32ljh4lk32djh4lkj32h4',
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        provider: 'google'
+      }
     },
     bt: {
       id: 'bt',
@@ -119,14 +122,18 @@ module.exports = {
       key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
       algorithm: 'sha256',
       settings: {
-        includeScopeInPrivatExt: true
+        includeScopeInPrivatExt: true,
+        provider: 'gigya'
       }
     },
     berlingske: {
       id: 'berlingske',
       scope: ['berlingske'],
       key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        provider: 'gigya'
+      }
     },
     valid_app: {
       id: 'valid-app',

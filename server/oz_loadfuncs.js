@@ -213,6 +213,7 @@ function buildExt(grant, app){
     let ext = {
       public: {},
       private: {
+        dataScopes: {}
         // collection: 'test'
       }
     };
@@ -222,7 +223,7 @@ function buildExt(grant, app){
       if (dataScopes === null) {
         return Promise.resolve(null);
       } else {
-        Object.assign(ext.private, dataScopes);
+        Object.assign(ext.private.dataScopes, dataScopes);
         return Promise.resolve(ext);
       }
     })

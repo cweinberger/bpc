@@ -59,12 +59,12 @@ module.exports = {
 
     } else {
 
-      if (ticket.ext.private === undefined || ticket.ext.private[request.params.scope] === undefined){
+      if (ticket.ext.private === undefined || ticket.ext.private.dataScopes[request.params.scope] === undefined){
         reply(Boom.forbidden());
       }
 
       // We only want to reply the permissions within the requested scope
-      var scopePermissions = Object.assign({}, ticket.ext.private[request.params.scope]);
+      var scopePermissions = Object.assign({}, ticket.ext.private.dataScopes[request.params.scope]);
 
       reply(scopePermissions);
     }

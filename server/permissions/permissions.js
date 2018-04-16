@@ -6,93 +6,176 @@ const Joi = require('joi');
 const ObjectID = require('mongodb').ObjectID;
 const MongoDB = require('./../mongo/mongodb_client');
 
-function stdFilter(user){
-  return ObjectID.isValid(user)
-  ? {
-    $or: [
-      { _id: new ObjectID(user) },
-      { id: user },
-      { id: user.toLowerCase() },
-      { 'gigya.UID': user },
-      { 'gigya.email': user.toLowerCase() },
-      { email: user.toLowerCase() }
-    ]
+
+module.exports = {
+
+  findPermissions: findPermissions,
+
+  getPermissions: function(request, reply) {
+    const ticket = request.auth.credentials;
+
+    findPermissions(ticket)
+    .then(reply)
+    .catch(reply);
+  },
+
+
+  getPermissionsScope: function(request, reply) {
+
+    const ticket = request.auth.credentials;
+
+    // Should we query the database or look in the private part of the ticket?
+    // When the app setting includeScopeInPrivatExt is set to true, we can validate the users scope by looking in ticket.ext.private.
+    // But we need to find out how we should handle any changes to the scope (by POST/PATCH). Should we then reissue the ticket with new ticket.ext.private?
+    if (true) {
+
+      if (Object.keys(request.query).length > 0) {
+
+        countPermissions({
+          user: ticket.user,
+          scope: request.params.scope,
+          query: request.query
+        })
+        .then(result => {
+          if(result === 1) {
+            reply({ status: 'OK' });
+          } else {
+            reply(Boom.notFound());
+          }
+        })
+        .catch(err => reply(err));
+
+      } else {
+
+        findPermissions({
+          user: ticket.user,
+          scope: request.params.scope
+        })
+        .then(dataScopes => reply(dataScopes[request.params.scope]
+          ? dataScopes[request.params.scope]
+          : {}))
+        .catch(err => reply(err));
+      }
+
+
+    } else {
+
+      if (ticket.ext.private === undefined || ticket.ext.private.dataScopes[request.params.scope] === undefined){
+        reply(Boom.forbidden());
+      }
+
+      // We only want to reply the permissions within the requested scope
+      var scopePermissions = Object.assign({}, ticket.ext.private.dataScopes[request.params.scope]);
+
+      reply(scopePermissions);
+    }
+  },
+
+
+  getPermissionsUserScope: function(request, reply) {
+    if (Object.keys(request.query).length > 0) {
+
+      countPermissions({
+        user: request.params.user,
+        scope: request.params.scope,
+        query: request.query
+      })
+      .then(result => {
+        if(result === 1) {
+          reply({ status: 'OK' });
+        } else {
+          reply(Boom.notFound());
+        }
+      })
+      .catch(err => reply(err));
+
+    } else {
+
+      findPermissions({
+        user: request.params.user,
+        scope: request.params.scope
+      })
+      .then(dataScopes => {
+        reply(dataScopes[request.params.scope]
+          ? dataScopes[request.params.scope]
+          : {}
+        );
+      })
+      .catch(err => reply(err));
+    }
+  },
+
+
+  postPermissionsUserScope: function(request, reply) {
+
+    // DENNNE HVIS user ER EN EMAIL
+
+    const input_is_email = Joi.validate({ email: request.params.user }, { email: Joi.string().email() });
+    if(input_is_email.error === null) {
+
+      MongoDB.collection('applications')
+      .findOne(
+        { id: request.auth.credentials.app },
+        { fields: { 'settings.provider': 1 } })
+      .then(res => {
+
+        const provider = res.settings && res.settings.provider
+          ? res.settings.provider
+          : 'gigya';
+
+        setPermissions({
+          user: request.params.user,
+          scope: request.params.scope,
+          permissions: request.payload,
+          provider: provider,
+          useProviderEmailFilter: true
+        })
+        .then(result => reply({'status': 'ok'}))
+        .catch(err => reply(err));
+
+      });
+
+    } else {
+
+      setPermissions({
+        user: request.params.user,
+        scope: request.params.scope,
+        permissions: request.payload,
+        useProviderEmailFilter: false
+      })
+      .then(result => reply({'status': 'ok'}))
+      .catch(err => reply(err));
+    }
+  },
+
+
+  patchPermissionsUserScope: function(request, reply) {
+    updatePermissions({
+      user: request.params.user,
+      scope: request.params.scope,
+      permissions: request.payload
+    })
+    .then(result => {
+      if (result.value === null || result.n === 0) {
+        reply(Boom.notFound());
+      } else {
+        reply(result.value.dataScopes[request.params.scope]);
+      }
+    })
+    .catch(err => reply(Boom.badRequest(err.message)));
   }
-  : {
-    $or: [
-      { id: user },
-      { id: user.toLowerCase() },
-      { 'gigya.UID': user },
-      { 'gigya.email': user.toLowerCase() },
-      { email: user.toLowerCase() }
-    ]
-  };
-}
-
-module.exports.set = function({user, scope}, payload) {
-
-  if (!user || !scope) {
-    return Promise.reject(Boom.badRequest('user or scope missing'));
-  }
-
-  const filter = stdFilter(user);
-
-  let set = {};
-
-  const valid_email = Joi.validate({ email: user }, {email: Joi.string().email()});
-
-  // We are setting 'id' = 'user'.
-  // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
-  let setOnInsert = {
-    id: user.toLowerCase(),
-    email: valid_email.error === null ? user.toLowerCase() : null,
-    provider: null,
-    createdAt: new Date()
-    // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
-  };
-
-
-  if (MongoDB.isMock) {
-
-    set.dataScopes = {};
-    set.dataScopes[scope] = payload;
-
-    // We are adding the $set onto $setOnInsert
-    //   because apparently mongo-mock does not use $set when inserting (upsert=true)
-    Object.assign(setOnInsert, set);
-
-  } else {
-
-    Object.keys(payload).forEach(function(field){
-      set['dataScopes.'.concat(scope,'.',field)] = payload[field];
-    });
-
-  }
-
-  const update = {
-    $currentDate: { 'lastUpdated': { $type: "date" } },
-    $set: set,
-    $setOnInsert: setOnInsert
-  };
-
-  const options = {
-    upsert: true
-    //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
-    //  collation: <document>
-  };
-
-  return MongoDB.collection('users').updateOne(filter, update, options);
 };
 
 
 
-module.exports.get = function({user, scope}) {
+
+function findPermissions({user, scope}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  const filter = stdFilter(user);
+  const filter = stdFilter({ input: user });
 
   const update = {
     $currentDate: {
@@ -123,7 +206,8 @@ module.exports.get = function({user, scope}) {
     projection: projection
   };
 
-  return MongoDB.collection('users').findOneAndUpdate(filter, update, options)
+  return MongoDB.collection('users')
+  .findOneAndUpdate(filter, update, options)
   .then(result => {
     if (result.n === 0 || result.value === null) {
       return Promise.reject(Boom.notFound());
@@ -141,7 +225,7 @@ module.exports.get = function({user, scope}) {
 };
 
 
-module.exports.count = function({user, scope}, query) {
+function countPermissions({user, scope, query}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
@@ -151,7 +235,7 @@ module.exports.count = function({user, scope}, query) {
     return Promise.reject(Boom.badRequest('scope must be a string'));
   }
 
-  let filter = stdFilter(user);
+  let filter = stdFilter({ input: user });
 
   Object.keys(query).forEach(key => {
     try {
@@ -161,31 +245,93 @@ module.exports.count = function({user, scope}, query) {
     }
   });
 
-  return MongoDB.collection('users').count(filter, {limit: 1});
+  return MongoDB.collection('users')
+  .count(filter, {limit: 1});
 };
 
 
-
-module.exports.update = function({user, scope, payload}) {
+function setPermissions({user, scope, permissions, provider, useProviderEmailFilter}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  const filter = stdFilter(user);
+  const filter = useProviderEmailFilter
+    ? providerEmailFilter({ input: user, provider: provider })
+    : stdFilter({ input: user });
+
+  let set = {};
+
+  const valid_email = Joi.validate({ email: user }, { email: Joi.string().email() });
+
+  // We are setting 'id' = 'user'.
+  // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
+  // Otherwise, getting an RSVP also updates the id to Gigya UID or Google ID
+  let setOnInsert = {
+    id: user.toLowerCase(),
+    email: valid_email.error === null ? user.toLowerCase() : null,
+    provider: provider,
+    createdAt: new Date()
+    // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
+  };
+
+
+  if (MongoDB.isMock) {
+
+    set.dataScopes = {};
+    set.dataScopes[scope] = permissions;
+
+    // We are adding the $set onto $setOnInsert
+    //   because apparently mongo-mock does not use $set when inserting (upsert=true)
+    Object.assign(setOnInsert, set);
+
+  } else {
+
+    Object.keys(permissions).forEach(function(field){
+      set['dataScopes.'.concat(scope,'.',field)] = permissions[field];
+    });
+
+  }
+
+  const update = {
+    $currentDate: { 'lastUpdated': { $type: "date" } },
+    $set: set,
+    $setOnInsert: setOnInsert
+  };
+
+  const options = {
+    upsert: true
+    //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+    //  collation: <document>
+  };
+
+  return MongoDB.collection('users')
+  .updateOne(filter, update, options);
+};
+
+
+function updatePermissions({user, scope, permissions}) {
+
+  if (!user || !scope) {
+    return Promise.reject(Boom.badRequest('user or scope missing'));
+  }
+
+  const filter = stdFilter({ input: user });
 
   let update = {
     '$currentDate': {}
   };
 
-  Object.keys(payload).filter(disallowedUpdateOperators).forEach(operator => {
+  Object.keys(permissions)
+  .filter(disallowedUpdateOperators)
+  .forEach(operator => {
     update[operator] = {};
-    Object.keys(payload[operator]).forEach(field => {
-      update[operator]['dataScopes.'.concat(scope,'.',field)] = payload[operator][field];
+    Object.keys(permissions[operator]).forEach(field => {
+      update[operator]['dataScopes.'.concat(scope,'.',field)] = permissions[operator][field];
     });
   });
 
-  // This must come after payload to make sure it cannot be set by the application
+  // This must come after permissions to make sure it cannot be set by the application
   update['$currentDate']['lastUpdated'] = { $type: "date" };
 
   let projection = {
@@ -198,7 +344,8 @@ module.exports.update = function({user, scope, payload}) {
     returnOriginal: false
   };
 
-  return MongoDB.collection('users').findOneAndUpdate(filter, update, options);
+  return MongoDB.collection('users')
+  .findOneAndUpdate(filter, update, options);
 
   function disallowedUpdateOperators(operator) {
     return [
@@ -208,3 +355,40 @@ module.exports.update = function({user, scope, payload}) {
     ].indexOf(operator) === -1;
   }
 };
+
+
+function stdFilter({input}){
+  return ObjectID.isValid(input)
+  ? { _id: new ObjectID(input) }
+  : { $or:
+      [
+        { id: input },
+        { 'gigya.UID': input },
+        { id: input.toLowerCase() } // In case the user was created using POST /permissions/THIRD_USER@berlingskemedia.dk and still not logged in
+      ]
+    };
+}
+
+
+function providerEmailFilter({input, provider}){
+  return { $and:
+    [
+      { $or:
+        [
+          { provider: { $eq: provider }},
+          { provider: { $exists: false }},
+          { provider: null }
+        ]
+      },
+      { $or:
+        [
+          { id: input },
+          { id: input.toLowerCase() },
+          { 'gigya.UID': input },
+          { 'gigya.email': input.toLowerCase() },
+          { email: input.toLowerCase() }
+        ]
+      }
+    ]
+  };
+}

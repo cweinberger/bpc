@@ -55,7 +55,7 @@ See each endpoint for details on required authorization.
 * [`POST /ticket/reissue`](#post-ticketreissue)
 * [`GET /rsvp`](#get-rsvp)
 * [`POST /rsvp`](#post-rsvp)
-* [`GET /me`](#get-me)
+* [`GET /permissions`](#get-permissions)
 * [`GET /permissions/{scope}`](#get-permissionsscope)
 * [`GET /permissions/{user}/{scope}`](#get-permissionsuserscope)
 * [`POST /permissions/{user}/{scope}`](#post-permissionsuserscope)
@@ -65,9 +65,6 @@ See each endpoint for details on required authorization.
 * [`GET /users`](#get-users)
 * [`GET /users/{id}`](#get-usersid)
 * [`DELETE /users/{id}`](#delete-usersid)
-* [`POST /users/register`](#post-usersregister)
-* [`POST /users/update`](#post-usersupdate)
-* [`POST /users/resetpassword`](#post-usersresetpassword)
 * [`GET /applications`](#get-applications)
 * [`POST /applications`](#post-applications)
 * [`GET /applications/{id}`](#get-applicationsid)
@@ -207,7 +204,7 @@ Example body response
 
 
 
-## [GET /me]
+## [GET /permissions]
 
 * Query parameters: _None_
 * Required ticket type: `user`

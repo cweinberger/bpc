@@ -44,6 +44,7 @@ describe('permissions - integration tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.bt_paywall).to.true();
+        expect(response.result.bt_subscription_tier).to.equal('free');
         return Promise.resolve();
       })
       // .then(() => MongoDB.collection('users').find().toArray())
@@ -54,11 +55,20 @@ describe('permissions - integration tests', () => {
       .catch(done);
     });
 
+    it('getting first user bt permissions by email', (done) => {
+      bpc_helper.request({ url: '/permissions/first_user@berlingskemedia.dk/bt' }, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(404);
+        return Promise.resolve();
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('getting first user bt permissions by uppercase email', (done) => {
       bpc_helper.request({ url: '/permissions/FIRST_USER@berlingskemedia.dk/bt' }, appTicket)
       .then(response => {
-        expect(response.statusCode).to.equal(200);
-        expect(response.result.bt_subscription_tier).to.equal('free');
+        expect(response.statusCode).to.equal(404);
         return Promise.resolve();
       })
       .then(done)
@@ -253,15 +263,6 @@ describe('permissions - integration tests', () => {
       .catch(done);
     });
 
-    it('getting third user by gigya UID', (done) => {
-      bpc_helper.request({ url: '/me' }, user_with_no_datascopes_ticket)
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
-      })
-      .then(done)
-      .catch(done);
-    });
 
     it('getting third user permissions by gigya UID', (done) => {
       bpc_helper.request({ url: '/permissions' }, user_with_no_datascopes_ticket)

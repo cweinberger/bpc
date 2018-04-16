@@ -53,8 +53,9 @@ module.exports = {
       }
 
     })
-    .then(() => OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization))
-    .then(ticket => {
+    .then(() => {
+
+      const ticket = request.auth.credentials;
 
       const ops_phase2 = [
         // Adding the admin:{id} scope to the application of the ticket issuer
@@ -122,8 +123,9 @@ module.exports = {
       }
 
     })
-    .then(() => OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization))
-    .then(ticket => {
+    .then(() => {
+
+      const ticket = request.auth.credentials;
 
       // At this point we have already deleted the app and told the user it went ok.
       // Now we are just cleaning up in the console/admin app and grants.
@@ -252,113 +254,108 @@ module.exports = {
 
 
   getApplicationAdmins: function (request, reply) {
-    OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization)
-    .then(ticket => {
 
-      const query = {
-         app: ticket.app,
-         scope: 'admin:'.concat(request.params.id)
-      };
+    const ticket = request.auth.credentials;
 
-      MongoDB.collection('grants').find(
-        query, {fields: {_id: 0}}
-      ).toArray(reply);
-    })
+    const query = {
+       app: ticket.app,
+       scope: 'admin:'.concat(request.params.id)
+    };
+
+    MongoDB.collection('grants').find(
+      query, {fields: {_id: 0}}
+    ).toArray(reply)
     .catch(err => reply(err));
   },
 
 
   postApplicationMakeAdmin: function (request, reply) {
-    OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization)
-    .then(ticket => {
 
-      const query = Object.assign(request.payload, {
-         app: ticket.app
-      });
+    const ticket = request.auth.credentials;
 
-      const newGrant = Object.assign(request.payload, {
-        id: crypto.randomBytes(20).toString('hex'),
-        app: ticket.app
-      });
+    const query = Object.assign(request.payload, {
+       app: ticket.app
+    });
 
-      const update = {
-        $addToSet: { scope: 'admin:'.concat(request.params.id) },
-        $setOnInsert: newGrant
-      };
+    const newGrant = Object.assign(request.payload, {
+      id: crypto.randomBytes(20).toString('hex'),
+      app: ticket.app
+    });
 
-      const options = {
-        upsert: true
-      };
+    const update = {
+      $addToSet: { scope: 'admin:'.concat(request.params.id) },
+      $setOnInsert: newGrant
+    };
 
-      MongoDB.collection('grants')
-      .updateOne(query, update, options)
-      .then(res => {
-        if(res.result.n === 1) {
+    const options = {
+      upsert: true
+    };
 
-          EventLog.logUserEvent(
-            request.params.id,
-            'Added Admin Scope to User',
-            {app: request.params.id, byUser: ticket.user}
-          );
+    MongoDB.collection('grants')
+    .updateOne(query, update, options)
+    .then(res => {
+      if(res.result.n === 1) {
 
-          reply({'status': 'ok'});
+        EventLog.logUserEvent(
+          request.params.id,
+          'Added Admin Scope to User',
+          {app: request.params.id, byUser: ticket.user}
+        );
 
-        } else {
+        reply({'status': 'ok'});
 
-          reply(Boom.badRequest());
+      } else {
 
-        }
-      })
-      .catch(err => {
-        console.error(err);
         reply(Boom.badRequest());
-      });
+
+      }
     })
-    .catch(err => reply(err));
+    .catch(err => {
+      console.error(err);
+      reply(Boom.badRequest());
+    });
   },
 
 
   postApplicationRemoveAdmin: function (request, reply) {
-    OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization)
-    .then(ticket => {
 
-      if (ticket.user === request.payload.user){
-        return Promise.reject(Boom.forbidden('You cannot remove yourself'));
-      }
+    const ticket = request.auth.credentials;
 
-      const query = Object.assign(request.payload, {
-        app: ticket.app
-      });
+    if (ticket.user === request.payload.user){
+      return Promise.reject(Boom.forbidden('You cannot remove yourself'));
+    }
 
-      const update = {
-        $pull: { scope: 'admin:'.concat(request.params.id) }
-      };
+    const query = Object.assign(request.payload, {
+      app: ticket.app
+    });
 
-      MongoDB.collection('grants')
-      .updateOne(query, update)
-      .then(res => {
-        if(res.result.n === 1) {
+    const update = {
+      $pull: { scope: 'admin:'.concat(request.params.id) }
+    };
 
-          EventLog.logUserEvent(
-            request.params.id,
-            'Pulled Admin Scope from User',
-            {app: request.params.id, byUser: ticket.user}
-          );
+    MongoDB.collection('grants')
+    .updateOne(query, update)
+    .then(res => {
+      if(res.result.n === 1) {
 
-          reply({'status': 'ok'});
+        EventLog.logUserEvent(
+          request.params.id,
+          'Pulled Admin Scope from User',
+          {app: request.params.id, byUser: ticket.user}
+        );
 
-        } else {
+        reply({'status': 'ok'});
 
-          reply(Boom.badRequest());
+      } else {
 
-        }
-      })
-      .catch(err => {
-        console.error(err);
         reply(Boom.badRequest());
-      });
+
+      }
     })
-    .catch(err => reply(err));
+    .catch(err => {
+      console.error(err);
+      reply(Boom.badRequest());
+    });
   }
 };
 

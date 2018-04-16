@@ -4,7 +4,6 @@
 
 const Boom = require('boom');
 const Joi = require('joi');
-const OzLoadFuncs = require('./../oz_loadfuncs');
 const MongoDB = require('./../mongo/mongodb_client');
 const EventLog = require('./../audit/eventlog');
 
@@ -32,34 +31,35 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function(err, ticket) {
-        MongoDB.collection('grants').update(
-          {
-            id: request.params.id,
-            app: ticket.app
-          }, {
-            $addToSet: { scope: 'admin:*' }
-          }, function (err, result) {
 
-            if (err) {
-              EventLog.logUserEvent(
-                request.params.id,
-                'Scope Change Failed',
-                {scope: 'admin:*', byUser: ticket.user}
-              );
-              return reply(err);
-            }
+      const ticket = request.auth.credentials;
 
+      MongoDB.collection('grants').update(
+        {
+          id: request.params.id,
+          app: ticket.app
+        }, {
+          $addToSet: { scope: 'admin:*' }
+        }, function (err, result) {
+
+          if (err) {
             EventLog.logUserEvent(
               request.params.id,
-              'Add Scope to User',
+              'Scope Change Failed',
               {scope: 'admin:*', byUser: ticket.user}
             );
-
-            reply({'status': 'ok'});
+            return reply(err);
           }
-        );
-      });
+
+          EventLog.logUserEvent(
+            request.params.id,
+            'Add Scope to User',
+            {scope: 'admin:*', byUser: ticket.user}
+          );
+
+          reply({'status': 'ok'});
+        }
+      );
     }
   });
 
@@ -77,45 +77,40 @@ module.exports.register = function (server, options, next) {
       cors: stdCors
     },
     handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
 
-        if (err) {
-          console.error(err);
-          return reply(err);
-        }
+      const ticket = request.auth.credentials;
 
-        if (ticket.grant === request.params.id){
-          return reply(Boom.forbidden('You cannot demote yourself'));
-        }
+      if (ticket.grant === request.params.id){
+        return reply(Boom.forbidden('You cannot demote yourself'));
+      }
 
-        MongoDB.collection('grants').update(
-          {
-            id: request.params.id,
-            app: ticket.app
-          }, {
-            $pull: { scope: 'admin:*' }
-          },
-          function(err, result) {
+      MongoDB.collection('grants').update(
+        {
+          id: request.params.id,
+          app: ticket.app
+        }, {
+          $pull: { scope: 'admin:*' }
+        },
+        function(err, result) {
 
-            if (err) {
-              EventLog.logUserEvent(
-                request.params.id,
-                'Scope Change Failed',
-                {scope: 'admin:*', byUser: ticket.user}
-              );
-              return reply(err);
-            }
-
+          if (err) {
             EventLog.logUserEvent(
               request.params.id,
-              'Remove Scope from User',
+              'Scope Change Failed',
               {scope: 'admin:*', byUser: ticket.user}
             );
-
-            reply({'status': 'ok'});
+            return reply(err);
           }
-        );
-      });
+
+          EventLog.logUserEvent(
+            request.params.id,
+            'Remove Scope from User',
+            {scope: 'admin:*', byUser: ticket.user}
+          );
+
+          reply({'status': 'ok'});
+        }
+      );
     }
   });
 

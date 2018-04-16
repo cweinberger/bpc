@@ -43,7 +43,7 @@ module.exports = {
       }
     },
     simple_third_user: {
-      id: 'THIRD_USER@berlingskemedia.dk',
+      id: 'third_user@berlingskemedia.dk',
       email: 'third_user@berlingskemedia.dk',
       gigya: {
         UID: '5347895384975934842758',
@@ -81,6 +81,28 @@ module.exports = {
       },
       lastLogin: new Date(),
       dataScopes: {}
+    },
+    xyz_user: {
+      id: '137802111134346654517',
+      email: 'xyx@berlingskemedia.dk',
+      gigya: {
+        UID: '5347895384975934842757',
+        email: 'mkoc@berlingskemedia.dk'
+      },
+      lastLogin: new Date(),
+      dataScopes: {}
+    },
+    console_admin: {
+      id: '6765636276327632763517531',
+      email: 'console_admin@berlingskemedia.dk',
+      lastLogin: new Date(),
+      dataScopes: {}
+    },
+    console_user: {
+      id: '4378638756232438756874365',
+      email: 'console_user@berlingskemedia.dk',
+      lastLogin: new Date(),
+      dataScopes: {}
     }
   },
 
@@ -89,19 +111,29 @@ module.exports = {
       id: 'console',
       scope: ['admin', 'admin:*'],
       key: 'j4h2kj4h32lkh432lkh4dk32ljh4lk32djh4lkj32h4',
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        provider: 'google'
+      }
     },
     bt: {
       id: 'bt',
       scope: ['bt', 'non_persisted_scope'],
       key: 'werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn',
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        includeScopeInPrivatExt: true,
+        provider: 'gigya'
+      }
     },
     berlingske: {
       id: 'berlingske',
       scope: ['berlingske'],
       key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        provider: 'gigya'
+      }
     },
     valid_app: {
       id: 'valid-app',
@@ -111,7 +143,10 @@ module.exports = {
       ],
       delegate: false,
       key: 'something_long_and_random',
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        includeScopeInPrivatExt: true
+      }
     },
     valid_google_app: {
       id: 'valid-google-app',
@@ -188,7 +223,7 @@ module.exports = {
     console_superadmin_google_user__console_grant : {
       id : '7462ydu3jjj3u32uej3mmsi3',
       app : 'console',
-      user : 'console_admin@berlingskemedia.dk',
+      user : '6765636276327632763517531',
       scope : ['admin:*'],
       exp : null,
       createdAt: new Date()
@@ -196,7 +231,7 @@ module.exports = {
     console_google_user__console_grant : {
       id : '7362ydu3kkk3u65uej3mmsi4',
       app : 'console',
-      user : 'console_user@berlingskemedia.dk',
+      user : '4378638756232438756874365',
       scope : [],
       exp : null,
       createdAt: new Date()
@@ -204,25 +239,25 @@ module.exports = {
     valid_app_grant: {
       id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
       app: 'valid-app',
-      user: 'xyx@berlingskemedia.dk',
+      user: '137802111134346654517',
       scope: []
     },
     delete_me_app_grant: {
       id: 'jhfgs294723ijsdhfsdfhskjh329423798animal',
       app: 'delete-me-app',
-      user: 'xyx@berlingskemedia.dk',
+      user: '137802111134346654517',
       scope: []
     },
     simple_first_user_bt_grant: {
       id: 'somerandomsdhjfkjlhsdfkjhsd',
       app: 'bt',
-      user: 'first_user@berlingskemedia.dk',
+      user: '3218736128736123215732',
       scope: []
     },
     user_with_no_datascopes_grant: {
       id: 'sdsadasdfvcxdfsfsd',
       app: 'app_with_no_scopes',
-      user: 'user_with_no_datascopes@berlingskemedia.dk',
+      user: 'user_with_no_datascopes',
       scope: []
     }
   },

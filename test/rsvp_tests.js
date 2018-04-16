@@ -175,7 +175,7 @@ describe('rsvp unit tests', () => {
         expect(user.provider).to.be.equal('gigya');
         return Promise.resolve(user);
       })
-      .then(user => MongoDB.collection('grants').findOne({user: user._id, app: 'valid-app'}))
+      .then(user => MongoDB.collection('grants').findOne({user: user.id, app: 'valid-app'}))
       .then(grant => {
         expect(grant).to.not.be.null();
         expect(grant.id).to.have.length(40);

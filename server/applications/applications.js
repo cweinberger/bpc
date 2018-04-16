@@ -268,8 +268,7 @@ module.exports = {
 
     MongoDB.collection('grants').find(
       query, {fields: {_id: 0}}
-    ).toArray(reply)
-    .catch(err => reply(err));
+    ).toArray(reply);
   },
 
 

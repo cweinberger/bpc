@@ -94,23 +94,6 @@ describe('users - integration tests', () => {
     done();
   });
 
-  it('create new user', done => {
-    let options = {
-      method: 'POST',
-      url: '/users/register',
-      payload: {
-        email: 'newuser@notyetcreated.nl',
-        password: 'justsomerandomtext'
-      }
-    };
-
-    bpc_helper.request(options, appTicket, (response) => {
-      expect(response.statusCode).to.equal(200);
-      expect(response.payload).to.equal("{\"UID\":\"randomUID1234\"}");
-      done();
-    });
-  });
-
 
   it('delete user', done => {
     let options = {
@@ -152,7 +135,7 @@ describe('users - integration tests', () => {
     })
     .catch(done);
   });
-  
+
 
   it('invalid trying to GET /gigya with no query params', done => {
     bpc_helper.request({url: '/gigya'}, appTicket)

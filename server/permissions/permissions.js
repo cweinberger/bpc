@@ -167,63 +167,6 @@ module.exports = {
 };
 
 
-function setPermissions({user, scope, permissions}) {
-
-  if (!user || !scope) {
-    return Promise.reject(Boom.badRequest('user or scope missing'));
-  }
-
-  const filter = stdFilter({ input: user });
-
-  let set = {};
-
-  const valid_email = Joi.validate({ email: user }, { email: Joi.string().email() });
-
-  // We are setting 'id' = 'user'.
-  // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
-  // Otherwise, getting an RSVP also updates the id to Gigya UID or Google ID
-  let setOnInsert = {
-    id: user.toLowerCase(),
-    email: valid_email.error === null ? user.toLowerCase() : null,
-    provider: null,
-    createdAt: new Date()
-    // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
-  };
-
-
-  if (MongoDB.isMock) {
-
-    set.dataScopes = {};
-    set.dataScopes[scope] = permissions;
-
-    // We are adding the $set onto $setOnInsert
-    //   because apparently mongo-mock does not use $set when inserting (upsert=true)
-    Object.assign(setOnInsert, set);
-
-  } else {
-
-    Object.keys(permissions).forEach(function(field){
-      set['dataScopes.'.concat(scope,'.',field)] = permissions[field];
-    });
-
-  }
-
-  const update = {
-    $currentDate: { 'lastUpdated': { $type: "date" } },
-    $set: set,
-    $setOnInsert: setOnInsert
-  };
-
-  const options = {
-    upsert: true
-    //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
-    //  collation: <document>
-  };
-
-  return MongoDB.collection('users')
-  .updateOne(filter, update, options);
-};
-
 
 
 function findPermissions({user, scope}) {
@@ -306,6 +249,63 @@ function countPermissions({user, scope, query}) {
   .count(filter, {limit: 1});
 };
 
+
+function setPermissions({user, scope, permissions}) {
+
+  if (!user || !scope) {
+    return Promise.reject(Boom.badRequest('user or scope missing'));
+  }
+
+  const filter = stdFilter({ input: user });
+
+  let set = {};
+
+  const valid_email = Joi.validate({ email: user }, { email: Joi.string().email() });
+
+  // We are setting 'id' = 'user'.
+  // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
+  // Otherwise, getting an RSVP also updates the id to Gigya UID or Google ID
+  let setOnInsert = {
+    id: user.toLowerCase(),
+    email: valid_email.error === null ? user.toLowerCase() : null,
+    provider: null,
+    createdAt: new Date()
+    // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
+  };
+
+
+  if (MongoDB.isMock) {
+
+    set.dataScopes = {};
+    set.dataScopes[scope] = permissions;
+
+    // We are adding the $set onto $setOnInsert
+    //   because apparently mongo-mock does not use $set when inserting (upsert=true)
+    Object.assign(setOnInsert, set);
+
+  } else {
+
+    Object.keys(permissions).forEach(function(field){
+      set['dataScopes.'.concat(scope,'.',field)] = permissions[field];
+    });
+
+  }
+
+  const update = {
+    $currentDate: { 'lastUpdated': { $type: "date" } },
+    $set: set,
+    $setOnInsert: setOnInsert
+  };
+
+  const options = {
+    upsert: true
+    //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
+    //  collation: <document>
+  };
+
+  return MongoDB.collection('users')
+  .updateOne(filter, update, options);
+};
 
 
 function updatePermissions({app, user, scope, permissions}) {

@@ -36,29 +36,6 @@ module.exports.strategyOptions = {
 };
 
 
-module.exports.parseAuthorizationHeader = function (requestHeaderAuthorization, callback) {
-
-  return new Promise((resolve, reject) => {
-    if(callback === undefined){
-      callback = function(err, ticket) {
-        if(err) {
-          reject(err);
-        } else {
-          resolve(ticket);
-        }
-      };
-    }
-
-    var id = requestHeaderAuthorization.match(/id=([^,]*)/)[1].replace(/"/g, '');
-    if (id === undefined || id === null || id === ''){
-      return callback(Boom.unauthorized('Authorization Hawk ticket not found'));
-    }
-
-    Oz.ticket.parse(id, ENCRYPTIONPASSWORD, {}, callback);
-  });
-};
-
-
 module.exports.grantIsExpired = function (grant) {
   return (
     grant !== undefined &&

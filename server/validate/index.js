@@ -122,22 +122,18 @@ module.exports.register = function (server, options, next) {
      }
     },
     handler: function(request, reply) {
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
-        if(err) {
-          console.error(err);
-          return reply(err);
-        }
 
-        let tmp = Object.assign({}, request.payload);
+      const ticket = request.auth.credentials;
 
-        const _authorizationHeader = Oz.hawk.client.header(request.payload.url, request.payload.method, {credentials: ticket, app: ticket.app });
-        if (_authorizationHeader.err) {
-          return reply(Boom.badRequest(_authorizationHeader.err));
-        }
-        tmp.authorization = _authorizationHeader.field;
+      let tmp = Object.assign({}, request.payload);
 
-        reply(tmp);
-      });
+      const _authorizationHeader = Oz.hawk.client.header(request.payload.url, request.payload.method, {credentials: ticket, app: ticket.app });
+      if (_authorizationHeader.err) {
+        return reply(Boom.badRequest(_authorizationHeader.err));
+      }
+      tmp.authorization = _authorizationHeader.field;
+
+      reply(tmp);
     }
   });
 

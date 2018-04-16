@@ -7,7 +7,6 @@ const Joi = require('joi');
 const Oz = require('oz');
 const crypto = require('crypto');
 const ObjectID = require('mongodb').ObjectID;
-const OzLoadFuncs = require('./../oz_loadfuncs');
 const MongoDB = require('./../mongo/mongodb_client');
 const EventLog = require('./../audit/eventlog');
 
@@ -113,26 +112,20 @@ module.exports.register = function (server, options, next) {
     },
     handler: (request, reply) => {
 
-      OzLoadFuncs.parseAuthorizationHeader(request.headers.authorization, function (err, ticket) {
+      const ticket = request.auth.credentials;
 
-        if (err) {
-          console.error(err);
-          return reply(Boom.wrap(err));
-        }
+      if (ticket.user === request.params.id){
+        return reply(Boom.badRequest('You cannot delete yourself'));
+      }
 
-        if (ticket.user === request.params.id){
-          return reply(Boom.badRequest('You cannot delete yourself'));
-        }
-
-        MongoDB.collection('users').remove({ id: request.params.id })
-        .then(() => {
-          EventLog.logUserEvent(request.params.id, 'Deleting user');
-          reply({'status': 'ok'});
-        })
-        .catch((err) => {
-          EventLog.logUserEvent(request.params.id, 'Deleting user Failed');
-          return reply(err);
-        });
+      MongoDB.collection('users').remove({ id: request.params.id })
+      .then(() => {
+        EventLog.logUserEvent(request.params.id, 'Deleting user');
+        reply({'status': 'ok'});
+      })
+      .catch((err) => {
+        EventLog.logUserEvent(request.params.id, 'Deleting user Failed');
+        return reply(err);
       });
     }
   });

@@ -138,12 +138,12 @@ function findUser_v2(user) {
       createdAt: new Date(),
       dataScopes: {}
     };
-    MongoDB.collection('users').insert(temp_user);
+
+    MongoDB.collection('users')
+    .insertOne(temp_user);
+
     return Promise.resolve(temp_user);
   }
-
-// TODO: Does all users have provider in PROD????
-// db.users.find({$and:[{$or: [{provider:'gigya'},{provider:null}]}, {$or: [{id:'abs'}, {email: 'dako@berlingskemedia.dk'}]}]}).pretty()
 
   return MongoDB.collection('users')
   .findOneAndUpdate(
@@ -151,7 +151,8 @@ function findUser_v2(user) {
       [
         { $or:
           [
-            { provider: user.provider },
+            { provider: { $eq: user.provider }},
+            { provider: { $exists: false }},
             { provider: null }
           ]
         },
@@ -200,15 +201,14 @@ function findGrant_v2({app, user}) {
 
   // Trying to find a grant the old way - to keep compatibility
   return MongoDB.collection('grants')
-  .findOne(
-    { app: app.id,
-      $or: [
-        {user: user._id},
-        {user: user.id},
-        {user: user.email}
-      ]
-    }
-  )
+  .findOne({
+    app: app.id,
+    $or: [
+      {user: user.id},
+      {user: user._id},
+      {user: user.email}
+    ]
+  })
   .then(grant => {
 
     if (grant) {
@@ -228,7 +228,10 @@ function findGrant_v2({app, user}) {
       // Trying to find a grant the new way - by using user.id
 
       return MongoDB.collection('grants')
-      .findOne({ app: app.id, user: user.id })
+      .findOne({
+        app: app.id,
+        user: user.id
+      })
       .then(grant => {
 
         if(grant) {

@@ -19,6 +19,7 @@ module.exports = {
     .catch(reply);
   },
 
+
   getPermissionsScope: function(request, reply) {
 
     const ticket = request.auth.credentials;
@@ -70,86 +71,86 @@ module.exports = {
     }
   },
 
+
   getPermissionsUserScope: function(request, reply) {
+    if (Object.keys(request.query).length > 0) {
 
-    // DENNNE HVIS user ER EN EMAIL
-    const input_is_email = Joi.validate({ email: request.params.user }, { email: Joi.string().email() });
-    if(input_is_email.error === null) {
-
-      console.log('input_is_email B', request.params.user);
-      console.log('app', request.auth.credentials.app);
-      MongoDB.collection('applications')
-      .findOne(
-        { id: request.auth.credentials.app },
-        { fields: { 'settings.provider': 1 } })
-      .then(res => {
-        if(res.settings && res.settings.provider) {
-          execute({ provider: res.settings.provider });
+      countPermissions({
+        user: request.params.user,
+        scope: request.params.scope,
+        query: request.query
+      })
+      .then(result => {
+        if(result === 1) {
+          reply({ status: 'OK' });
         } else {
-          execute({ provider: null });
+          reply(Boom.notFound());
         }
       })
+      .catch(err => reply(err));
+
     } else {
-      execute({ provider: null });
-    }
 
-    function execute({provider}){
-      if (Object.keys(request.query).length > 0) {
-
-        countPermissions({
-          user: request.params.user,
-          scope: request.params.scope,
-          query: request.query
-        })
-        .then(result => {
-          if(result === 1) {
-            reply({ status: 'OK' });
-          } else {
-            reply(Boom.notFound());
-          }
-        })
-        .catch(err => reply(err));
-
-      } else {
-
-        findPermissions({
-          user: request.params.user,
-          scope: request.params.scope
-        })
-        .then(dataScopes => reply(dataScopes[request.params.scope]
+      findPermissions({
+        user: request.params.user,
+        scope: request.params.scope
+      })
+      .then(dataScopes => {
+        reply(dataScopes[request.params.scope]
           ? dataScopes[request.params.scope]
-          : {}))
-          .catch(err => reply(err));
-
-        }
+          : {}
+        );
+      })
+      .catch(err => reply(err));
     }
-
   },
+
 
   postPermissionsUserScope: function(request, reply) {
 
     // DENNNE HVIS user ER EN EMAIL
 
     const input_is_email = Joi.validate({ email: request.params.user }, { email: Joi.string().email() });
+    if(input_is_email.error === null) {
 
-    setPermissions({
-      user: request.params.user,
-      scope: request.params.scope,
-      permissions: request.payload
-    })
-    .then(result => reply({'status': 'ok'}))
-    .catch(err => reply(err));
+      MongoDB.collection('applications')
+      .findOne(
+        { id: request.auth.credentials.app },
+        { fields: { 'settings.provider': 1 } })
+      .then(res => {
 
+        const provider = res.settings && res.settings.provider
+          ? res.settings.provider
+          : 'gigya';
+
+        setPermissions({
+          user: request.params.user,
+          scope: request.params.scope,
+          permissions: request.payload,
+          provider: provider,
+          useProviderEmailFilter: true
+        })
+        .then(result => reply({'status': 'ok'}))
+        .catch(err => reply(err));
+
+      });
+
+    } else {
+
+      setPermissions({
+        user: request.params.user,
+        scope: request.params.scope,
+        permissions: request.payload,
+        useProviderEmailFilter: false
+      })
+      .then(result => reply({'status': 'ok'}))
+      .catch(err => reply(err));
+    }
   },
 
+
   patchPermissionsUserScope: function(request, reply) {
-
-    // DENNNE HVIS user ER EN EMAIL
-
-    const input_is_email = Joi.validate({ email: request.params.user }, { email: Joi.string().email() });
-
     updatePermissions({
-      app: request.auth.credentials.app,
       user: request.params.user,
       scope: request.params.scope,
       permissions: request.payload
@@ -163,7 +164,6 @@ module.exports = {
     })
     .catch(err => reply(Boom.badRequest(err.message)));
   }
-
 };
 
 
@@ -250,13 +250,15 @@ function countPermissions({user, scope, query}) {
 };
 
 
-function setPermissions({user, scope, permissions}) {
+function setPermissions({user, scope, permissions, provider, useProviderEmailFilter}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
   }
 
-  const filter = stdFilter({ input: user });
+  const filter = useProviderEmailFilter
+    ? providerEmailFilter({ input: user, provider: provider })
+    : stdFilter({ input: user });
 
   let set = {};
 
@@ -268,7 +270,7 @@ function setPermissions({user, scope, permissions}) {
   let setOnInsert = {
     id: user.toLowerCase(),
     email: valid_email.error === null ? user.toLowerCase() : null,
-    provider: null,
+    provider: provider,
     createdAt: new Date()
     // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
   };
@@ -308,7 +310,7 @@ function setPermissions({user, scope, permissions}) {
 };
 
 
-function updatePermissions({app, user, scope, permissions}) {
+function updatePermissions({user, scope, permissions}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
@@ -320,7 +322,9 @@ function updatePermissions({app, user, scope, permissions}) {
     '$currentDate': {}
   };
 
-  Object.keys(permissions).filter(disallowedUpdateOperators).forEach(operator => {
+  Object.keys(permissions)
+  .filter(disallowedUpdateOperators)
+  .forEach(operator => {
     update[operator] = {};
     Object.keys(permissions[operator]).forEach(field => {
       update[operator]['dataScopes.'.concat(scope,'.',field)] = permissions[operator][field];
@@ -359,22 +363,20 @@ function stdFilter({input}){
   : { $or:
       [
         { id: input },
-        { id: input.toLowerCase() },
         { 'gigya.UID': input },
-        { 'gigya.email': input.toLowerCase() },
-        { email: input.toLowerCase() }
+        { id: input.toLowerCase() } // In case the user was created using POST /permissions/THIRD_USER@berlingskemedia.dk and still not logged in
       ]
     };
 }
 
 
-function providerFilter({input, provider}){
-  return
-  { $and:
+function providerEmailFilter({input, provider}){
+  return { $and:
     [
       { $or:
         [
-          { provider: provider },
+          { provider: { $eq: provider }},
+          { provider: { $exists: false }},
           { provider: null }
         ]
       },

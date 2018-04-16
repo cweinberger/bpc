@@ -43,7 +43,7 @@ module.exports = {
       }
     },
     simple_third_user: {
-      id: 'THIRD_USER@berlingskemedia.dk',
+      id: 'third_user@berlingskemedia.dk',
       email: 'third_user@berlingskemedia.dk',
       gigya: {
         UID: '5347895384975934842758',

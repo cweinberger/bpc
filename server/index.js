@@ -13,7 +13,6 @@ const Users = require('./users');
 const Superadmin = require('./superadmin');
 const Gigya = require('./gigya');
 const Permissions = require('./permissions');
-const Me = require('./me');
 const Validate = require('./validate');
 const Settings = require('./settings');
 const OzLoadFuncs = require('./oz_loadfuncs');
@@ -49,7 +48,6 @@ server.register(Scarecrow, function(err) {
   server.register(Superadmin, { routes: { prefix: '/superadmin' } }, cb);
   server.register(Gigya, { routes: { prefix: '/gigya' } }, cb);
   server.register(Permissions, { routes: { prefix: '/permissions' } }, cb);
-  server.register(Me, { routes: { prefix: '/me' } }, cb);
   server.register(Validate, { routes: { prefix: '/validate' } }, cb);
   server.register(Settings, { routes: { prefix: '/settings' } }, cb);
 });

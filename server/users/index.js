@@ -9,7 +9,6 @@ const crypto = require('crypto');
 const ObjectID = require('mongodb').ObjectID;
 const OzLoadFuncs = require('./../oz_loadfuncs');
 const MongoDB = require('./../mongo/mongodb_client');
-const Gigya = require('./../gigya/gigya_client');
 const EventLog = require('./../audit/eventlog');
 
 

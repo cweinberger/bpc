@@ -35,6 +35,10 @@ module.exports = {
       settings: request.payload.settings || {}
     };
 
+    if (!app.settings.provider){
+      app.settings.provider = 'gigya';
+    }
+
     // Ensure that the id is unique before creating the application.
     convertToUniqueid(app.id)
     .then(uniqueId => {

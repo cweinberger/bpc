@@ -64,15 +64,15 @@ module.exports = {
       const ops_phase2 = [
         // Adding the admin:{id} scope to the application of the ticket issuer
         MongoDB.collection('applications')
-        .update(
+        .updateOne(
           { id: ticket.app },
-          { $addToSet: { scope: 'admin:'.concat(app.id) } }
+          { $addToSet: { scope: 'admin:'.concat(application.id) } }
         ),
         // Adding the admin:{id} scope to the grant of the ticket owner
         MongoDB.collection('grants')
-        .update(
+        .updateOne(
           { id: ticket.grant },
-          { $addToSet: { scope: 'admin:'.concat(app.id) } }
+          { $addToSet: { scope: 'admin:'.concat(application.id) } }
         )
       ];
 
@@ -191,6 +191,9 @@ module.exports = {
       MongoDB.collection('applications')
       .findOne({id: grant.app}),
 
+      MongoDB.collection('users')
+      .findOne({id: grant.user}),
+
       MongoDB.collection('grants')
       .count({user: grant.user, app: grant.app}, {limit:1})
     ];
@@ -198,10 +201,15 @@ module.exports = {
     return Promise.all(operations)
     .then(results => {
       let app = results[0];
-      let existingGrant = results[1];
+      let user = results[1];
+      let existingGrant = results[2];
 
       if(existingGrant > 0){
         return Promise.reject(Boom.conflict());
+      }
+
+      if (!user){
+        return Promise.reject(Boom.badRequest('invalid user'))
       }
 
       if (!app){

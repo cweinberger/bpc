@@ -37,7 +37,8 @@ module.exports.register = function (server, options, next) {
       validate: {
         query: Joi.object().keys({
           id: Joi.string(),
-          email: Joi.string()
+          email: Joi.string(),
+          provider: Joi.string()
         }).unknown(false).or('id', 'email')
       }
     },
@@ -55,6 +56,15 @@ module.exports.register = function (server, options, next) {
 
       MongoDB.collection('users')
       .find(query)
+      .project({
+        _id: 1,
+        id: 1,
+        email: 1,
+        provider: 1,
+        createdAt: 1,
+        lastUpdated: 1,
+        lastFetched: 1
+      })
       .toArray(reply);
     }
   });
@@ -118,7 +128,10 @@ module.exports.register = function (server, options, next) {
         return reply(Boom.badRequest('You cannot delete yourself'));
       }
 
-      MongoDB.collection('users').remove({ id: request.params.id })
+      // TODO: We must move the user to the deleted-collections, just like with Gigya-notification
+
+      MongoDB.collection('users')
+      .deleteOne({ id: request.params.id })
       .then(() => {
         EventLog.logUserEvent(request.params.id, 'Deleting user');
         reply({'status': 'ok'});

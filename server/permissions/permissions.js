@@ -387,6 +387,7 @@ function providerEmailFilter({input, provider}){
       { $or:
         [
           { provider: { $eq: provider }},
+          { provider: { $eq: "" }},
           { provider: { $exists: false }},
           { provider: null }
         ]

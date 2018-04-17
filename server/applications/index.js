@@ -51,7 +51,7 @@ module.exports.register = function (server, options, next) {
           key: Joi.strip(),
           id: Joi.string().required(),
           scope: scopeValidation,
-          algorithm: Joi.string(),
+          algorithm: Joi.string().default('sha256'),
           delegate: Joi.boolean(),
           callbackurl: Joi.string().uri(),
           settings: Joi.object()
@@ -91,7 +91,7 @@ module.exports.register = function (server, options, next) {
           key: Joi.strip(),
           id: Joi.strip(),
           scope: scopeValidation,
-          algorithm: Joi.string(),
+          algorithm: Joi.string().default('sha256'),
           delegate: Joi.boolean(),
           callbackurl: Joi.string().uri(),
           settings: Joi.object()

@@ -29,7 +29,7 @@ module.exports = {
     let application = {
       id: request.payload.id,
       key: crypto.randomBytes(25).toString('hex'),
-      algorithm: 'sha256',
+      algorithm: request.payload.algorithm,
       scope: makeArrayUnique(request.payload.scope),
       delegate: request.payload.delegate ? request.payload.delegate : false,
       settings: request.payload.settings || {}

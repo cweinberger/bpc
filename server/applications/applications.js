@@ -5,6 +5,7 @@ const Boom = require('boom');
 const Joi = require('joi');
 const OzLoadFuncs = require('./../oz_loadfuncs');
 const MongoDB = require('./../mongo/mongodb_client');
+const ObjectID = require('mongodb').ObjectID;
 const crypto = require('crypto');
 const EventLog = require('./../audit/eventlog');
 
@@ -182,20 +183,27 @@ module.exports = {
 
 
   postApplicationNewGrant: function (request, reply) {
-    const grant = Object.assign(request.payload, {
+    let grant = Object.assign(request.payload, {
       id: crypto.randomBytes(20).toString('hex'),
       app: request.params.id
     });
 
+    let userQuery = {};
+    if(ObjectID.isValid(grant.user)) {
+      userQuery._id = new ObjectID(grant.user);
+    } else {
+      userQuery.id = grant.user;
+    }
+
     const operations = [
       MongoDB.collection('applications')
-      .findOne({id: grant.app}),
+      .findOne({ id: grant.app }),
 
       MongoDB.collection('users')
-      .findOne({id: grant.user}),
+      .findOne(userQuery),
 
       MongoDB.collection('grants')
-      .count({user: grant.user, app: grant.app}, {limit:1})
+      .count({ user: grant.user, app: grant.app }, {limit:1})
     ];
 
     return Promise.all(operations)
@@ -211,6 +219,8 @@ module.exports = {
       if (!user){
         return Promise.reject(Boom.badRequest('invalid user'))
       }
+
+      grant.user = user._id;
 
       if (!app){
         return Promise.reject(Boom.badRequest('invalid app'))
@@ -251,11 +261,12 @@ module.exports = {
       grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
 
       MongoDB.collection('grants')
-      .updateOne(
-        {id: grant.id},
-        {$set: grant}
+      .findOneAndUpdate(
+        { id: grant.id },
+        { $set: grant },
+        { returnOriginal: false }
       )
-      .then(res => reply({'status':'ok'}))
+      .then(result => reply(result.value))
       .catch(err => {
         console.error(err);
         reply(Boom.badRequest());
@@ -291,16 +302,20 @@ module.exports = {
 
 
   postApplicationMakeAdmin: function (request, reply) {
+console.log('request.payload', request.payload);
+    if(!ObjectID.isValid(request.payload.user)) {
+      return reply(Boom.badRequest());
+    }
 
     const ticket = request.auth.credentials;
 
-    const query = Object.assign(request.payload, {
-       app: ticket.app
-    });
+    const query = {
+       app: ticket.app,
+       user: new ObjectID(request.payload.user)
+    };
 
-    const newGrant = Object.assign(request.payload, {
-      id: crypto.randomBytes(20).toString('hex'),
-      app: ticket.app
+    const newGrant = Object.assign(query, {
+      id: crypto.randomBytes(20).toString('hex')
     });
 
     const update = {
@@ -342,14 +357,20 @@ module.exports = {
 
     const ticket = request.auth.credentials;
 
-    if (ticket.user === request.payload.user){
+    if (ticket.user === request.payload.user || ticket.user === new ObjectID(request.payload.user)){
       return Promise.reject(Boom.forbidden('You cannot remove yourself'));
     }
 
-    const query = Object.assign(request.payload, {
+    let query = {
       app: ticket.app
-    });
+    };
 
+    if(ObjectID.isValid(request.payload.user)) {
+      query.user = new ObjectID(request.payload.user);
+    } else {
+      query.user = request.payload.user;
+    }
+console.log('query', query);
     const update = {
       $pull: { scope: 'admin:'.concat(request.params.id) }
     };
@@ -357,6 +378,7 @@ module.exports = {
     MongoDB.collection('grants')
     .updateOne(query, update)
     .then(res => {
+      console.log('res', res);
       if(res.result.n === 1) {
 
         EventLog.logUserEvent(

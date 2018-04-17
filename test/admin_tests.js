@@ -155,7 +155,11 @@ describe('admin tests', () => {
         user: 'first_user@berlingskemedia.dk'
       };
 
-      bpc_helper.request({ url: '/applications/new-app-to-simple-user/makeadmin', method: 'POST', payload: payload }, consoleUserTicket)
+      bpc_helper.request({ url: '/users?email=first_user@berlingskemedia.dk' }, consoleUserTicket)
+      .then(response => {
+        return Promise.resolve(response.result[0]);
+      })
+      .then(user => bpc_helper.request({ url: '/applications/new-app-to-simple-user/makeadmin', method: 'POST', payload: { user: user._id} }, consoleUserTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
         done();
@@ -166,7 +170,11 @@ describe('admin tests', () => {
 
     it('simple user now has grant to console', done => {
       // Finding the new grant to be able to generate RSVP
-      MongoDB.collection('grants').findOne({app: 'console', user: 'first_user@berlingskemedia.dk'})
+      bpc_helper.request({ url: '/users?email=first_user@berlingskemedia.dk' }, consoleUserTicket)
+      .then(response => {
+        return Promise.resolve(response.result[0]);
+      })
+      .then(user => MongoDB.collection('grants').findOne({app: 'console', user: user._id }))
       .then(grant => bpc_helper.generateRsvp(consoleApp, grant))
       .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
       .then(response => {

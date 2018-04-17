@@ -102,7 +102,7 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply){
       const ticket = request.auth.credentials;
-      
+
       getAnonymousPermissions(ticket)
       .then(result => reply(result))
       .catch(err => reply(err));
@@ -293,7 +293,8 @@ function getAnonymousPermissions({user}) {
     }
   };
 
-  return MongoDB.collection('users').findOneAndUpdate(filter, update, options)
+  return MongoDB.collection('users')
+  .findOneAndUpdate(filter, update, options)
   .then(result => {
     if (result.n === 0 || result.value === null) {
       return Promise.resolve(null);

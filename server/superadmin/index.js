@@ -4,6 +4,7 @@
 
 const Boom = require('boom');
 const Joi = require('joi');
+const ObjectID = require('mongodb').ObjectID;
 const MongoDB = require('./../mongo/mongodb_client');
 const EventLog = require('./../audit/eventlog');
 
@@ -34,32 +35,43 @@ module.exports.register = function (server, options, next) {
 
       const ticket = request.auth.credentials;
 
-      MongoDB.collection('grants').update(
-        {
-          id: request.params.id,
-          app: ticket.app
-        }, {
-          $addToSet: { scope: 'admin:*' }
-        }, function (err, result) {
+      let query = {
+        app: ticket.app
+      };
 
-          if (err) {
-            EventLog.logUserEvent(
-              request.params.id,
-              'Scope Change Failed',
-              {scope: 'admin:*', byUser: ticket.user}
-            );
-            return reply(err);
-          }
+      if(ObjectID.isValid(request.params.id)) {
+        query._id = new ObjectID(request.params.id);
+      } else {
+        query.id = request.params.id;
+      }
 
-          EventLog.logUserEvent(
-            request.params.id,
-            'Add Scope to User',
-            {scope: 'admin:*', byUser: ticket.user}
-          );
+      const update = {
+        $addToSet: { scope: 'admin:*' }
+      };
 
-          reply({'status': 'ok'});
-        }
-      );
+      MongoDB.collection('grants')
+      .updateOne(query, update)
+      .then(result => {
+        EventLog.logUserEvent(
+          request.params.id,
+          'Add Scope to User',
+          {scope: 'admin:*', byUser: ticket.user}
+        );
+
+        reply({'status': 'ok'});
+
+      })
+      .catch(err => {
+
+        console.error(err);
+        EventLog.logUserEvent(
+          request.params.id,
+          'Scope Change Failed',
+          {scope: 'admin:*', byUser: ticket.user}
+        );
+
+        return reply(err);
+      });
     }
   });
 

@@ -87,7 +87,7 @@ module.exports = {
       email: 'xyx@berlingskemedia.dk',
       gigya: {
         UID: '5347895384975934842757',
-        email: 'mkoc@berlingskemedia.dk'
+        email: 'xyx@berlingskemedia.dk'
       },
       lastLogin: new Date(),
       dataScopes: {}

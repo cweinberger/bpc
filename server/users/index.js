@@ -45,13 +45,14 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
       var query = {
         $or: [
+          { _id: request.query.id },
           { id: request.query.id },
           { email: request.query.email.toLowerCase() }
         ]
       };
 
-      if(ObjectID.isValid(request.query.id)){
-        query.$or = [{ _id: new ObjectID(request.query.id) }].concat(query.$or)
+      if(ObjectID.isValid(request.query.id)) {
+        query.$or = [{ _id: new ObjectID(request.query.id) }].concat(query.$or);
       }
 
       MongoDB.collection('users')
@@ -84,19 +85,30 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
+      var match = {
+        $or: [
+          { id: request.params.id }
+        ]
+      };
+
+      if(ObjectID.isValid(request.params.id)) {
+        match.$or = [{ _id: new ObjectID(request.params.id) }].concat(match.$or);
+      }
+
       MongoDB.collection('users').aggregate(
-        [{
-          $match: {
-            id: request.params.id
+        [
+          {
+            $match: match
+          },
+          {
+            $lookup: {
+              from: 'grants',
+              localField: '_id',
+              foreignField: 'user',
+              as: 'grants'
+            }
           }
-        }, {
-          $lookup: {
-            from: 'grants',
-            localField: 'id',
-            foreignField: 'user',
-            as: 'grants'
-          }
-        }], (err, result) => {
+        ], (err, result) => {
           if (err) {
             return reply(err);
           } else if (result === null || result.length !== 1) {

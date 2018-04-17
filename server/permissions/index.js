@@ -55,6 +55,23 @@ module.exports.register = function (server, options, next) {
     handler: Permissions.getPermissionsScope
   });
 
+  server.route({
+    method: 'GET',
+    path: '/{user}/_all',
+    config: {
+      auth: {
+        access: {
+          entity: 'app' // <-- Important. Users must not be allowed to get permissions from other users
+        }
+      },
+      cors: stdCors,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: Permissions.getPermissionsUserAllScopes
+  });
 
   server.route({
     method: 'GET',

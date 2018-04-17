@@ -71,6 +71,17 @@ module.exports = {
     }
   },
 
+  getPermissionsUserAllScopes: function(request, reply) {
+    const ticket = request.auth.credentials;
+
+    findPermissions({
+      user: request.params.user,
+      scope: ticket.scope
+    })
+    .then(reply)
+    .catch(reply);
+  },
+
 
   getPermissionsUserScope: function(request, reply) {
     if (Object.keys(request.query).length > 0) {

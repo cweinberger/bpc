@@ -26,7 +26,7 @@ module.exports = {
 
   postApplication: function (request, reply) {
 
-    let app = {
+    let application = {
       id: request.payload.id,
       key: crypto.randomBytes(25).toString('hex'),
       algorithm: 'sha256',
@@ -35,24 +35,24 @@ module.exports = {
       settings: request.payload.settings || {}
     };
 
-    if (!app.settings.provider){
-      app.settings.provider = 'gigya';
+    if (!application.settings.provider){
+      application.settings.provider = 'gigya';
     }
 
     // Ensure that the id is unique before creating the application.
-    convertToUniqueid(app.id)
+    convertToUniqueid(application.id)
     .then(uniqueId => {
-      app.id = uniqueId;
+      application.id = uniqueId;
       return Promise.resolve();
     })
-    .then(() => MongoDB.collection('applications').insertOne(app))
+    .then(() => MongoDB.collection('applications').insertOne(application))
     .then(res => {
 
       if (res.result.ok === 1){
-        reply(app);
+        reply(application);
         return Promise.resolve();
       } else {
-        reply(Boom.badRequest('app could not be created'));
+        reply(Boom.badRequest('application could not be created'));
         return Promise.reject();
       }
 
@@ -93,10 +93,20 @@ module.exports = {
 
 
   putApplication: function (request, reply) {
+    let application = request.payload;
+
+    if (!application.settings) {
+      application.settings = {};
+    }
+
+    if (!application.settings.provider){
+      application.settings.provider = 'gigya';
+    }
+
     MongoDB.collection('applications')
     .updateOne(
       { id: request.params.id },
-      { $set: request.payload }
+      { $set: application }
     )
     .then(res => reply({'status':'ok'}))
     .catch(err => reply(Boom.wrap(err)));

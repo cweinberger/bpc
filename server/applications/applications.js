@@ -302,7 +302,7 @@ module.exports = {
 
 
   postApplicationMakeAdmin: function (request, reply) {
-console.log('request.payload', request.payload);
+
     if(!ObjectID.isValid(request.payload.user)) {
       return reply(Boom.badRequest());
     }
@@ -370,7 +370,7 @@ console.log('request.payload', request.payload);
     } else {
       query.user = request.payload.user;
     }
-console.log('query', query);
+
     const update = {
       $pull: { scope: 'admin:'.concat(request.params.id) }
     };

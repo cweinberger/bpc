@@ -94,6 +94,11 @@ function loadGrantFunc(id, next) {
     return loadAppFunc(grant.app)
     .then(app => {
 
+      // The field grant.user is now an ObjectID.
+      // And performing an /ticket/reissue, this must be a string value - not an object.
+      // Otherwise Oz will not accept ticket.user === grant.user
+      grant.user = grant.user.toString();
+
       // We test the scope of the grant now, so we don't get the internal server error:
       // Boom.internal('Grant scope is not a subset of the application scope');
       // in oz/lib/ticket.js

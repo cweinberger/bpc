@@ -277,7 +277,7 @@ const appAdminPayloadValidation = Joi.object().keys({
   user: Joi.string().required(),
   exp: Joi.strip(),
   scope: Joi.strip()
-});
+}).unknown(true); // Allow and strip unknows parameters
 
 
 const scopeValidation = Joi.array().items(

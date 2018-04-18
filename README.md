@@ -258,7 +258,9 @@ db.grants.createIndex({ id: 1 })
 db.grants.createIndex({ user: 1, app: 1 })
 db.users.createIndex( { id: 1 })
 db.users.createIndex( { email: 1 })
+db.users.createIndex( { provider: 1 })
 db.users.createIndex( { 'gigya.UID': 1 })
+db.users.createIndex( { 'gigya.email': 1 })
 ```
 
 

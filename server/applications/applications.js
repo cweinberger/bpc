@@ -188,11 +188,17 @@ module.exports = {
       app: request.params.id
     });
 
-    let userQuery = {};
+    let userQuery = {}
+    let grantQuery = {
+      app: grant.app
+    };
+
     if(ObjectID.isValid(grant.user)) {
       userQuery._id = new ObjectID(grant.user);
+      grantQuery.user = new ObjectID(grant.user);
     } else {
       userQuery.id = grant.user;
+      grantQuery.user = grant.user;
     }
 
     const operations = [
@@ -203,7 +209,7 @@ module.exports = {
       .findOne(userQuery),
 
       MongoDB.collection('grants')
-      .count({ user: grant.user, app: grant.app }, {limit:1})
+      .count(grantQuery, { limit:1 })
     ];
 
     return Promise.all(operations)
@@ -230,7 +236,8 @@ module.exports = {
       grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
       grant.scope = makeArrayUnique(grant.scope);
 
-      MongoDB.collection('grants').insertOne(grant)
+      MongoDB.collection('grants')
+      .insertOne(grant)
       .then(res => reply(grant))
       .catch(err => {
         console.error(err);
@@ -260,12 +267,17 @@ module.exports = {
       // Keep only the scopes allowed in the app scope.
       grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
 
+      const update = {
+        $set: grant
+      };
+
+      const options = {
+        returnNewDocument: true, // MongoDB
+        returnOriginal: false // Node-driver
+      };
+
       MongoDB.collection('grants')
-      .findOneAndUpdate(
-        { id: grant.id },
-        { $set: grant },
-        { returnOriginal: false }
-      )
+      .findOneAndUpdate({ id: grant.id }, update, options)
       .then(result => reply(result.value))
       .catch(err => {
         console.error(err);
@@ -279,7 +291,8 @@ module.exports = {
 
   deleteApplicationGrant: function (request, reply) {
     MongoDB.collection('grants').removeOne({
-      id: request.params.grantId, app: request.params.id
+      app: request.params.id,
+      id: request.params.grantId
     })
     .then(result => reply({'status':'ok'}))
     .catch(err => reply(err));
@@ -295,9 +308,29 @@ module.exports = {
        scope: 'admin:'.concat(request.params.id)
     };
 
-    MongoDB.collection('grants').find(
-      query, {fields: {_id: 0}}
-    ).toArray(reply);
+    MongoDB.collection('grants')
+    .find(query)
+    .toArray(reply);
+
+    // MongoDB.collection('grants')
+    // .aggregate(
+    //   [
+    //     { $match:
+    //       {
+    //         app: ticket.app,
+    //         scope: 'admin:'.concat(request.params.id)
+    //       }
+    //     },
+    //     { $lookup:
+    //       {
+    //        from: 'users',
+    //        localField: 'user',
+    //        foreignField: '_id',
+    //        as: 'users'
+    //       }
+    //     }
+    //   ]
+    // ).toArray(reply);
   },
 
 
@@ -310,13 +343,16 @@ module.exports = {
     const ticket = request.auth.credentials;
 
     const query = {
-       app: ticket.app,
-       user: new ObjectID(request.payload.user)
+      app: ticket.app,
+      user: new ObjectID(request.payload.user)
     };
 
-    const newGrant = Object.assign(query, {
-      id: crypto.randomBytes(20).toString('hex')
-    });
+    const newGrant = {
+      id: crypto.randomBytes(20).toString('hex'),
+      app: ticket.app,
+      user: new ObjectID(request.payload.user),
+      exp: null
+    };
 
     const update = {
       $addToSet: { scope: 'admin:'.concat(request.params.id) },
@@ -324,13 +360,15 @@ module.exports = {
     };
 
     const options = {
-      upsert: true
+      upsert: true,
+      returnNewDocument: true, // MongoDB
+      returnOriginal: false // Node-driver
     };
 
     MongoDB.collection('grants')
-    .updateOne(query, update, options)
-    .then(res => {
-      if(res.result.n === 1) {
+    .findOneAndUpdate(query, update, options)
+    .then(result => {
+      if(result.lastErrorObject.n === 1) {
 
         EventLog.logUserEvent(
           request.params.id,
@@ -338,7 +376,7 @@ module.exports = {
           {app: request.params.id, byUser: ticket.user}
         );
 
-        reply({'status': 'ok'});
+        reply(result.value);
 
       } else {
 
@@ -357,7 +395,8 @@ module.exports = {
 
     const ticket = request.auth.credentials;
 
-    if (ticket.user === request.payload.user || ticket.user === new ObjectID(request.payload.user)){
+    // You cannot remove yourself, unless you are superadmin
+    if (ticket.user === request.payload.user && ticket.scope.indexOf('admin:*') === -1){
       return Promise.reject(Boom.forbidden('You cannot remove yourself'));
     }
 
@@ -378,7 +417,6 @@ module.exports = {
     MongoDB.collection('grants')
     .updateOne(query, update)
     .then(res => {
-      console.log('res', res);
       if(res.result.n === 1) {
 
         EventLog.logUserEvent(

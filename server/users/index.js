@@ -44,16 +44,23 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
       var query = {
-        $or: [
-          { _id: request.query.id },
-          { id: request.query.id },
-          { email: request.query.email.toLowerCase() }
-        ]
+        $or: []
       };
 
-      if(ObjectID.isValid(request.query.id)) {
-        query.$or = [{ _id: new ObjectID(request.query.id) }].concat(query.$or);
+      if(request.query.id) {
+
+        if(ObjectID.isValid(request.query.id)) {
+          query.$or.push({ _id: new ObjectID(request.query.id) });
+        } else {
+          query.$or.push({ id: request.query.id });
+        }
+
       }
+
+      if(request.query.email) {
+        query.$or.push({ email: request.query.email.toLowerCase() });
+      }
+
 
       MongoDB.collection('users')
       .find(query)
@@ -95,7 +102,8 @@ module.exports.register = function (server, options, next) {
         match.$or = [{ _id: new ObjectID(request.params.id) }].concat(match.$or);
       }
 
-      MongoDB.collection('users').aggregate(
+      MongoDB.collection('users')
+      .aggregate(
         [
           {
             $match: match

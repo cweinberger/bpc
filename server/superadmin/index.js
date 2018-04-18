@@ -49,17 +49,29 @@ module.exports.register = function (server, options, next) {
         $addToSet: { scope: 'admin:*' }
       };
 
+      const options = {
+        returnNewDocument: true, // MongoDB
+        returnOriginal: false // Node-driver
+      };
+
       MongoDB.collection('grants')
-      .updateOne(query, update)
+      .findOneAndUpdate(query, update, options)
       .then(result => {
-        EventLog.logUserEvent(
-          request.params.id,
-          'Add Scope to User',
-          {scope: 'admin:*', byUser: ticket.user}
-        );
+        if(result.lastErrorObject.n === 1) {
 
-        reply({'status': 'ok'});
+          EventLog.logUserEvent(
+            request.params.id,
+            'Add Scope to User',
+            {scope: 'admin:*', byUser: ticket.user}
+          );
 
+          reply(result.value);
+
+        } else {
+
+          reply(Boom.badRequest());
+
+        }
       })
       .catch(err => {
 
@@ -96,23 +108,24 @@ module.exports.register = function (server, options, next) {
         return reply(Boom.forbidden('You cannot demote yourself'));
       }
 
-      MongoDB.collection('grants').update(
-        {
-          id: request.params.id,
-          app: ticket.app
-        }, {
-          $pull: { scope: 'admin:*' }
-        },
-        function(err, result) {
+      const filter = {
+        id: request.params.id,
+        app: ticket.app
+      };
 
-          if (err) {
-            EventLog.logUserEvent(
-              request.params.id,
-              'Scope Change Failed',
-              {scope: 'admin:*', byUser: ticket.user}
-            );
-            return reply(err);
-          }
+      const update = {
+        $pull: { scope: 'admin:*' }
+      };
+
+      const options = {
+        returnNewDocument: true, // MongoDB
+        returnOriginal: false // Node-driver
+      };
+
+      MongoDB.collection('grants')
+      .findOneAndUpdate(filter, update, options)
+      .then(result => {
+        if(result.lastErrorObject.n === 1) {
 
           EventLog.logUserEvent(
             request.params.id,
@@ -120,13 +133,26 @@ module.exports.register = function (server, options, next) {
             {scope: 'admin:*', byUser: ticket.user}
           );
 
-          reply({'status': 'ok'});
+          reply(result.value);
+        } else {
+
+          reply(Boom.badRequest());
+
         }
-      );
+      })
+      .catch(err => {
+
+        EventLog.logUserEvent(
+          request.params.id,
+          'Scope Change Failed',
+          {scope: 'admin:*', byUser: ticket.user}
+        );
+
+        return reply(err);
+
+      });
     }
   });
-
-
 
   next();
 

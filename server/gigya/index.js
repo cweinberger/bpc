@@ -46,8 +46,8 @@ module.exports.register = function (server, options, next) {
       } else if (request.query.email) {
         query = {
           $or: [
-            { 'gigya.email': request.query.email.toLowerCase() },
-            { id: request.query.email }
+            { 'gigya.email': request.query.email },
+            { email: request.query.email.toLowerCase() }
           ]
         };
       } else if (request.query.UID) {

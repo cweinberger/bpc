@@ -47,7 +47,8 @@ module.exports.register = function (server, options, next) {
         query = {
           $or: [
             { 'gigya.email': request.query.email },
-            { email: request.query.email.toLowerCase() }
+            { email: request.query.email.toLowerCase() },
+            { id: request.query.email }
           ]
         };
       } else if (request.query.UID) {

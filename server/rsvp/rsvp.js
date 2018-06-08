@@ -16,7 +16,7 @@ const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
 module.exports = {
   create: function (data) {
 
-    return findApplication_v2({ id: data.app })
+    return findApplication({ id: data.app })
     .then(app => {
 
       const provider = app.settings && app.settings.provider ? app.settings.provider : 'gigya';
@@ -35,9 +35,9 @@ module.exports = {
         result.provider = provider;
         return Promise.resolve(result);
       })
-      .then(result => findUser_v2(result))
-      .then(user => findGrant_v2({ app: app, user: user }))
-      .then(grant => createRsvp_v2({ app: app, grant: grant }));
+      .then(result => findUser(result))
+      .then(user => findGrant({ app: app, user: user }))
+      .then(grant => createRsvp({ app: app, grant: grant }));
     });
   }
 };
@@ -110,7 +110,7 @@ function validateGoogleSession(data) {
 }
 
 
-function findApplication_v2({id}) {
+function findApplication({id}) {
   return MongoDB.collection('applications')
   .findOne(
     { id: id },
@@ -128,7 +128,7 @@ function findApplication_v2({id}) {
 
 
 
-function findUser_v2(user) {
+function findUser(user) {
   if (MongoDB.isMock) {
     const temp_user = {
       _id: crypto.randomBytes(20).toString('hex'),
@@ -197,7 +197,7 @@ function findUser_v2(user) {
 }
 
 
-function findGrant_v2({app, user}) {
+function findGrant({app, user}) {
 
   // Trying to find a grant the old way - to keep compatibility
   return MongoDB.collection('grants')
@@ -271,7 +271,7 @@ function findGrant_v2({app, user}) {
 }
 
 
-function createRsvp_v2({app, grant}){
+function createRsvp({app, grant}){
   if(!grant) {
     return Promise.reject(Boom.forbidden());
   }

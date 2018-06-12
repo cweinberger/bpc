@@ -216,6 +216,18 @@ module.exports = {
       settings: {
         provider: 'gigya'
       }
+    },
+    app_with_email_masks: {
+      id: 'app_with_email_masks',
+      scope: [],
+      key: 'fssdfn7eyhjhkjthergnweyi4t7syeir7bytyuuygbe',
+      algorithm: 'sha256',
+      settings: {
+        provider: 'gigya',
+        allowEmailMasks: [
+          '@validdomain.nl'
+        ]
+      }
     }
   },
 

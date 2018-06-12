@@ -172,13 +172,54 @@ module.exports = {
 
 
   getApplicationGrants: function (request, reply) {
-    const query = Object.assign(request.query, {
-       app: request.params.id
-    });
+    var query = {
+      app: request.params.id
+    };
 
-    MongoDB.collection('grants').find(
-      query, {fields: {_id: 0}}
-    ).toArray(reply);
+    if (request.query.id) {
+      query.id = request.query.id;
+    }
+
+    if (request.query.user) {
+      if (ObjectID.isValid(request.query.user)) {
+        query.user = new ObjectID(request.query.user);
+      } else {
+        query.user = request.query.user;
+      }
+    }
+
+    return MongoDB.collection('grants')
+    .find(query)
+    .project({
+      _id: 0,
+      id: 1,
+      app: 1,
+      user: 1,
+      scope: 1,
+      exp: 1
+    })
+    .limit(request.query.limit)
+    .skip(request.query.skip)
+    .toArray(reply);
+    // .toArray()
+    // .then(res => {
+    //   reply({
+    //     grants: res,
+    //     limit: request.query.limit,
+    //     skip: request.query.skip,
+    //   });
+    // });
+  },
+
+
+  getApplicationGrantsCount: function (request, reply) {
+    const query = {
+       app: request.params.id
+    };
+
+    return MongoDB.collection('grants')
+    .count(query)
+    .then(res => reply({ count: res }));
   },
 
 
@@ -310,27 +351,14 @@ module.exports = {
 
     MongoDB.collection('grants')
     .find(query)
+    .project({
+      _id: 0,
+      id: 1,
+      app: 1,
+      user: 1,
+      exp: 1
+    })
     .toArray(reply);
-
-    // MongoDB.collection('grants')
-    // .aggregate(
-    //   [
-    //     { $match:
-    //       {
-    //         app: ticket.app,
-    //         scope: 'admin:'.concat(request.params.id)
-    //       }
-    //     },
-    //     { $lookup:
-    //       {
-    //        from: 'users',
-    //        localField: 'user',
-    //        foreignField: '_id',
-    //        as: 'users'
-    //       }
-    //     }
-    //   ]
-    // ).toArray(reply);
   },
 
 
@@ -453,10 +481,13 @@ module.exports = {
 function convertToUniqueid(id) {
 
   return MongoDB.collection('applications')
-  .find(
-    {id: {$regex: '^'.concat(id)}},
-    {_id: 0, id: 1}
-  )
+  .find({
+    id: {$regex: '^'.concat(id)}
+  })
+  .project({
+    _id: 0,
+    id: 1,
+  })
   .toArray()
   .then((apps) => {
 

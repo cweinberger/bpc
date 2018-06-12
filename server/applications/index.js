@@ -129,12 +129,29 @@ module.exports.register = function (server, options, next) {
       cors: stdCors,
       validate: {
         query: {
+          id: Joi.string(),
           user: Joi.string(),
-          scope: Joi.string()
+          limit: Joi.number().min(0).max(100).default(50),
+          skip: Joi.number().min(0).default(0)
         }
       }
     },
     handler: Applications.getApplicationGrants
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/{id}/grantscount',
+    config: {
+      auth: {
+        access: {
+          scope: ['admin:{params.id}', 'admin:*'],
+          entity: 'user'
+        }
+      },
+      cors: stdCors
+    },
+    handler: Applications.getApplicationGrantsCount
   });
 
 

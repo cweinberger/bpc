@@ -61,6 +61,9 @@ module.exports.register = function (server, options, next) {
         query.$or.push({ email: request.query.email.toLowerCase() });
       }
 
+      if(request.query.provider) {
+        query.provider = request.query.provider;
+      }
 
       MongoDB.collection('users')
       .find(query)
@@ -94,7 +97,8 @@ module.exports.register = function (server, options, next) {
 
       var match = {
         $or: [
-          { id: request.params.id }
+          { id: request.params.id },
+          { email: request.params.id }
         ]
       };
 

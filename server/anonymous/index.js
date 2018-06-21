@@ -219,12 +219,12 @@ function findApplication(app) {
   .then (app => {
     if (app === null){
       return Promise.reject(Boom.unauthorized('Unknown application'));
-    } else if (app.settings && app.settings.disallowGrants){
-      return Promise.reject(Boom.unauthorized('App disallow users'));
-    } else if (!app.settings || !app.settings.allowAnonymousUsers){
-      return Promise.reject(Boom.unauthorized('Anonymous tickets not allowed for application'));
-    } else {
+    } else if (app.settings && app.settings.disallowUserTickets){
+      return Promise.reject(Boom.unauthorized('App disallow user tickets'));
+    } else if (app.settings && app.settings.allowAnonymousUsers){
       return Promise.resolve(app);
+    } else {
+      return Promise.reject(Boom.unauthorized('Anonymous tickets not allowed for application'));
     }
   });
 }

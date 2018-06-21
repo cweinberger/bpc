@@ -145,6 +145,7 @@ module.exports = {
       key: 'something_long_and_random',
       algorithm: 'sha256',
       settings: {
+        allowAutoCreationGrants: true,
         includeScopeInPrivatExt: true
       }
     },
@@ -158,7 +159,8 @@ module.exports = {
       key: 'something_long_and_random',
       algorithm: 'sha256',
       settings: {
-        provider: 'google'
+        provider: 'google',
+        allowAutoCreationGrants: true,
       }
     },
     delete_me_app: {
@@ -168,14 +170,14 @@ module.exports = {
       key: 'something_long_and_random',
       algorithm: 'sha256'
     },
-    app_with_disallowAutoCreationGrants: {
-      id: 'app_with_disallowAutoCreationGrants',
+    app_that_disallowAutoCreationGrants: {
+      id: 'app_that_disallowAutoCreationGrants',
       scope: [],
       delegate: false,
       key: 'something_long_and_random',
       algorithm: 'sha256',
       settings: {
-        disallowAutoCreationGrants: true
+        allowAutoCreationGrants: false
       }
     },
     app_with_admin_scope: {

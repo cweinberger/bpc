@@ -118,8 +118,8 @@ function findApplication({id}) {
   .then (app => {
     if (app === null){
       return Promise.reject(Boom.unauthorized('Unknown application'));
-    } else if (app.settings && app.settings.disallowGrants){
-      return Promise.reject(Boom.unauthorized('App disallow users'));
+    } else if (app.settings && app.settings.disallowUserTickets){
+      return Promise.reject(Boom.unauthorized('App disallow user tickets'));
     } else {
       return Promise.resolve(app);
     }
@@ -244,30 +244,37 @@ function findGrant({app, user}) {
         } else {
 
           if (app.settings &&
-              app.settings.disallowAutoCreationGrants) {
+            app.settings.allowAutoCreationGrants) {
 
-            return Promise.reject(Boom.forbidden());
+              return createGrant(app, user);
 
           } else {
+                
+            return Promise.reject(Boom.forbidden());
 
-            // Creating new clean grant
-            grant = {
-              id: crypto.randomBytes(20).toString('hex'),
-              app: app.id,
-              user: user._id,
-              scope: [],
-              exp: null
-            };
-
-            // Saves the grant
-            MongoDB.collection('grants').insertOne(grant);
-
-            return Promise.resolve(grant);
           }
         }
       })
     }
   });
+}
+
+
+function createGrant(app, user) {
+  // Creating new clean grant
+  const newGrant = {
+    id: crypto.randomBytes(20).toString('hex'),
+    app: app.id,
+    user: user._id,
+    scope: [],
+    exp: null
+  };
+
+  // Saves the grant
+  MongoDB.collection('grants').insertOne(newGrant);
+
+  // Resolve it straight away. No need to wait on the database
+  return Promise.resolve(newGrant);
 }
 
 

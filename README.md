@@ -234,8 +234,7 @@ db.applications.insert({
   key: 'something_long_and_random',
   algorithm: 'sha256',
   settings: {
-    provider: 'google',
-    disallowAutoCreationGrants: true
+    provider: 'google'
   }
 })
 

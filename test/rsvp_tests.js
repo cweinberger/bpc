@@ -194,7 +194,7 @@ describe('rsvp unit tests', () => {
         UIDSignature:'UIDSignature_random',
         signatureTimestamp:'signatureTimestamp_random',
         email: 'userwithnopreviousgrant@email.com',
-        app: 'app_with_disallowAutoCreationGrants'
+        app: 'app_that_disallowAutoCreationGrants'
       })
       .then(result => {
         done(new Error('RSVP must not be issued to userwithnopreviousgrant'));
@@ -207,7 +207,7 @@ describe('rsvp unit tests', () => {
         expect(err).to.be.an.error('Forbidden');
         return Promise.resolve();
       })
-      .then(() => MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'app_with_disallowAutoCreationGrants'}))
+      .then(() => MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'app_that_disallowAutoCreationGrants'}))
       .then(grant => {
         expect(grant).to.be.null();
         done();

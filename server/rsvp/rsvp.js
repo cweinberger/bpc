@@ -35,6 +35,14 @@ module.exports = {
         result.provider = provider;
         return Promise.resolve(result);
       })
+      .then(result => {
+        if(app.settings && app.settings && app.settings.allowEmailMasksRsvp) {
+          return validateEmailMask(result.email, app.settings.allowEmailMasksRsvp)
+          .then(() => result);
+        } else {
+          return Promise.resolve(result);
+        }
+      })
       .then(result => findUser(result))
       .then(user => findGrant({ app: app, user: user }))
       .then(grant => createRsvp({ app: app, grant: grant }));
@@ -124,6 +132,28 @@ function findApplication({id}) {
       return Promise.resolve(app);
     }
   });
+}
+
+
+
+function validateEmailMask(email, emailMask) {
+  if(!(emailMask instanceof Array)) {
+    return Promise.reject(Boom.unauthorized('Invalid email mask in application settings'));
+  }
+
+  const validEmail = emailMask
+  .filter(mask => {
+    return typeof mask === 'string';
+  })
+  .some(mask => {
+    return email.indexOf(mask) > -1;
+  });
+
+  if (validEmail) {
+    return Promise.resolve();
+  } else {
+    return Promise.reject(Boom.forbidden('Invalid email mask'));
+  }
 }
 
 

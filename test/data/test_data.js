@@ -226,7 +226,8 @@ module.exports = {
       algorithm: 'sha256',
       settings: {
         provider: 'gigya',
-        allowEmailMasks: [
+        allowAutoCreationGrants: true,
+        allowEmailMasksRsvp: [
           '@validdomain.nl'
         ]
       }

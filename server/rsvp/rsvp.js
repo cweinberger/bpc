@@ -141,6 +141,10 @@ function validateEmailMask(email, emailMask) {
     return Promise.reject(Boom.unauthorized('Invalid email mask in application settings'));
   }
 
+  if(emailMask.length === 0) {
+    return Promise.resolve();
+  }
+
   const validEmail = emailMask
   .filter(mask => {
     return typeof mask === 'string';

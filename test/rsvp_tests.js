@@ -375,6 +375,24 @@ describe('rsvp integration test - email masks', () => {
       UID: 'user_with_valid_email_domain',
       profile: { email: 'user_with_valid_email_domain@validdomain.nl'}}
     });
+
+
+    // exchangeUIDSignature
+    Gigya.callApi.withArgs('/accounts.exchangeUIDSignature', {
+      UID: 'user_with_another_valid_email_domain',
+      UIDSignature:'UIDSignature_random',
+      signatureTimestamp:'signatureTimestamp_random'
+    })
+    .resolves({ body: {UID: 'user_with_another_valid_email_domain'}});
+    
+    // getAccountInfo
+    Gigya.callApi.withArgs('/accounts.getAccountInfo', {
+      UID: 'user_with_another_valid_email_domain'
+    })
+    .resolves({ body: {
+      UID: 'user_with_another_valid_email_domain',
+      profile: { email: 'user_with_another_valid_email_domain@anothervaliddomain.nl'}}
+    });
     
 
     // exchangeUIDSignature
@@ -407,6 +425,26 @@ describe('rsvp integration test - email masks', () => {
       provider: 'gigya',
       UID: 'user_with_valid_email_domain',
       email: 'user_with_valid_email_domain@validdomain.nl',
+      UIDSignature: 'UIDSignature_random',
+      signatureTimestamp: 'signatureTimestamp_random',
+      app: 'app_with_email_masks'
+    };
+
+    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload}, null)
+    .then(response => {
+      expect(response.statusCode).to.be.equal(200);
+      expect(response.result.rsvp).to.have.length(356);
+      done();
+    })
+    .catch(done);
+  });
+
+
+  it('get rsvp for a gigya user with another valid domain', done => {
+    let payload = {
+      provider: 'gigya',
+      UID: 'user_with_another_valid_email_domain',
+      email: 'user_with_another_valid_email_domain@anothervaliddomain.nl',
       UIDSignature: 'UIDSignature_random',
       signatureTimestamp: 'signatureTimestamp_random',
       app: 'app_with_email_masks'

@@ -228,7 +228,8 @@ module.exports = {
         provider: 'gigya',
         allowAutoCreationGrants: true,
         allowEmailMasksRsvp: [
-          '@validdomain.nl'
+          '@validdomain.nl',
+          '@anothervaliddomain.nl'
         ]
       }
     }

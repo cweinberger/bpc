@@ -146,7 +146,8 @@ function validateEmailMask(email, emailMask) {
     return typeof mask === 'string';
   })
   .some(mask => {
-    return email.indexOf(mask) > -1;
+    return email.endsWith(mask);
+    // return email.indexOf(mask) > -1;
   });
 
   if (validEmail) {

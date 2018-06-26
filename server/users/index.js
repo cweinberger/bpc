@@ -150,11 +150,23 @@ module.exports.register = function (server, options, next) {
         return reply(Boom.badRequest('You cannot delete yourself'));
       }
 
-      // TODO: We must move the user to the deleted-collections, just like with Gigya-notification
-      // We must also delete the grants
-
       MongoDB.collection('users')
-      .deleteOne({ id: request.params.id })
+      .findOneAndDelete({ id: request.params.id })
+      .then(result => {
+
+        if (result.ok !== 1) {
+          return reply(Boom.notFound());
+        }
+
+        var user = result.value;
+
+        var deleteGrants = MongoDB.collection('grants').remove({ user: user._id });
+
+        user.deletedAt = new Date();
+        var insertDeletedUser = MongoDB.collection('deleted_users').insert(user);
+
+        return Promise.all([deleteGrants, insertDeletedUser]);
+      })
       .then(() => {
         EventLog.logUserEvent(request.params.id, 'Deleting user');
         reply({'status': 'ok'});

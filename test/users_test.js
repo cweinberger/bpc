@@ -29,13 +29,13 @@ describe('users - integration tests', () => {
 
   describe('getting user with an app ticket', () => {
 
-    const app = test_data.applications.bt;
+    const bt = test_data.applications.bt;
     var appTicket;
     const simple_first_user = test_data.users.simple_first_user;
 
     // Getting the appTicket
     before(done => {
-      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, bt)
       .then((response) => {
         appTicket = response.result;
       })
@@ -49,46 +49,57 @@ describe('users - integration tests', () => {
       .then((response) => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.bt_paywall).to.true();
-        done();
-      });
+      })
+      .then(() => done())
+      .catch(done);
     });
   });
 
 
   describe('deleting user using an application with admin scope', () => {
 
-    const app = test_data.applications.app_with_admin_scope;
+    const app_with_admin_scope = test_data.applications.app_with_admin_scope;
     let appTicket;
 
     // Getting the appTicket
     before(done => {
-      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app_with_admin_scope)
       .then((response) => {
         expect(response.statusCode).to.equal(200);
         appTicket = response.result;
-        done();
-      });
+      })
+      .then(() => done())
+      .catch(done);
     });
+
 
     it('delete user succeeds', done => {
-      let options = {
+
+      const simple_second_user = test_data.users.simple_second_user;
+
+      const request = {
         method: 'DELETE',
-        url: '/users/5347895384975934842757'
+        url: `/users/${simple_second_user.id}`
       };
 
-      Bpc.request(options, appTicket)
+      Bpc.request(request, appTicket)
       .then((response) => {
         expect(response.statusCode).to.equal(200);
-
-        MongoDB.collection('users')
-        .find({id: '5347895384975934842757'})
-        .toArray(function(err, result){
-          expect(result.length).to.equal(0);
-
-          done();
-        });
-      });
+      })
+      .then(() => MongoDB.collection('users').find({ id: simple_second_user.id }).toArray())
+      .then(result => {
+        expect(result.length).to.equal(0);
+      })
+      .then(() => MongoDB.collection('grants').find({ user: simple_second_user._id }).toArray())
+      .then(result => {
+        expect(result.length).to.equal(0);
+      })
+      .then(() => MongoDB.collection('deleted_users').find({ id: simple_second_user.id }).toArray())
+      .then(result => {
+        expect(result.length).to.equal(1);
+      })
+      .then(() => done())
+      .catch(done);
     });
   });
-
 });

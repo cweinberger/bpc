@@ -4,7 +4,7 @@
 // Bootstrap the testing harness.
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
+const Bpc = require('./helpers/bpc_helper');
 const MongoDB = require('./helpers/mongodb_helper');
 const Gigya = require('./helpers/gigya_stub');
 const gigya_helper = require('./helpers/gigya_helper');
@@ -31,7 +31,7 @@ describe('gigya notifications - integration tests', () => {
     var appTicket;
 
     before(done => {
-      bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app)
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
       .then(response => {
         appTicket = response.result;
         return Promise.resolve();
@@ -67,7 +67,7 @@ describe('gigya notifications - integration tests', () => {
         }
       };
 
-      bpc_helper.request(permissions_request, appTicket)
+      Bpc.request(permissions_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         // expect(response.payload.status).to.equal('ok');
@@ -116,7 +116,7 @@ describe('gigya notifications - integration tests', () => {
 
       notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -165,7 +165,7 @@ describe('gigya notifications - integration tests', () => {
 
       notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -196,7 +196,7 @@ describe('gigya notifications - integration tests', () => {
     var appTicket;
 
     before(done => {
-      bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app)
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
       .then(response => {
         appTicket = response.result;
       })
@@ -229,7 +229,7 @@ describe('gigya notifications - integration tests', () => {
         }
       };
 
-      bpc_helper.request(permissions_request, appTicket)
+      Bpc.request(permissions_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         // expect(response.payload.status).to.equal('ok');
@@ -278,7 +278,7 @@ describe('gigya notifications - integration tests', () => {
 
       notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -311,7 +311,7 @@ describe('gigya notifications - integration tests', () => {
         }
       };
 
-      bpc_helper.request(permissions_request, appTicket)
+      Bpc.request(permissions_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         // expect(response.payload.status).to.equal('ok');
@@ -342,7 +342,7 @@ describe('gigya notifications - integration tests', () => {
     var appTicket;
 
     before(done => {
-      bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app)
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
       .then(response => {
         appTicket = response.result;
       })
@@ -375,7 +375,7 @@ describe('gigya notifications - integration tests', () => {
         }
       };
 
-      bpc_helper.request(permissions_request, appTicket)
+      Bpc.request(permissions_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         // expect(response.payload.status).to.equal('ok');
@@ -424,7 +424,7 @@ describe('gigya notifications - integration tests', () => {
 
       notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      Bpc.request(notifications_request, null)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -457,7 +457,7 @@ describe('gigya notifications - integration tests', () => {
         }
       };
 
-      bpc_helper.request(permissions_request, appTicket)
+      Bpc.request(permissions_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         // expect(response.payload.status).to.equal('ok');

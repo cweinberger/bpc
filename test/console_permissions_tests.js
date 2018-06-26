@@ -5,7 +5,7 @@
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const MongoDB = require('./helpers/mongodb_helper');
-const bpc_helper = require('./helpers/bpc_helper');
+const Bpc = require('./helpers/bpc_helper');
 // const Permissions = require('./../server/permissions');
 
 // Test shortcuts.
@@ -28,7 +28,7 @@ describe('console - functional tests:', () => {
 
   // Getting the console_app_ticket
   before(done => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, console_app)
+    Bpc.request({ method: 'POST', url: '/ticket/app' }, console_app)
     .then(response => {
       console_app_ticket = response.result;
     })
@@ -44,8 +44,8 @@ describe('console - functional tests:', () => {
     var console_superadmin_google_user__console_ticket;
 
     it('getting superadmin user ticket', (done) => {
-      bpc_helper.generateRsvp(console_app, console_superadmin_google_user__console_grant)
-      .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, console_app_ticket))
+      Bpc.generateRsvp(console_app, console_superadmin_google_user__console_grant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, console_app_ticket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
         console_superadmin_google_user__console_ticket = response.result;
@@ -70,8 +70,8 @@ describe('console - functional tests:', () => {
     var console_google_user_ticket;
 
     it('getting user ticket', (done) => {
-      bpc_helper.generateRsvp(console_app, console_google_user__console_grant)
-      .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, console_app_ticket))
+      Bpc.generateRsvp(console_app, console_google_user__console_grant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, console_app_ticket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
         console_google_user_ticket = response.result;

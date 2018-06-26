@@ -3,7 +3,7 @@
 
 // Bootstrap the testing harness.
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
+const Bpc = require('./helpers/bpc_helper');
 const Gigya = require('./helpers/gigya_stub');
 const MongoDB = require('./helpers/mongodb_helper');
 
@@ -33,7 +33,7 @@ describe('users - integration tests', () => {
 
     // Getting the appTicket
     before(done => {
-      bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app)
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
       .then((response) => {
         expect(response.statusCode).to.equal(200);
         appTicket = response.result;
@@ -55,7 +55,7 @@ describe('users - integration tests', () => {
 
 
     it('get Gigya email from UID', done => {
-      bpc_helper.request({url: '/gigya?UID=3218736128736123215732'}, appTicket)
+      Bpc.request({url: '/gigya?UID=3218736128736123215732'}, appTicket)
       .then((response) => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.UID).to.equal('3218736128736123215732');
@@ -67,7 +67,7 @@ describe('users - integration tests', () => {
 
 
     it('get Gigya UID from email', done => {
-      bpc_helper.request({url: '/gigya?email=first_user@berlingskemedia.dk'}, appTicket)
+      Bpc.request({url: '/gigya?email=first_user@berlingskemedia.dk'}, appTicket)
       .then((response) => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.UID).to.equal('3218736128736123215732');
@@ -79,7 +79,7 @@ describe('users - integration tests', () => {
 
 
     it('invalid trying to GET /gigya with no query params', done => {
-      bpc_helper.request({url: '/gigya'}, appTicket)
+      Bpc.request({url: '/gigya'}, appTicket)
       .then((response) => {
         expect(response.statusCode).to.equal(400);
         done();
@@ -88,7 +88,7 @@ describe('users - integration tests', () => {
     });
 
     it('invalid trying to GET /gigya with too many query params', done => {
-      bpc_helper.request({url: '/gigya?email=someemail&UID=someuid'}, appTicket)
+      Bpc.request({url: '/gigya?email=someemail&UID=someuid'}, appTicket)
       .then((response) => {
         expect(response.statusCode).to.equal(400);
         done();

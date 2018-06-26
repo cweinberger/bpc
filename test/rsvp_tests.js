@@ -5,7 +5,7 @@
 // Bootstrap the testing harness.
 const Oz = require('oz');
 const sinon = require('sinon');
-const bpc_helper = require('./helpers/bpc_helper');
+const Bpc = require('./helpers/bpc_helper');
 const MongoDB = require('./helpers/mongodb_helper');
 const Gigya = require('./helpers/gigya_stub');
 const Google = require('./helpers/google_stub');
@@ -256,7 +256,7 @@ describe('rsvp integration test - gigya', () => {
       signatureTimestamp: 'signatureTimestamp_random'
     };
 
-    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload})
+    Bpc.request({ method: 'POST', url: '/rsvp', payload: payload})
     .then(response => {
       expect(response.statusCode).to.be.equal(200);
       expect(response.result.rsvp).to.have.length(334);
@@ -274,7 +274,7 @@ describe('rsvp integration test - gigya', () => {
       app: 'app_with_gigya_provider'
     };
 
-    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload})
+    Bpc.request({ method: 'POST', url: '/rsvp', payload: payload})
     .then(response => {
       expect(response.statusCode).to.be.equal(400);
       done();
@@ -316,7 +316,7 @@ describe('rsvp integration test - google', () => {
       access_token: 'random_access_token_kfjsdhkjfhsdwe'
     };
 
-    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload})
+    Bpc.request({ method: 'POST', url: '/rsvp', payload: payload})
     .then(response => {
       expect(response.statusCode).to.be.equal(200);
       expect(response.result.rsvp.length).to.be.within(300,360);
@@ -335,7 +335,7 @@ describe('rsvp integration test - google', () => {
       access_token: 'random_access_token_oyiyu'
     };
 
-    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload})
+    Bpc.request({ method: 'POST', url: '/rsvp', payload: payload})
     .then(response => {
       expect(response.statusCode).to.be.equal(400);
       done();
@@ -429,7 +429,7 @@ describe('rsvp integration test - email masks', () => {
       app: 'app_with_email_masks'
     };
 
-    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload})
+    Bpc.request({ method: 'POST', url: '/rsvp', payload: payload})
     .then(response => {
       expect(response.statusCode).to.be.equal(200);
       expect(response.result.rsvp).to.have.length(356);
@@ -449,7 +449,7 @@ describe('rsvp integration test - email masks', () => {
       app: 'app_with_email_masks'
     };
 
-    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload})
+    Bpc.request({ method: 'POST', url: '/rsvp', payload: payload})
     .then(response => {
       expect(response.statusCode).to.be.equal(200);
       expect(response.result.rsvp).to.have.length(356);
@@ -469,7 +469,7 @@ describe('rsvp integration test - email masks', () => {
       app: 'app_with_email_masks'
     };
 
-    bpc_helper.request({ method: 'POST', url: '/rsvp', payload: payload})
+    Bpc.request({ method: 'POST', url: '/rsvp', payload: payload})
     .then(response => {
       expect(response.statusCode).to.be.equal(403);
       done();

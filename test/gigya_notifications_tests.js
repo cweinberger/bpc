@@ -4,7 +4,7 @@
 // Bootstrap the testing harness.
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
+const Bpc = require('./helpers/bpc_helper');
 const MongoDB = require('./helpers/mongodb_helper');
 const Gigya = require('./helpers/gigya_stub');
 const gigya_helper = require('./helpers/gigya_helper');
@@ -77,7 +77,7 @@ describe('gigya notifications', () => {
 
       notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -139,7 +139,7 @@ describe('gigya notifications', () => {
 
       notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -196,7 +196,7 @@ describe('gigya notifications', () => {
 
       notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -260,7 +260,7 @@ describe('gigya notifications', () => {
       notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
       
 
-      bpc_helper.request(notifications_request)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
       })
@@ -306,7 +306,7 @@ describe('gigya notifications', () => {
 
       notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
       })

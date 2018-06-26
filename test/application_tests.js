@@ -2,7 +2,7 @@
 'use strict';
 
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
+const Bpc = require('./helpers/bpc_helper');
 const MongoDB = require('./helpers/mongodb_helper');
 
 // Test shortcuts.
@@ -32,7 +32,7 @@ describe('application tests', () => {
 
   // Getting the consoleAppTicket
   before(done => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, consoleApp)
+    Bpc.request({ method: 'POST', url: '/ticket/app' }, consoleApp)
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleAppTicket = response.result;
@@ -44,8 +44,8 @@ describe('application tests', () => {
 
   // Getting the consoleUserTicket
   before(done => {
-    bpc_helper.generateRsvp(consoleApp, consoleGrant)
-    .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+    Bpc.generateRsvp(consoleApp, consoleGrant)
+    .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleUserTicket = response.result;
@@ -56,8 +56,8 @@ describe('application tests', () => {
 
   // Getting the consoleSuperAdminUserTicket
   before(done => {
-    bpc_helper.generateRsvp(consoleApp, consoleSuperAdminGrant)
-    .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+    Bpc.generateRsvp(consoleApp, consoleSuperAdminGrant)
+    .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleSuperAdminUserTicket = response.result;
@@ -71,7 +71,7 @@ describe('application tests', () => {
 
     it('returns at least one app', done => {
 
-      bpc_helper.request({ url: '/applications' }, consoleUserTicket)
+      Bpc.request({ url: '/applications' }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.array();
@@ -90,7 +90,7 @@ describe('application tests', () => {
 
     it('returns 403 for normal admin user', done => {
 
-      bpc_helper.request({ url: '/applications/valid-app' }, consoleUserTicket)
+      Bpc.request({ url: '/applications/valid-app' }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(403);
         done();
@@ -100,7 +100,7 @@ describe('application tests', () => {
 
 
     it('returns the correct app', done => {
-      bpc_helper.request({ url: '/applications/valid-app' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/valid-app' }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.object();
@@ -114,7 +114,7 @@ describe('application tests', () => {
 
 
     it('returns empty response for invalid app ids', done => {
-      bpc_helper.request({ url: '/applications/invalid-app' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/invalid-app' }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
         done();
@@ -136,7 +136,7 @@ describe('application tests', () => {
 
     it('create new app by console user', done => {
 
-      bpc_helper.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.id).to.equal(newApp.id);
@@ -159,13 +159,13 @@ describe('application tests', () => {
     it('console user can get own app', done => {
 
       // Getting a new ticket, since the old ticket does not have the new admin:new-app scope
-      bpc_helper.generateRsvp(consoleApp, consoleGrant)
-      .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+      Bpc.generateRsvp(consoleApp, consoleGrant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
       .then(response => {
         expect(response.result.scope).to.include('admin:new-app');
         return Promise.resolve(response.result);
       })
-      .then(newConsoleUserTicket => bpc_helper.request({ url: '/applications/new-app' }, newConsoleUserTicket))
+      .then(newConsoleUserTicket => Bpc.request({ url: '/applications/new-app' }, newConsoleUserTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.id).to.equal(newApp.id);
@@ -187,7 +187,7 @@ describe('application tests', () => {
         algorithm: 'sha256'
       };
 
-      bpc_helper.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.object();
@@ -243,7 +243,7 @@ describe('application tests', () => {
   describe('delete', () => {
 
     it('nonexisting app forbidden for regular console app user', done => {
-      bpc_helper.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleUserTicket)
+      Bpc.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(403);
         done();
@@ -252,7 +252,7 @@ describe('application tests', () => {
 
 
     it(' nonexisting app for superadmin user return not found', done => {
-      bpc_helper.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
         done();
@@ -262,7 +262,7 @@ describe('application tests', () => {
 
     it('existing app forbidden for non-admin console app user', done => {
 
-      bpc_helper.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleUserTicket)
+      Bpc.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleUserTicket)
       .then(response => {
 
         expect(response.statusCode).to.equal(403);
@@ -274,7 +274,7 @@ describe('application tests', () => {
 
     it('superadmin delete app', done => {
 
-      bpc_helper.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
       .then(response => {
 
         expect(response.statusCode).to.equal(200);

@@ -2,7 +2,7 @@
 'use strict';
 
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
+const Bpc = require('./helpers/bpc_helper');
 const MongoDB = require('./helpers/mongodb_helper');
 
 // Test shortcuts.
@@ -33,7 +33,7 @@ describe('admin tests', () => {
 
   // Getting the consoleAppTicket
   before(done => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, consoleApp)
+    Bpc.request({ method: 'POST', url: '/ticket/app' }, consoleApp)
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleAppTicket = response.result;
@@ -45,8 +45,8 @@ describe('admin tests', () => {
 
   // Getting the consoleUserTicket
   before(done => {
-    bpc_helper.generateRsvp(consoleApp, consoleGrant)
-    .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+    Bpc.generateRsvp(consoleApp, consoleGrant)
+    .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleUserTicket = response.result;
@@ -69,7 +69,7 @@ describe('admin tests', () => {
         algorithm: 'sha256'
       };
 
-      bpc_helper.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         done();
@@ -79,8 +79,8 @@ describe('admin tests', () => {
 
 
     it('refresh console ticket to get new admin:app scope', done => {
-      bpc_helper.generateRsvp(consoleApp, consoleGrant)
-      .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+      Bpc.generateRsvp(consoleApp, consoleGrant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
         consoleUserTicket = response.result;
@@ -96,11 +96,11 @@ describe('admin tests', () => {
         user: 'first_user@berlingskemedia.dk'
       };
 
-      bpc_helper.request({ url: '/users?email=first_user@berlingskemedia.dk' }, consoleUserTicket)
+      Bpc.request({ url: '/users?email=first_user@berlingskemedia.dk' }, consoleUserTicket)
       .then(response => {
         return Promise.resolve(response.result[0]);
       })
-      .then(user => bpc_helper.request({ url: '/applications/new-app-to-simple-user/makeadmin', method: 'POST', payload: { user: user._id} }, consoleUserTicket))
+      .then(user => Bpc.request({ url: '/applications/new-app-to-simple-user/makeadmin', method: 'POST', payload: { user: user._id} }, consoleUserTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
         done();
@@ -111,13 +111,13 @@ describe('admin tests', () => {
 
     it('simple user now has grant to console', done => {
       // Finding the new grant to be able to generate RSVP
-      bpc_helper.request({ url: '/users?email=first_user@berlingskemedia.dk' }, consoleUserTicket)
+      Bpc.request({ url: '/users?email=first_user@berlingskemedia.dk' }, consoleUserTicket)
       .then(response => {
         return Promise.resolve(response.result[0]);
       })
       .then(user => MongoDB.collection('grants').findOne({app: 'console', user: user._id }))
-      .then(grant => bpc_helper.generateRsvp(consoleApp, grant))
-      .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+      .then(grant => Bpc.generateRsvp(consoleApp, grant))
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
         simpleFirstUserTicket = response.result;

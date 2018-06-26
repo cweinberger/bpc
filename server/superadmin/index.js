@@ -34,6 +34,10 @@ module.exports.register = function (server, options, next) {
 
       const ticket = request.auth.credentials;
 
+      if (ticket.grant === request.params.id){
+        return reply('No need to promote yourself');
+      }
+
       let query = {
         app: ticket.app
       };

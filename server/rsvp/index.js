@@ -1,8 +1,6 @@
 /* jshint node: true */
 'use strict';
 
-
-const Boom = require('boom');
 const Joi = require('joi');
 const Rsvp = require('./rsvp');
 

@@ -1,29 +1,21 @@
+/* jshint node: true */
+'use strict';
 
-const ENCRYPTIONPASSWORD = 'random_test_password_that_is_longer_than_32_characters';
-process.env.ENCRYPTIONPASSWORD = ENCRYPTIONPASSWORD;
+if (process.env.NODE_ENV !== 'test') {
+  console.error('NODE_ENV is not set to test')
+  process.exit(1);
+}
 
 const Hawk = require('hawk');
 const Oz = require('oz');
 const crypto = require('crypto');
 const bpc = require('../../server');
+const Config = require('./../../server/config');
 
 
-module.exports.request = function (options, ticket, callback) {
+module.exports.request = function (options, ticket) {
 
   return new Promise((resolve, reject) => {
-
-    if (callback === undefined) {
-      // callback = function(response) {
-      //   if (response.statusCode >= 400 || response.err) {
-      //     reject(response);
-      //   } else {
-      //     resolve(response);
-      //   }
-      // };
-      // Actually, we don't need to reject anything. We only resolve and the tests should validate the response
-      callback = resolve;
-    }
-
     const req = {
       method: options.method ? options.method : 'GET',
       url: options.url,
@@ -36,7 +28,7 @@ module.exports.request = function (options, ticket, callback) {
     };
 
     if (ticket !== undefined && ticket !== null && ticket !== {}) {
-
+      
       const hawkHeader = Hawk.client.header(
         'http://'.concat(req.headers.host, req.url),
         req.method, {
@@ -44,29 +36,25 @@ module.exports.request = function (options, ticket, callback) {
           app: ticket.app
         }
       );
-
+      
       if (!hawkHeader.field){
         console.error('Error when generating Hawk field:', hawkHeader.err);
-        callback(hawkHeader);
+        reject(hawkHeader);
       }
-
+      
       req.headers.authorization = hawkHeader.field;
     }
-
-    bpc.inject(req, callback);
+    
+    // We don't need to reject anything. We only resolve and the tests should validate the response
+    bpc.inject(req, resolve);
   });
 };
 
 
-module.exports.generateRsvp = function(app, grant, callback) {
-
+module.exports.generateRsvp = function(app, grant) {
   return new Promise((resolve, reject) => {
     // Generating the RSVP based on the grant
-    Oz.ticket.rsvp(app, grant, ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
-      if(typeof callback === 'function'){
-        callback(err, rsvp);
-      }
-
+    Oz.ticket.rsvp(app, grant, Config.ENCRYPTIONPASSWORD, {}, (err, rsvp) => {
       if (err) {
         return reject(err);
       } else {

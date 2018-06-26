@@ -4,7 +4,7 @@
 // Bootstrap the testing harness.
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
-const MongoDB = require('./helpers/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_helper');
 const bpc_helper = require('./helpers/bpc_helper');
 // const Permissions = require('./../server/permissions');
 

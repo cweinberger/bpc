@@ -2,8 +2,6 @@
 'use strict';
 
 const Boom = require('boom');
-const Joi = require('joi');
-const OzLoadFuncs = require('./../oz_loadfuncs');
 const MongoDB = require('./../mongo/mongodb_client');
 const ObjectID = require('mongodb').ObjectID;
 const crypto = require('crypto');

@@ -6,7 +6,7 @@ const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
 const Gigya = require('./helpers/gigya_stub');
-const MongoDB = require('./helpers/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_helper');
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
@@ -44,7 +44,7 @@ describe('anonymous users - integration tests', () => {
       bpc_helper.request({
         method: 'GET',
         url: `/au/ticket?app=${app.id}`
-      }, null)
+      })
       .then(response => {
         expect(response.statusCode).to.be.equal(200);
         expect(response.headers).to.include('set-cookie');
@@ -144,7 +144,7 @@ describe('anonymous users - integration tests', () => {
           method: 'GET',
           url: `/au/ticket?app=${app.id}`,
           headers: headers
-        }, null)
+        })
         .then(response => {
 
           expect(response.statusCode).to.be.equal(200);

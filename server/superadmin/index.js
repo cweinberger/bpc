@@ -3,7 +3,6 @@
 
 
 const Boom = require('boom');
-const Joi = require('joi');
 const ObjectID = require('mongodb').ObjectID;
 const MongoDB = require('./../mongo/mongodb_client');
 const EventLog = require('./../audit/eventlog');

@@ -5,7 +5,7 @@
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./helpers/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_helper');
 const Gigya = require('./helpers/gigya_stub');
 const gigya_helper = require('./helpers/gigya_helper');
 
@@ -93,7 +93,7 @@ describe('gigya notifications - integration tests', () => {
 
     it('getting accountRegistered', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -114,9 +114,9 @@ describe('gigya notifications - integration tests', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      bpc_helper.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -132,11 +132,6 @@ describe('gigya notifications - integration tests', () => {
         expect(result[0].gigya.UID).to.equal('4');
         expect(result[0].gigya.email).to.equal('four@test.nl');
         expect(result[0].createdAt).to.be.a.date();
-        // Testing the data scope using this key, since mongo-mock does not support sub-documents
-        // https://github.com/williamkapke/mongo-mock/issues/26
-        // expect(result[0]['dataScopes.profile.sso-id']).to.be.equal('12345');
-        // OK, now we can test is better, because I'm doing mock manipulation in the permissions.js file
-        //  in the "if (MongoDB.isMock)" code
         expect(result[0].dataScopes.profile['sso-id']).to.be.equal('12345');
         return Promise.resolve();
       })
@@ -146,7 +141,8 @@ describe('gigya notifications - integration tests', () => {
 
 
     it('getting accountUpdated with a new email', (done) => {
-      const notifications_request = {
+
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -167,9 +163,9 @@ describe('gigya notifications - integration tests', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      bpc_helper.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -259,7 +255,7 @@ describe('gigya notifications - integration tests', () => {
 
     it('getting accountRegistered', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -280,9 +276,9 @@ describe('gigya notifications - integration tests', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      bpc_helper.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -405,7 +401,7 @@ describe('gigya notifications - integration tests', () => {
 
     it('getting accountRegistered', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -426,7 +422,7 @@ describe('gigya notifications - integration tests', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
       bpc_helper.request(notifications_request, null)
       .then(response => {

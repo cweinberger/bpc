@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const Boom = require('boom');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./helpers/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_helper');
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
@@ -21,11 +21,13 @@ describe('grants tests', () => {
   var consoleUserTicket;
   const consoleSuperAdminGrant = test_data.grants.console_superadmin_google_user__console_grant;
   var consoleSuperAdminUserTicket;
+  var grantIdToUpdate;
 
-
+  
   before(done => {
     MongoDB.reset().then(done);
   });
+
 
   after(done => {
     MongoDB.clear().then(done);
@@ -67,10 +69,7 @@ describe('grants tests', () => {
     });
   });
 
-
-
-  var grantIdToUpdate;
-
+  
   describe('create', () => {
 
     it('badRequest for nonexisting app id', done => {
@@ -147,6 +146,5 @@ describe('grants tests', () => {
       .catch(done);
     });
   });
-
 
 });

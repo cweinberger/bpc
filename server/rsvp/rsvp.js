@@ -10,7 +10,7 @@ const Gigya = require('./../gigya/gigya_client');
 const Google = require('./../google/google_client');
 const OzLoadFuncs = require('./../oz_loadfuncs');
 
-const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
+const ENCRYPTIONPASSWORD = OzLoadFuncs.strategyOptions.oz.encryptionPassword;
 
 
 module.exports = {
@@ -164,22 +164,6 @@ function validateEmailMask(email, emailMask) {
 
 
 function findUser(user) {
-  if (MongoDB.isMock) {
-    const temp_user = {
-      _id: crypto.randomBytes(20).toString('hex'),
-      id: user.id,
-      email: user.email,
-      provider: user.provider,
-      createdAt: new Date(),
-      dataScopes: {}
-    };
-
-    MongoDB.collection('users')
-    .insertOne(temp_user);
-
-    return Promise.resolve(temp_user);
-  }
-
   return MongoDB.collection('users')
   .findOneAndUpdate(
     { $and:

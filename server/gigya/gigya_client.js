@@ -1,18 +1,20 @@
 /* jshint node: true */
 'use strict';
 
-if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
+if (process.env.NODE_ENV === 'test') {
   module.exports = require('../../test/helpers/gigya_stub.js');
   return;
 }
+
+const Config = require('./../config');
 
 // Gigya configuration.
 const GIGYA_DC = 'eu1';
 const GIGYA_HOSTNAME = 'gigya.com';
 const GIGYA_PROTOCOL = 'https://';
-const GIGYA_APP_KEY = process.env.GIGYA_APP_KEY;
-const GIGYA_USER_KEY = process.env.GIGYA_USER_KEY;
-const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY;
+const GIGYA_APP_KEY = Config.GIGYA_APP_KEY;
+const GIGYA_USER_KEY = Config.GIGYA_USER_KEY;
+const GIGYA_SECRET_KEY = Config.GIGYA_SECRET_KEY;
 
 
 // Dependencies.
@@ -87,7 +89,7 @@ module.exports.callApi = function(path, payload = null, api = 'accounts') {
           const errors = _body.validationErrors.map(
             error => `${error.fieldName} -> ${error.errorCode} ${error.message}; `
           );
-          console.log(`  Validation errors: ${errors}`);
+          console.error(`  Validation errors: ${errors}`);
           _body.errorDetails = _body.errorDetails.concat(' ', errors);
         }
 

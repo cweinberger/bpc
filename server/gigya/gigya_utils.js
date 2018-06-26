@@ -1,15 +1,10 @@
 /* jshint node: true */
 'use strict';
 
-
-const Boom = require('boom');
 const Crypto = require('crypto');
+const Config = require('./../config');
 
-if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
-  process.env.GIGYA_SECRET_KEY = 'random_test_password_that_is_longer_than_32_characters';
-}
-
-const GIGYA_SECRET_KEY = process.env.GIGYA_SECRET_KEY || '';
+const GIGYA_SECRET_KEY = Config.GIGYA_SECRET_KEY;
 
 const secretBuffer = new Buffer(GIGYA_SECRET_KEY, 'base64');
 const algorithm = 'sha1'; // sha256

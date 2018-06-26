@@ -3,8 +3,6 @@
 
 
 const Hapi = require('hapi');
-const Joi = require('joi');
-const crypto = require('crypto');
 const Health = require('./health');
 const Rsvp = require('./rsvp');
 const Anonymous = require('./anonymous');
@@ -18,6 +16,7 @@ const Settings = require('./settings');
 const OzLoadFuncs = require('./oz_loadfuncs');
 const Scarecrow = require('scarecrow');
 const Good = require('good');
+const Config = require('./config');
 const GoodConsole = require('good-console');
 
 
@@ -35,7 +34,7 @@ const goodOpts = {
 
 const server = new Hapi.Server();
 
-server.connection({ port: process.env.PORT ? process.env.PORT : 8000 });
+server.connection({ port: Config.PORT });
 
 
 server.register(Scarecrow, function(err) {
@@ -53,7 +52,7 @@ server.register(Scarecrow, function(err) {
 });
 
 
-if ((module.parent && module.parent.exports.lab !== undefined) || process.env.NODE_ENV === 'test') {
+if (process.env.NODE_ENV === 'test') {
   // We are running tests.
 } else {
   // We don't need the logging output while running tests

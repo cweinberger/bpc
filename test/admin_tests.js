@@ -3,7 +3,7 @@
 
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./helpers/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_helper');
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
@@ -56,66 +56,7 @@ describe('admin tests', () => {
 
 
 
-  // I know these tests do NOT test the actual code.These are just examples.
-  describe('the scope containing', () => {
-
-    it('only admin not allowed', (done) => {
-      // const result = Joi.validate(['admin'], Applications.scopeValidation);
-      // expect(result.error).to.exist();
-      done();
-    });
-
-    it('only admin: not allowed', (done) => {
-      // const result = Joi.validate(['admin:'], Applications.scopeValidation);
-      // expect(result.error).to.exist();
-      done();
-    });
-
-    it('only sadmin allowed', (done) => {
-      // const result = Joi.validate(['sadmin'], Applications.scopeValidation);
-      // expect(result.error).to.not.exist();
-      done();
-    });
-
-    it('only sdmin allowed', (done) => {
-      // const result = Joi.validate(['sdmin'], Applications.scopeValidation);
-      // expect(result.error).to.not.exist();
-      done();
-    });
-
-    it('only a allowed', (done) => {
-      // const result = Joi.validate(['a'], Applications.scopeValidation);
-      // expect(result.error).to.not.exist();
-      done();
-    });
-
-    it('both a and b allowed', (done) => {
-      // const result = Joi.validate(['a', 'b'], Applications.scopeValidation);
-      // expect(result.error).to.not.exist();
-      done();
-    });
-
-    it('both admin and b not allowed', (done) => {
-      // const result = Joi.validate(['admin', 'b'], Applications.scopeValidation);
-      // expect(result.error).to.exist();
-      done();
-    });
-
-    it('both a and admin not allowed', (done) => {
-      // const result = Joi.validate(['a', 'admin'], Applications.scopeValidation);
-      // expect(result.error).to.exist();
-      done();
-    });
-
-  });
-
-
-
   describe('making a simple user admin', () => {
-
-    if(MongoDB.isMock){
-      return;
-    }
 
     var simpleFirstUserTicket;
 

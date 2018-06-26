@@ -5,7 +5,7 @@
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./helpers/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_helper');
 const Gigya = require('./helpers/gigya_stub');
 const gigya_helper = require('./helpers/gigya_helper');
 
@@ -46,7 +46,7 @@ describe('gigya notifications', () => {
 
     it('getting accountRegistered test 1', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -75,9 +75,9 @@ describe('gigya notifications', () => {
         "timestamp": 1450011477
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      bpc_helper.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -108,12 +108,7 @@ describe('gigya notifications', () => {
 
     it('getting accountDeleted test 1', (done) => {
 
-      if(MongoDB.isMock){
-        // mongo-mock does not support selection from subdocuments and other stuff
-        return done();
-      }
-
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -142,9 +137,9 @@ describe('gigya notifications', () => {
         "timestamp": 1450011477
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      bpc_helper.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -170,7 +165,7 @@ describe('gigya notifications', () => {
 
     it('getting multiple identical accountRegistered events', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -199,9 +194,9 @@ describe('gigya notifications', () => {
         "timestamp": 1450011477
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      bpc_helper.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -241,7 +236,7 @@ describe('gigya notifications', () => {
 
     it('getting accountRegistered', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -262,9 +257,10 @@ describe('gigya notifications', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
+      
 
-      bpc_helper.request(notifications_request, null)
+      bpc_helper.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
       })
@@ -287,7 +283,7 @@ describe('gigya notifications', () => {
 
     it('getting accountUpdated with a new email', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -308,9 +304,9 @@ describe('gigya notifications', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      bpc_helper.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
       })

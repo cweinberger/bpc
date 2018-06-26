@@ -4,8 +4,6 @@
 
 const Boom = require('boom');
 const Joi = require('joi');
-const Oz = require('oz');
-const crypto = require('crypto');
 const ObjectID = require('mongodb').ObjectID;
 const MongoDB = require('./../mongo/mongodb_client');
 const EventLog = require('./../audit/eventlog');
@@ -153,6 +151,7 @@ module.exports.register = function (server, options, next) {
       }
 
       // TODO: We must move the user to the deleted-collections, just like with Gigya-notification
+      // We must also delete the grants
 
       MongoDB.collection('users')
       .deleteOne({ id: request.params.id })

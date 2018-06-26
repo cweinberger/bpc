@@ -3,7 +3,7 @@
 
 const test_data = require('./data/test_data');
 const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./helpers/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_helper');
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
@@ -70,10 +70,6 @@ describe('application tests', () => {
   describe('get the list', () => {
 
     it('returns at least one app', done => {
-
-      if(MongoDB.isMock){
-        return done();
-      }
 
       bpc_helper.request({ url: '/applications' }, consoleUserTicket)
       .then(response => {
@@ -161,10 +157,6 @@ describe('application tests', () => {
 
 
     it('console user can get own app', done => {
-
-      if(MongoDB.isMock){
-        return done();
-      }
 
       // Getting a new ticket, since the old ticket does not have the new admin:new-app scope
       bpc_helper.generateRsvp(consoleApp, consoleGrant)
@@ -281,10 +273,6 @@ describe('application tests', () => {
 
 
     it('superadmin delete app', done => {
-
-      if(MongoDB.isMock){
-        return done();
-      }
 
       bpc_helper.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
       .then(response => {

@@ -60,8 +60,8 @@ describe('users - integration tests', () => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.UID).to.equal('3218736128736123215732');
         expect(response.result.email).to.equal('first_user@berlingskemedia.dk');
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -72,8 +72,8 @@ describe('users - integration tests', () => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.UID).to.equal('3218736128736123215732');
         expect(response.result.email).to.equal('first_user@berlingskemedia.dk');
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -82,8 +82,8 @@ describe('users - integration tests', () => {
       Bpc.request({url: '/gigya'}, appTicket)
       .then((response) => {
         expect(response.statusCode).to.equal(400);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -91,8 +91,8 @@ describe('users - integration tests', () => {
       Bpc.request({url: '/gigya?email=someemail&UID=someuid'}, appTicket)
       .then((response) => {
         expect(response.statusCode).to.equal(400);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });

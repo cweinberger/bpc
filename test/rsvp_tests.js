@@ -91,14 +91,13 @@ describe('rsvp unit tests', () => {
         email: 'some@email.com',
         app: 'invalid-app'
       })
-      .then(result => {
-        done(new Error('RSVP must not be issued'));
-      })
+      .then(result => done(new Error('RSVP must not be issued')))
       .catch(err => {
         expect(err).to.exist();
         expect(err).to.be.an.error('Unknown application');
-        done();
-      });
+        return Promise.resolve();
+      })
+      .then(() => done());
     });
 
 
@@ -114,11 +113,9 @@ describe('rsvp unit tests', () => {
       .then(result => {
         expect(result.rsvp).to.be.a.string();
         expect(result.rsvp).to.have.length(334);
-        done();
       })
-      .catch(err => {
-        done(new Error('RSVP missing'));
-      });
+      .then(() => done())
+      .catch(err => done(new Error('RSVP missing')));
     });
   });
 
@@ -179,8 +176,8 @@ describe('rsvp unit tests', () => {
         expect(grant).to.not.be.null();
         expect(grant.id).to.have.length(40);
         expect(grant.app).to.be.equal('valid-app');
-        done();
       })
+      .then(() => done())
       .catch(err => {
         done(new Error('RSVP missing'));
       });
@@ -209,8 +206,8 @@ describe('rsvp unit tests', () => {
       .then(() => MongoDB.collection('grants').findOne({user:'userwithnopreviousgrant@email.com', app: 'app_that_disallowAutoCreationGrants'}))
       .then(grant => {
         expect(grant).to.be.null();
-        done();
-      });
+      })
+      .then(() => done());
     });
   });
 });
@@ -260,8 +257,8 @@ describe('rsvp integration test - gigya', () => {
     .then(response => {
       expect(response.statusCode).to.be.equal(200);
       expect(response.result.rsvp).to.have.length(334);
-      done();
     })
+    .then(() => done())
     .catch(done);
   });
 
@@ -277,8 +274,8 @@ describe('rsvp integration test - gigya', () => {
     Bpc.request({ method: 'POST', url: '/rsvp', payload: payload})
     .then(response => {
       expect(response.statusCode).to.be.equal(400);
-      done();
     })
+    .then(() => done())
     .catch(done);
   });
 
@@ -320,8 +317,8 @@ describe('rsvp integration test - google', () => {
     .then(response => {
       expect(response.statusCode).to.be.equal(200);
       expect(response.result.rsvp.length).to.be.within(300,360);
-      done();
     })
+    .then(() => done())
     .catch(done);
   });
 
@@ -338,8 +335,8 @@ describe('rsvp integration test - google', () => {
     Bpc.request({ method: 'POST', url: '/rsvp', payload: payload})
     .then(response => {
       expect(response.statusCode).to.be.equal(400);
-      done();
     })
+    .then(() => done())
     .catch(done);
   });
 
@@ -419,6 +416,7 @@ describe('rsvp integration test - email masks', () => {
     done();
   });
 
+
   it('get rsvp for a gigya user with a valid domain', done => {
     let payload = {
       provider: 'gigya',
@@ -433,8 +431,8 @@ describe('rsvp integration test - email masks', () => {
     .then(response => {
       expect(response.statusCode).to.be.equal(200);
       expect(response.result.rsvp).to.have.length(356);
-      done();
     })
+    .then(() => done())
     .catch(done);
   });
 
@@ -453,8 +451,8 @@ describe('rsvp integration test - email masks', () => {
     .then(response => {
       expect(response.statusCode).to.be.equal(200);
       expect(response.result.rsvp).to.have.length(356);
-      done();
     })
+    .then(() => done())
     .catch(done);
   });
 
@@ -472,8 +470,8 @@ describe('rsvp integration test - email masks', () => {
     Bpc.request({ method: 'POST', url: '/rsvp', payload: payload})
     .then(response => {
       expect(response.statusCode).to.be.equal(403);
-      done();
     })
+    .then(() => done())
     .catch(done);
   });
 });

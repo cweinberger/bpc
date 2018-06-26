@@ -36,8 +36,8 @@ describe('application tests', () => {
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleAppTicket = response.result;
-      done();
     })
+    .then(() => done())
     .catch(done);
   });
 
@@ -49,8 +49,8 @@ describe('application tests', () => {
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleUserTicket = response.result;
-      done();
-    });
+    })
+    .then(() => done());
   });
 
 
@@ -61,8 +61,8 @@ describe('application tests', () => {
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleSuperAdminUserTicket = response.result;
-      done();
-    });
+    })
+    .then(() => done());
   });
 
 
@@ -79,8 +79,8 @@ describe('application tests', () => {
         response.result.forEach(function(app){
           expect(app.key).to.not.exist();
         });
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
@@ -93,8 +93,8 @@ describe('application tests', () => {
       Bpc.request({ url: '/applications/valid-app' }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(403);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -107,8 +107,8 @@ describe('application tests', () => {
         expect(response.result).to.part.include({
           id: 'valid-app', key: 'something_long_and_random'
         });
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -117,8 +117,8 @@ describe('application tests', () => {
       Bpc.request({ url: '/applications/invalid-app' }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
@@ -143,15 +143,13 @@ describe('application tests', () => {
         expect(response.result.scope).to.equal(newApp.scope);
         expect(response.result.delegate).to.equal(newApp.delegate);
         expect(response.result.algorithm).to.equal(newApp.algorithm);
-        return Promise.resolve();
       })
-      .then(() => MongoDB.collection('applications').find({id: 'new-app'}).toArray())
+      .then(() => MongoDB.collection('applications').find({ id: 'new-app' }).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0]).to.part.include(newApp); // There will be "_id" field etc.
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -170,9 +168,8 @@ describe('application tests', () => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.id).to.equal(newApp.id);
         expect(response.result.scope).to.equal(newApp.scope);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -193,9 +190,8 @@ describe('application tests', () => {
         expect(response.result).to.be.an.object();
         expect(response.result.id).to.not.be.empty();
         expect(response.result.id).to.not.equal('valid-app'); // Different id's.
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
   });
@@ -246,8 +242,9 @@ describe('application tests', () => {
       Bpc.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(403);
-        done();
-      });
+      })
+      .then(() => done())
+      .catch(done);
     });
 
 
@@ -255,8 +252,9 @@ describe('application tests', () => {
       Bpc.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
-        done();
-      });
+      })
+      .then(() => done())
+      .catch(done);
     });
 
 
@@ -264,11 +262,10 @@ describe('application tests', () => {
 
       Bpc.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleUserTicket)
       .then(response => {
-
         expect(response.statusCode).to.equal(403);
-        done();
-
-      });
+      })
+      .then(() => done())
+      .catch(done);
     });
 
 
@@ -288,11 +285,9 @@ describe('application tests', () => {
           expect(res).to.have.length(2);
           expect(res[0]).to.be.null();
           expect(res[1]).to.be.null();
-          done();
-
         })
+        .then(() => done())
         .catch(done);
-
       });
     });
   });

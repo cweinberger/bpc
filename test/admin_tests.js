@@ -37,8 +37,8 @@ describe('admin tests', () => {
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleAppTicket = response.result;
-      done();
     })
+    .then(() => done())
     .catch(done);
   });
 
@@ -50,8 +50,9 @@ describe('admin tests', () => {
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleUserTicket = response.result;
-      done();
-    });
+    })
+    .then(() => done())
+    .catch(done);
   });
 
 
@@ -72,8 +73,8 @@ describe('admin tests', () => {
       Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -85,8 +86,8 @@ describe('admin tests', () => {
         expect(response.statusCode).to.equal(200);
         consoleUserTicket = response.result;
         expect(consoleUserTicket.scope).to.include('admin:new-app-to-simple-user');
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -103,8 +104,8 @@ describe('admin tests', () => {
       .then(user => Bpc.request({ url: '/applications/new-app-to-simple-user/makeadmin', method: 'POST', payload: { user: user._id} }, consoleUserTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -121,8 +122,8 @@ describe('admin tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         simpleFirstUserTicket = response.result;
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 

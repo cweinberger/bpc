@@ -14,8 +14,8 @@ const { expect, describe, it, before, after } = exports.lab = require('lab').scr
 
 describe('console - functional tests:', () => {
 
-  var console_app = test_data.applications.console;
-  var console_app_ticket;
+  const app = test_data.applications.console;
+  var appTicket;
 
 
   before(done => {
@@ -26,66 +26,131 @@ describe('console - functional tests:', () => {
     MongoDB.clear().then(done);
   });
 
-  // Getting the console_app_ticket
+  // Getting the appTicket
   before(done => {
-    Bpc.request({ method: 'POST', url: '/ticket/app' }, console_app)
+    Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
     .then(response => {
-      console_app_ticket = response.result;
+      appTicket = response.result;
     })
-    .then(done)
+    .then(() => done())
     .catch(done);
   });
 
 
+  describe('regular console user', () => {
 
-  describe('superadmin', () => {
+    const grant = test_data.grants.console_google_user__console_grant;
+    var userTicket;
 
-    var console_superadmin_google_user__console_grant = test_data.grants.console_superadmin_google_user__console_grant;
-    var console_superadmin_google_user__console_ticket;
-
-    it('getting superadmin user ticket', (done) => {
-      Bpc.generateRsvp(console_app, console_superadmin_google_user__console_grant)
-      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, console_app_ticket))
+    it('getting user ticket', (done) => {
+      Bpc.generateRsvp(app, grant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        console_superadmin_google_user__console_ticket = response.result;
-        expect(console_superadmin_google_user__console_ticket.scope).to.be.an.array();
-        expect(console_superadmin_google_user__console_ticket.scope).to.include('admin');
-        expect(console_superadmin_google_user__console_ticket.scope).to.include('admin:*');
-        done();
-      });
+        userTicket = response.result;
+        expect(userTicket.scope).to.be.an.array();
+        expect(userTicket.scope).to.include('admin');
+        expect(userTicket.scope).to.not.include('admin:*');
+      })
+      .then(() => done())
+      .catch(done);
     });
 
 
-    it('demote superadmin', (done) => {
-      // TODO
-      done();
+    it('promote self to superadmin is forbidden', (done) => {
+
+      const request = {
+        method: 'POST',
+        url: `/superadmin/${grant.id}`
+      };
+
+      Bpc.request(request, userTicket)
+      .then((response) => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+    
+    it('promote another user to superadmin is forbidden', (done) => {
+
+      const grant_two = test_data.grants.console_google_user_two__console_grant;
+
+      const request = {
+        method: 'POST',
+        url: `/superadmin/${grant_two.id}`
+      };
+
+      Bpc.request(request, userTicket)
+      .then((response) => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
     });
   });
 
 
+  describe('superadmin', () => {
 
-  describe('non superadmin', () => {
-    var console_google_user__console_grant = test_data.grants.console_google_user__console_grant;
-    var console_google_user_ticket;
+    const grant = test_data.grants.console_superadmin_google_user__console_grant;
+    var userTicket;
 
-    it('getting user ticket', (done) => {
-      Bpc.generateRsvp(console_app, console_google_user__console_grant)
-      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, console_app_ticket))
+    it('getting superadmin user ticket', (done) => {
+      Bpc.generateRsvp(app, grant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        console_google_user_ticket = response.result;
-        expect(console_google_user_ticket.scope).to.be.an.array();
-        expect(console_google_user_ticket.scope).to.include('admin');
-        expect(console_google_user_ticket.scope).to.not.include('admin:*');
-        done();
-      });
+        userTicket = response.result;
+        expect(userTicket.scope).to.be.an.array();
+        expect(userTicket.scope).to.include('admin');
+        expect(userTicket.scope).to.include('admin:*');
+      })
+      .then(() => done())
+      .catch(done);
     });
 
 
-    it('promote superadmin', (done) => {
-      // TODO
-      done();
+    it('demote self from superadmin fails', (done) => {
+      const request = {
+        method: 'DELETE',
+        url: `/superadmin/${grant.id}`
+      };
+
+      Bpc.request(request, userTicket)
+      .then((response) => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('promote and demote another user to superadmin succeeds', (done) => {
+
+      const another_grant = test_data.grants.console_google_user__console_grant;
+
+      const promoteRequest = {
+        method: 'POST',
+        url: `/superadmin/${another_grant.id}`
+      };
+
+      const deomoteRequest = {
+        method: 'POST',
+        url: `/superadmin/${another_grant.id}`
+      };
+
+      Bpc.request(promoteRequest, userTicket)
+      .then((response) => {
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => Bpc.request(deomoteRequest, userTicket))
+      .then((response) => {
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => done())
+      .catch(done);
     });
   });
 

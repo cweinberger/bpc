@@ -41,7 +41,7 @@ describe('grants tests', () => {
       expect(response.statusCode).to.equal(200);
       consoleAppTicket = response.result;
     })
-    .then(done)
+    .then(() => done())
     .catch(done);
   });
 
@@ -53,8 +53,9 @@ describe('grants tests', () => {
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleUserTicket = response.result;
-      done();
-    });
+    })
+    .then(() => done())
+    .catch(done);
   });
 
 
@@ -65,8 +66,9 @@ describe('grants tests', () => {
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleSuperAdminUserTicket = response.result;
-      done();
-    });
+    })
+    .then(() => done())
+    .catch(done);
   });
 
   
@@ -85,8 +87,8 @@ describe('grants tests', () => {
       Bpc.request({ url: '/applications/invalid-app/grants', method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(400);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -111,8 +113,8 @@ describe('grants tests', () => {
         expect(response.result.scope).to.have.length(2);
         expect(response.result.scope).not.to.contain('aok:all');
         grantIdToUpdate = response.result.id;
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
@@ -141,8 +143,8 @@ describe('grants tests', () => {
         expect(response.result.scope).to.have.length(2);
         expect(response.result.scope).not.to.contain('b:all');
         expect(response.result.scope).not.to.contain('aok:all');
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });

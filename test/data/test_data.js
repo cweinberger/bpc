@@ -123,6 +123,14 @@ module.exports = {
       provider: 'google',
       lastLogin: new Date(),
       dataScopes: {}
+    },
+    console_user_two: {
+      _id: new ObjectID("5b32129f4e094108d0e8a789"),
+      id: '4378638756232438756874366',
+      email: 'console_user2@berlingskemedia.dk',
+      provider: 'google',
+      lastLogin: new Date(),
+      dataScopes: {}
     }
   },
 
@@ -274,6 +282,14 @@ module.exports = {
       exp : null,
       createdAt: new Date()
     },
+    console_google_user_two__console_grant : {
+      id : '7362ydu3kkk3u65uej3mmsi6',
+      app : 'console',
+      user : new ObjectID("5b32129f4e094108d0e8a789"),
+      scope : [],
+      exp : null,
+      createdAt: new Date()
+    },
     valid_app_grant: {
       id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
       app: 'valid-app',
@@ -290,6 +306,18 @@ module.exports = {
       id: 'somerandomsdhjfkjlhsdfkjhsd',
       app: 'bt',
       user: new ObjectID("5b3211fd4e094108d0e8a781"),
+      scope: []
+    },
+    simple_second_user_bt_grant: {
+      id: 'somerandomsdhjydhddkxhdbhsd',
+      app: 'bt',
+      user: new ObjectID("5b3211fd4e094108d0e8a782"),
+      scope: []
+    },
+    simple_second_user_berlingske_grant: {
+      id: 'somerandomsdhjydhddkxhdbhse',
+      app: 'berlingske',
+      user: new ObjectID("5b3211fd4e094108d0e8a782"),
       scope: []
     },
     user_with_no_datascopes_grant: {

@@ -32,7 +32,7 @@ describe('scope datafields - integration tests', () => {
     .then(response => {
       appTicket = response.result;
     })
-    .then(done)
+    .then(() => done())
     .catch(done);
   });
 
@@ -63,7 +63,7 @@ describe('scope datafields - integration tests', () => {
         expect(user.dataScopes.bt.test_integer).to.equal(1);
         lastUpdated = user.lastUpdated;
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 

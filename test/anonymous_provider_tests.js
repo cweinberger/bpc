@@ -60,8 +60,8 @@ describe('anonymous users - integration tests', () => {
         expect(anonymousUserTicket.user).to.startWith('auid**');
         expect(anonymousUserTicket.grant).to.startWith('agid**');
         expect(anonymousUserTicket.app).to.equal(app.id);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
@@ -77,8 +77,8 @@ describe('anonymous users - integration tests', () => {
       }, null)
       .then(response => {
         expect(response.statusCode).to.be.equal(401);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
@@ -95,8 +95,8 @@ describe('anonymous users - integration tests', () => {
       .then(response => {
         // console.log('response', response);
         expect(response.statusCode).to.equal(404);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -110,8 +110,8 @@ describe('anonymous users - integration tests', () => {
       Bpc.request({ method: 'POST', url: '/permissions/' + fingerprint + '/anonymous', payload: payload}, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        done();
       })
+      .then(() => done())
       // TODO: test for ttl in MongoDB collection
       .catch(done);
     });
@@ -123,8 +123,8 @@ describe('anonymous users - integration tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.buy_model).to.equal('A');
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -161,8 +161,8 @@ describe('anonymous users - integration tests', () => {
           expect(anonymousUserTicket.user).to.be.equal(fingerprint);
           expect(anonymousUserTicket.grant).to.startWith('agid**');
           expect(anonymousUserTicket.app).to.equal(app.id);
-          done();
         })
+        .then(() => done())
         .catch(done);
       });
 
@@ -171,8 +171,8 @@ describe('anonymous users - integration tests', () => {
         .then(response => {
           expect(response.statusCode).to.equal(200);
           expect(response.result.buy_model).to.equal('A');
-          done();
         })
+        .then(() => done())
         .catch(done);
       });
 
@@ -180,8 +180,8 @@ describe('anonymous users - integration tests', () => {
         Bpc.request({ method: 'GET', url: '/permissions/anothernotanonynmousscope'}, anonymousUserTicket)
         .then(response => {
           expect(response.statusCode).to.equal(403);
-          done();
         })
+        .then(() => done())
         .catch(done);
       });
 

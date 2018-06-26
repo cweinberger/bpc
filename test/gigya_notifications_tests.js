@@ -80,7 +80,6 @@ describe('gigya notifications', () => {
       Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -91,7 +90,6 @@ describe('gigya notifications', () => {
         expect(result[0]).not.to.be.null();
         expect(result[0].gigya.email).to.equal('1@test.nl');
         expect(result[0].createdAt).to.be.a.date();
-        return Promise.resolve();
       })
       .then(() => MongoDB.collection('users').find({id: '2'}).toArray())
       .then(result => {
@@ -99,9 +97,8 @@ describe('gigya notifications', () => {
         expect(result[0]).not.to.be.null();
         expect(result[0].gigya.email).to.equal('2@test.nl');
         expect(result[0].createdAt).to.be.a.date();
-
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -142,7 +139,6 @@ describe('gigya notifications', () => {
       Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -150,15 +146,13 @@ describe('gigya notifications', () => {
       .then(() => MongoDB.collection('users').find({id: '1'}).toArray())
       .then(result => {
         expect(result.length).to.equal(0);
-        return Promise.resolve();
       })
       .then(() => MongoDB.collection('deleted_users').find({id: '1'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0].deletedAt).to.be.a.date();
-
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -209,9 +203,8 @@ describe('gigya notifications', () => {
         expect(result.length).to.equal(1);
         expect(result[0].gigya.UID).to.equal('3');
         expect(result[0].gigya.email).to.equal('3@test.nl');
-
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -276,7 +269,7 @@ describe('gigya notifications', () => {
         expect(result[0].gigya.email).to.equal('five@test.nl');
         expect(result[0].createdAt).to.be.a.date();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -320,9 +313,8 @@ describe('gigya notifications', () => {
         expect(result[0].id).to.be.equal('5');
         expect(result[0].gigya.email).to.equal('five_o@test.nl');
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
-
     });
   });
 });

@@ -32,7 +32,7 @@ describe('permissions - integration tests', () => {
     .then(response => {
       appTicket = response.result;
     })
-    .then(done)
+    .then(() => done())
     .catch(done);
   });
 
@@ -45,13 +45,12 @@ describe('permissions - integration tests', () => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.bt_paywall).to.true();
         expect(response.result.bt_subscription_tier).to.equal('free');
-        return Promise.resolve();
       })
       // .then(() => MongoDB.collection('users').find().toArray())
       // .then(result => {
       //   console.log('result', result);
       // })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -59,9 +58,8 @@ describe('permissions - integration tests', () => {
       Bpc.request({ url: '/permissions/first_user@berlingskemedia.dk/bt' }, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -69,9 +67,8 @@ describe('permissions - integration tests', () => {
       Bpc.request({ url: '/permissions/FIRST_USER@berlingskemedia.dk/bt' }, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -80,9 +77,8 @@ describe('permissions - integration tests', () => {
       Bpc.request({ url: '/permissions/' + simple_first_user.id + '/berlingske' }, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(403);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -90,9 +86,8 @@ describe('permissions - integration tests', () => {
       Bpc.request({ url: '/permissions/thisuserdoesnotexist/bt' }, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -106,9 +101,8 @@ describe('permissions - integration tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.third_user).to.equal(true);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -117,9 +111,8 @@ describe('permissions - integration tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.third_user).to.equal(true);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -128,9 +121,8 @@ describe('permissions - integration tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.third_user).to.equal(true);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
   });
@@ -147,9 +139,8 @@ describe('permissions - integration tests', () => {
       Bpc.request({ url: '/permissions/thisuserdoesnotexist/bt', method: 'PATCH', payload: payload}, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -168,9 +159,8 @@ describe('permissions - integration tests', () => {
         expect(user.createdAt).to.exist();
         // expect(user.lastUpdated).to.exist();
         // expect(user.lastUpdated).to.equal(user.createdAt);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
   });
@@ -188,9 +178,8 @@ describe('permissions - integration tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         simple_first_user_ticket = response.result;
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -200,9 +189,8 @@ describe('permissions - integration tests', () => {
       Bpc.request({ url: '/permissions/bt' + queryPermissions }, simple_first_user_ticket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -214,9 +202,8 @@ describe('permissions - integration tests', () => {
       Bpc.request({ url: '/permissions/bt' + queryPermissions }, simple_first_user_ticket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -225,9 +212,8 @@ describe('permissions - integration tests', () => {
       Bpc.request({ url: '/permissions/non_persisted_scope'}, simple_first_user_ticket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
   });
@@ -245,9 +231,8 @@ describe('permissions - integration tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         app_with_no_scopes_ticket = response.result;
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -257,9 +242,8 @@ describe('permissions - integration tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         user_with_no_datascopes_ticket = response.result;
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -268,9 +252,8 @@ describe('permissions - integration tests', () => {
       Bpc.request({ url: '/permissions' }, user_with_no_datascopes_ticket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 

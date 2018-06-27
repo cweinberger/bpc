@@ -11,56 +11,96 @@ const { expect, describe, it, before, after } = exports.lab = require('lab').scr
 
 describe('admin tests', () => {
 
-  const consoleApp = test_data.applications.console;
-  var consoleAppTicket;
-
-  const consoleGrant = test_data.grants.console_google_user__console_grant;
-  var consoleUserTicket;
-
-  const consoleSuperAdminGrant = test_data.grants.console_superadmin_google_user__console_grant;
-  var consoleSuperAdminUserTicket;
-
-
-
+  
   before(done => {
     MongoDB.reset().then(done);
   });
-
+  
   after(done => {
     MongoDB.clear().then(done);
   });
+  
+
+  const app = test_data.applications.console;
+  var appTicket;
 
 
-  // Getting the consoleAppTicket
+  // Getting the appTicket
   before(done => {
-    Bpc.request({ method: 'POST', url: '/ticket/app' }, consoleApp)
+    Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
     .then(response => {
-      expect(response.statusCode).to.equal(200);
-      consoleAppTicket = response.result;
+      appTicket = response.result;
     })
     .then(() => done())
     .catch(done);
   });
 
 
-  // Getting the consoleUserTicket
-  before(done => {
-    Bpc.generateRsvp(consoleApp, consoleGrant)
-    .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
-    .then(response => {
-      expect(response.statusCode).to.equal(200);
-      consoleUserTicket = response.result;
-    })
-    .then(() => done())
-    .catch(done);
-  });
+  describe('regular console user', () => {
+
+    const grant = test_data.grants.console_google_user__console_grant;
+    var userTicket;
+
+    
+    it('getting user ticket', (done) => {
+      Bpc.generateRsvp(app, grant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        userTicket = response.result;
+        expect(userTicket.scope).to.be.an.array();
+        expect(userTicket.scope).to.include('admin');
+        expect(userTicket.scope).to.not.include('admin:*');
+      })
+      .then(() => done())
+      .catch(done);
+    });
 
 
+    it('get list of admin users is forbidden', (done) => {
+      Bpc.request({ url: `/applications/${app.id}/grants` }, userTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+  
 
-  describe('making a simple user admin', () => {
+    it('promote self to superadmin is forbidden', (done) => {
 
-    var simpleFirstUserTicket;
+      const request = {
+        method: 'POST',
+        url: `/superadmin/${grant.id}`
+      };
 
+      Bpc.request(request, userTicket)
+      .then((response) => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+    
+    it('promote another user to superadmin is forbidden', (done) => {
+
+      const grant_two = test_data.grants.console_google_user_two__console_grant;
+
+      const request = {
+        method: 'POST',
+        url: `/superadmin/${grant_two.id}`
+      };
+
+      Bpc.request(request, userTicket)
+      .then((response) => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+    
     it('create new app by console user', done => {
 
       const newApp = {
@@ -70,7 +110,7 @@ describe('admin tests', () => {
         algorithm: 'sha256'
       };
 
-      Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, userTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
       })
@@ -80,12 +120,12 @@ describe('admin tests', () => {
 
 
     it('refresh console ticket to get new admin:app scope', done => {
-      Bpc.generateRsvp(consoleApp, consoleGrant)
-      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+      Bpc.generateRsvp(app, grant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        consoleUserTicket = response.result;
-        expect(consoleUserTicket.scope).to.include('admin:new-app-to-simple-user');
+        userTicket = response.result;
+        expect(userTicket.scope).to.include('admin:new-app-to-simple-user');
       })
       .then(() => done())
       .catch(done);
@@ -97,11 +137,18 @@ describe('admin tests', () => {
         user: 'first_user@berlingskemedia.dk'
       };
 
-      Bpc.request({ url: '/users?email=first_user@berlingskemedia.dk' }, consoleUserTicket)
+      Bpc.request({ url: '/users?email=first_user@berlingskemedia.dk' }, userTicket)
       .then(response => {
         return Promise.resolve(response.result[0]);
       })
-      .then(user => Bpc.request({ url: '/applications/new-app-to-simple-user/makeadmin', method: 'POST', payload: { user: user._id} }, consoleUserTicket))
+      .then(user => Bpc.request(
+        {
+          url: '/admins/new-app-to-simple-user/admin',
+          method: 'POST',
+          payload: { user: user._id}
+        },
+        userTicket
+      ))
       .then(response => {
         expect(response.statusCode).to.equal(200);
       })
@@ -112,21 +159,97 @@ describe('admin tests', () => {
 
     it('simple user now has grant to console', done => {
       // Finding the new grant to be able to generate RSVP
-      Bpc.request({ url: '/users?email=first_user@berlingskemedia.dk' }, consoleUserTicket)
+      Bpc.request({ url: '/users?email=first_user@berlingskemedia.dk' }, userTicket)
       .then(response => {
         return Promise.resolve(response.result[0]);
       })
       .then(user => MongoDB.collection('grants').findOne({app: 'console', user: user._id }))
-      .then(grant => Bpc.generateRsvp(consoleApp, grant))
-      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+      .then(grant => Bpc.generateRsvp(app, grant))
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        simpleFirstUserTicket = response.result;
+        expect(response.result.scope).to.include('admin');
+        expect(response.result.scope).to.include('admin:new-app-to-simple-user');
       })
       .then(() => done())
       .catch(done);
     });
 
+  });
+
+
+
+  describe('superadmin', () => {
+
+    const grant = test_data.grants.console_superadmin_google_user__console_grant;
+    var userTicket;
+
+    it('getting superadmin user ticket', (done) => {
+      Bpc.generateRsvp(app, grant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        userTicket = response.result;
+        expect(userTicket.scope).to.be.an.array();
+        expect(userTicket.scope).to.include('admin');
+        expect(userTicket.scope).to.include('admin:*');
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('get list of admin users is allowed', (done) => {
+      Bpc.request({ url: `/applications/${app.id}/grants` }, userTicket)
+      .then(response => {
+        console.log('sd', response.result)
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('demote self from superadmin fails', (done) => {
+      const request = {
+        method: 'DELETE',
+        url: `/superadmin/${grant.id}`
+      };
+
+      Bpc.request(request, userTicket)
+      .then((response) => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('promote and demote another user to superadmin succeeds', (done) => {
+
+      const another_grant = test_data.grants.console_google_user__console_grant;
+
+      const promoteRequest = {
+        method: 'POST',
+        url: `/superadmin/${another_grant.id}`
+      };
+
+      const deomoteRequest = {
+        method: 'POST',
+        url: `/superadmin/${another_grant.id}`
+      };
+
+      Bpc.request(promoteRequest, userTicket)
+      .then((response) => {
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => Bpc.request(deomoteRequest, userTicket))
+      .then((response) => {
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => done())
+      .catch(done);
+    });
   });
 
 });

@@ -71,7 +71,7 @@ describe('admin tests', () => {
 
       const request = {
         method: 'POST',
-        url: `/superadmin/${grant.id}`
+        url: `/admins/superadmin/${grant.id}`
       };
 
       Bpc.request(request, userTicket)
@@ -89,7 +89,7 @@ describe('admin tests', () => {
 
       const request = {
         method: 'POST',
-        url: `/superadmin/${grant_two.id}`
+        url: `/admins/superadmin/${grant_two.id}`
       };
 
       Bpc.request(request, userTicket)
@@ -202,8 +202,8 @@ describe('admin tests', () => {
     it('get list of admin users is allowed', (done) => {
       Bpc.request({ url: `/applications/${app.id}/grants` }, userTicket)
       .then(response => {
-        console.log('sd', response.result)
         expect(response.statusCode).to.equal(200);
+        expect(response.result).to.be.an.array();
       })
       .then(() => done())
       .catch(done);
@@ -213,7 +213,7 @@ describe('admin tests', () => {
     it('demote self from superadmin fails', (done) => {
       const request = {
         method: 'DELETE',
-        url: `/superadmin/${grant.id}`
+        url: `/admins/superadmin/${grant.id}`
       };
 
       Bpc.request(request, userTicket)
@@ -231,12 +231,12 @@ describe('admin tests', () => {
 
       const promoteRequest = {
         method: 'POST',
-        url: `/superadmin/${another_grant.id}`
+        url: `/admins/superadmin/${another_grant.id}`
       };
 
       const deomoteRequest = {
-        method: 'POST',
-        url: `/superadmin/${another_grant.id}`
+        method: 'DELETE',
+        url: `/admins/superadmin/${another_grant.id}`
       };
 
       Bpc.request(promoteRequest, userTicket)

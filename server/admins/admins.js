@@ -28,7 +28,7 @@ module.exports = {
 
     const ticket = request.auth.credentials;
 
-    if (ticket.grant === request.payload.user){
+    if (ticket.grant === request.params.id){
       return reply('No need to promote yourself');
     }
 
@@ -36,10 +36,10 @@ module.exports = {
       app: ticket.app
     };
 
-    if(ObjectID.isValid(request.payload.user)) {
-      query._id = new ObjectID(request.payload.user);
+    if(ObjectID.isValid(request.params.id)) {
+      query._id = new ObjectID(request.params.id);
     } else {
-      query.id = request.payload.user;
+      query.id = request.params.id;
     }
 
     const update = {
@@ -57,7 +57,7 @@ module.exports = {
       if(result.lastErrorObject.n === 1) {
 
         EventLog.logUserEvent(
-          request.payload.user,
+          request.params.id,
           'Add Scope to User',
           {scope: 'admin:*', byUser: ticket.user}
         );
@@ -74,7 +74,7 @@ module.exports = {
 
       console.error(err);
       EventLog.logUserEvent(
-        request.payload.user,
+        request.params.id,
         'Scope Change Failed',
         {scope: 'admin:*', byUser: ticket.user}
       );
@@ -88,12 +88,12 @@ module.exports = {
 
     const ticket = request.auth.credentials;
 
-    if (ticket.grant === request.payload.user){
+    if (ticket.grant === request.params.id){
       return reply(Boom.forbidden('You cannot demote yourself'));
     }
 
     const filter = {
-      id: request.payload.user,
+      id: request.params.id,
       app: ticket.app
     };
 
@@ -112,7 +112,7 @@ module.exports = {
       if(result.lastErrorObject.n === 1) {
 
         EventLog.logUserEvent(
-          request.payload.user,
+          request.params.id,
           'Remove Scope from User',
           {scope: 'admin:*', byUser: ticket.user}
         );
@@ -127,7 +127,7 @@ module.exports = {
     .catch(err => {
 
       EventLog.logUserEvent(
-        request.payload.user,
+        request.params.id,
         'Scope Change Failed',
         {scope: 'admin:*', byUser: ticket.user}
       );

@@ -224,7 +224,8 @@ module.exports = {
   postApplicationNewGrant: function (request, reply) {
     let grant = Object.assign(request.payload, {
       id: crypto.randomBytes(20).toString('hex'),
-      app: request.params.id
+      app: request.params.id,
+      scope: []
     });
 
     let userQuery = {}
@@ -302,9 +303,9 @@ module.exports = {
         return Promise.reject(Boom.badRequest('invalid app'))
       }
 
-      grant.scope = makeArrayUnique(grant.scope);
+      // grant.scope = makeArrayUnique(grant.scope);
       // Keep only the scopes allowed in the app scope.
-      grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
+      // grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
 
       const update = {
         $set: grant

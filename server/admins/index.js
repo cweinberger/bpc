@@ -52,7 +52,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'POST',
-    path: '/superadmin',
+    path: '/superadmin/{id}',
     config: {
       auth:  {
         access: {
@@ -60,10 +60,7 @@ module.exports.register = function (server, options, next) {
           entity: 'user' // Only superadmin users are allows to promote other superadmins
         }
       },
-      cors: stdCors,
-      validate: {
-        payload: adminPayloadValidation
-      }
+      cors: stdCors
     },
     handler: Admins.postSuperadmin
   });
@@ -71,7 +68,7 @@ module.exports.register = function (server, options, next) {
 
   server.route({
     method: 'DELETE',
-    path: '/superadmin',
+    path: '/superadmin/{id}',
     config: {
       auth:  {
         access: {
@@ -79,10 +76,7 @@ module.exports.register = function (server, options, next) {
           entity: 'user' // Only superadmin users are allows to demote other superadmins
         }
       },
-      cors: stdCors,
-      validate: {
-        payload: adminPayloadValidation
-      }
+      cors: stdCors
     },
     handler: Admins.deleteSuperadmin
   });

@@ -223,59 +223,6 @@ module.exports.register = function (server, options, next) {
   });
 
 
-  server.route({
-    method: 'GET',
-    path: '/{id}/admins',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
-        }
-      },
-      cors: stdCors
-    },
-    handler: Applications.getApplicationAdmins
-  });
-
-
-  server.route({
-    method: 'POST',
-    path: '/{id}/makeadmin',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
-        }
-      },
-      cors: stdCors,
-      validate: {
-        payload: appAdminPayloadValidation
-      }
-    },
-    handler: Applications.postApplicationMakeAdmin
-  });
-
-
-  server.route({
-    method: 'POST',
-    path: '/{id}/removeadmin',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
-        }
-      },
-      cors: stdCors,
-      validate: {
-        payload: appAdminPayloadValidation
-      }
-    },
-    handler: Applications.postApplicationRemoveAdmin
-  });
-
   next();
 
 };
@@ -285,16 +232,6 @@ module.exports.register.attributes = {
   name: 'applications',
   version: '1.0.0'
 };
-
-
-const appAdminPayloadValidation = Joi.object().keys({
-  _id: Joi.strip(),
-  id: Joi.strip(),
-  app: Joi.strip(),
-  user: Joi.string().required(),
-  exp: Joi.strip(),
-  scope: Joi.strip()
-}).unknown(true); // Allow and strip unknows parameters
 
 
 const scopeValidation = Joi.array().items(

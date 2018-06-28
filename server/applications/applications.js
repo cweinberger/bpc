@@ -290,8 +290,7 @@ module.exports = {
   postApplicationGrant: function (request, reply) {
     const grant = Object.assign(request.payload, {
       id: request.params.grantId,
-      app: request.params.id,
-      scope: []
+      app: request.params.id
     });
 
     const ticket = request.auth.credentials;

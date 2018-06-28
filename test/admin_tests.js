@@ -158,12 +158,9 @@ describe('admin tests', () => {
 
 
     it('simple user now has grant to console', done => {
+      const user = test_data.users.simple_first_user;
       // Finding the new grant to be able to generate RSVP
-      Bpc.request({ url: '/users?email=first_user@berlingskemedia.dk' }, userTicket)
-      .then(response => {
-        return Promise.resolve(response.result[0]);
-      })
-      .then(user => MongoDB.collection('grants').findOne({app: 'console', user: user._id }))
+      MongoDB.collection('grants').findOne({app: 'console', user: user._id })
       .then(grant => Bpc.generateRsvp(app, grant))
       .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
       .then(response => {
@@ -246,6 +243,45 @@ describe('admin tests', () => {
       .then(() => Bpc.request(deomoteRequest, userTicket))
       .then((response) => {
         expect(response.statusCode).to.equal(200);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('simple user grant to console is expired', done => {
+
+      const user = test_data.users.simple_first_user;
+
+      MongoDB.collection('grants').findOne({app: 'console', user: user._id })
+      .then(grant => {
+
+        expect(grant).to.be.an.object();
+        expect(grant.exp).to.equal(null);
+        expect(grant.scope).to.include('admin:new-app-to-simple-user');
+
+        grant.exp = Date.now();
+
+        const expireGrantRequest = {
+          url: `/applications/${app.id}/grants/${grant.id}`,
+          method: 'POST',
+          payload: JSON.stringify(grant)
+        };
+
+        return Bpc.request(expireGrantRequest, userTicket);
+      })
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        const updatedGrant = response.result;
+        expect(updatedGrant).to.be.an.object();
+        expect(updatedGrant.exp).to.not.equal(null);
+        expect(updatedGrant.scope).to.include('admin:new-app-to-simple-user');
+      })
+      .then(() => MongoDB.collection('grants').findOne({ app: app.id, user: user._id }))
+      .then(dbGrant => {
+        expect(dbGrant).to.be.an.object();
+        expect(dbGrant.exp).to.not.equal(null);
+        expect(dbGrant.scope).to.include('admin:new-app-to-simple-user');
       })
       .then(() => done())
       .catch(done);

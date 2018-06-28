@@ -199,38 +199,52 @@ describe('application tests', () => {
 
   describe('update', () => {
 
-    // TODO: Test is currently skipped due to lacking support in mongo-mock:
-    // findOneAndUpdate().
-    /* it('updates the correct app', done => {
+    it('update not allowed for non-admin user', done => {
+      
+      var app = test_data.applications.valid_app;
 
-      MongoDB.collection('applications').findOne({id: 'valid-app'}).then(app => {
+      const updateRequest = {
+        url: `/applications/${app.id}`,
+        method: 'PUT',
+        payload: JSON.stringify(app)
+      };
 
-        expect(app).to.be.an.object();
-        expect(app.id).to.equal('valid-app');
-        expect(app.delegate).to.equal(false);
+      Bpc.request(updateRequest, consoleUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
 
-        // Change the app.
-        app.delegate = true;
 
-        Applications.updateApp('valid-app', app).then(res => {
+    it('duplicates in scope are removed and key is ignored', done => {
 
-          expect(res).to.be.an.object();
-          expect(res.id).to.equal('valid-app');
+      var app = test_data.applications.valid_app;
+      app.scope.push('test_scope');
+      app.scope.push('test_scope');
+      app.key = 'somenewkeythatisignored';
 
-          MongoDB.collection('applications').findOne({id: 'valid-app'}).then(_app => {
+      const updateRequest = {
+        url: `/applications/${app.id}`,
+        method: 'PUT',
+        payload: JSON.stringify(app)
+      };
 
-            expect(_app).to.be.an.object();
-            expect(_app.id).to.equal('valid-app');
-            expect(_app.delegate).to.equal(true);
-            done();
-
-          });
-
-        });
-
-      });
-
-    }); */
+      Bpc.request(updateRequest, consoleSuperAdminUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.status).to.equal('ok');
+      })
+      .then(() => MongoDB.collection('applications').findOne({ id: app.id}))
+      .then(savedApp => {
+        expect(savedApp.scope).to.be.an.array();
+        expect(savedApp.scope).to.once.include('test_scope');
+        expect(savedApp.key).to.not.be.equal('somenewkeythatisignored');
+      })
+      .then(() => done())
+      .catch(done);
+    });
 
   });
 

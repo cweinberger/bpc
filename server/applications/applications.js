@@ -102,6 +102,8 @@ module.exports = {
       application.settings.provider = 'gigya';
     }
 
+    application.scope = makeArrayUnique(application.scope);
+
     MongoDB.collection('applications')
     .updateOne(
       { id: request.params.id },
@@ -272,10 +274,6 @@ module.exports = {
         return Promise.reject(Boom.badRequest('invalid app'))
       }
 
-      // Keep only the scopes allowed in the app scope.
-      // grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
-      // grant.scope = makeArrayUnique(grant.scope);
-
       MongoDB.collection('grants')
       .insertOne(grant)
       .then(res => reply(grant))
@@ -303,10 +301,6 @@ module.exports = {
       if (!app) {
         return Promise.reject(Boom.badRequest('invalid app'))
       }
-
-      // grant.scope = makeArrayUnique(grant.scope);
-      // Keep only the scopes allowed in the app scope.
-      // grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
 
       const update = {
         $set: grant

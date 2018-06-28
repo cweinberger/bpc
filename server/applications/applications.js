@@ -294,6 +294,12 @@ module.exports = {
       scope: []
     });
 
+    const ticket = request.auth.credentials;
+
+    if (ticket.grant === request.params.grantId){
+      return reply(Boom.forbidden('You cannot update your own grant'));
+    }
+
     MongoDB.collection('applications')
     .findOne({id: grant.app})
     .then(app => {
@@ -325,6 +331,13 @@ module.exports = {
 
 
   deleteApplicationGrant: function (request, reply) {
+
+    const ticket = request.auth.credentials;
+
+    if (ticket.grant === request.params.grantId){
+      return reply(Boom.forbidden('You cannot delete your own grant'));
+    }
+
     MongoDB.collection('grants').removeOne({
       app: request.params.id,
       id: request.params.grantId

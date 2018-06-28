@@ -110,7 +110,7 @@ describe('grants tests', () => {
         expect(response.result.app).to.equal('valid-app');
         // expect(response.result.user).to.equal(grant.user);
         expect(response.result.scope).to.be.an.array();
-        expect(response.result.scope).to.have.length(2);
+        expect(response.result.scope).to.have.length(0);
         expect(response.result.scope).not.to.contain('aok:all');
         grantIdToUpdate = response.result.id;
       })
@@ -140,7 +140,7 @@ describe('grants tests', () => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.object();
         expect(response.result.scope).to.be.an.array();
-        expect(response.result.scope).to.have.length(2);
+        expect(response.result.scope).to.have.length(0);
         expect(response.result.scope).not.to.contain('b:all');
         expect(response.result.scope).not.to.contain('aok:all');
       })

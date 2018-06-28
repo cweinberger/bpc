@@ -273,8 +273,8 @@ module.exports = {
       }
 
       // Keep only the scopes allowed in the app scope.
-      grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
-      grant.scope = makeArrayUnique(grant.scope);
+      // grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
+      // grant.scope = makeArrayUnique(grant.scope);
 
       MongoDB.collection('grants')
       .insertOne(grant)
@@ -292,7 +292,8 @@ module.exports = {
   postApplicationGrant: function (request, reply) {
     const grant = Object.assign(request.payload, {
       id: request.params.grantId,
-      app: request.params.id
+      app: request.params.id,
+      scope: []
     });
 
     MongoDB.collection('applications')

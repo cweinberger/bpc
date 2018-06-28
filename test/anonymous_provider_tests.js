@@ -4,9 +4,9 @@
 // Bootstrap the testing harness.
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
+const Bpc = require('./helpers/bpc_helper');
 const Gigya = require('./helpers/gigya_stub');
-const MongoDB = require('./helpers/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_helper');
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
@@ -26,7 +26,7 @@ describe('anonymous users - integration tests', () => {
 
   // Getting the appTicket
   before(done => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app)
+    Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
     .then(response => {
       appTicket = response.result;
     })
@@ -41,10 +41,10 @@ describe('anonymous users - integration tests', () => {
 
     it('getting ticket without fingerprint', (done) => {
 
-      bpc_helper.request({
+      Bpc.request({
         method: 'GET',
         url: `/au/ticket?app=${app.id}`
-      }, null)
+      })
       .then(response => {
         expect(response.statusCode).to.be.equal(200);
         expect(response.headers).to.include('set-cookie');
@@ -60,8 +60,8 @@ describe('anonymous users - integration tests', () => {
         expect(anonymousUserTicket.user).to.startWith('auid**');
         expect(anonymousUserTicket.grant).to.startWith('agid**');
         expect(anonymousUserTicket.app).to.equal(app.id);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
@@ -71,14 +71,14 @@ describe('anonymous users - integration tests', () => {
 
     it('getting ticket without fingerprint', (done) => {
 
-      bpc_helper.request({
+      Bpc.request({
         method: 'GET',
         url: `/au/ticket?app=${test_data.applications.app_with_profile_scope.id}`
       }, null)
       .then(response => {
         expect(response.statusCode).to.be.equal(401);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
@@ -91,12 +91,12 @@ describe('anonymous users - integration tests', () => {
 
     it('getting anonymous user permissions without any there', (done) => {
 
-      bpc_helper.request({ method: 'GET', url: '/permissions/' + fingerprint + '/anonymous'}, appTicket)
+      Bpc.request({ method: 'GET', url: '/permissions/' + fingerprint + '/anonymous'}, appTicket)
       .then(response => {
         // console.log('response', response);
         expect(response.statusCode).to.equal(404);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -107,11 +107,11 @@ describe('anonymous users - integration tests', () => {
         buy_model: 'A'
       };
 
-      bpc_helper.request({ method: 'POST', url: '/permissions/' + fingerprint + '/anonymous', payload: payload}, appTicket)
+      Bpc.request({ method: 'POST', url: '/permissions/' + fingerprint + '/anonymous', payload: payload}, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        done();
       })
+      .then(() => done())
       // TODO: test for ttl in MongoDB collection
       .catch(done);
     });
@@ -119,12 +119,12 @@ describe('anonymous users - integration tests', () => {
 
     it('getting anonymous user permissions now there is data', (done) => {
 
-      bpc_helper.request({ method: 'GET', url: '/permissions/' + fingerprint + '/anonymous'}, appTicket)
+      Bpc.request({ method: 'GET', url: '/permissions/' + fingerprint + '/anonymous'}, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.buy_model).to.equal('A');
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -140,11 +140,11 @@ describe('anonymous users - integration tests', () => {
           'cookie': 'auid=' + fingerprint
         };
 
-        bpc_helper.request({
+        Bpc.request({
           method: 'GET',
           url: `/au/ticket?app=${app.id}`,
           headers: headers
-        }, null)
+        })
         .then(response => {
 
           expect(response.statusCode).to.be.equal(200);
@@ -161,27 +161,27 @@ describe('anonymous users - integration tests', () => {
           expect(anonymousUserTicket.user).to.be.equal(fingerprint);
           expect(anonymousUserTicket.grant).to.startWith('agid**');
           expect(anonymousUserTicket.app).to.equal(app.id);
-          done();
         })
+        .then(() => done())
         .catch(done);
       });
 
       it('getting permissions using the anonymous ticket', (done) => {
-        bpc_helper.request({ method: 'GET', url: '/au/audata'}, anonymousUserTicket)
+        Bpc.request({ method: 'GET', url: '/au/audata'}, anonymousUserTicket)
         .then(response => {
           expect(response.statusCode).to.equal(200);
           expect(response.result.buy_model).to.equal('A');
-          done();
         })
+        .then(() => done())
         .catch(done);
       });
 
       it('using the anonymous ticket for unallowed scope', (done) => {
-        bpc_helper.request({ method: 'GET', url: '/permissions/anothernotanonynmousscope'}, anonymousUserTicket)
+        Bpc.request({ method: 'GET', url: '/permissions/anothernotanonynmousscope'}, anonymousUserTicket)
         .then(response => {
           expect(response.statusCode).to.equal(403);
-          done();
         })
+        .then(() => done())
         .catch(done);
       });
 

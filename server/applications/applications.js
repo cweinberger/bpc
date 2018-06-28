@@ -2,8 +2,6 @@
 'use strict';
 
 const Boom = require('boom');
-const Joi = require('joi');
-const OzLoadFuncs = require('./../oz_loadfuncs');
 const MongoDB = require('./../mongo/mongodb_client');
 const ObjectID = require('mongodb').ObjectID;
 const crypto = require('crypto');
@@ -103,6 +101,8 @@ module.exports = {
     if (!application.settings.provider){
       application.settings.provider = 'gigya';
     }
+
+    application.scope = makeArrayUnique(application.scope);
 
     MongoDB.collection('applications')
     .updateOne(
@@ -226,7 +226,8 @@ module.exports = {
   postApplicationNewGrant: function (request, reply) {
     let grant = Object.assign(request.payload, {
       id: crypto.randomBytes(20).toString('hex'),
-      app: request.params.id
+      app: request.params.id,
+      scope: []
     });
 
     let userQuery = {}
@@ -273,10 +274,6 @@ module.exports = {
         return Promise.reject(Boom.badRequest('invalid app'))
       }
 
-      // Keep only the scopes allowed in the app scope.
-      grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
-      grant.scope = makeArrayUnique(grant.scope);
-
       MongoDB.collection('grants')
       .insertOne(grant)
       .then(res => reply(grant))
@@ -296,6 +293,12 @@ module.exports = {
       app: request.params.id
     });
 
+    const ticket = request.auth.credentials;
+
+    if (ticket.grant === request.params.grantId){
+      return reply(Boom.forbidden('You cannot update your own grant'));
+    }
+
     MongoDB.collection('applications')
     .findOne({id: grant.app})
     .then(app => {
@@ -303,10 +306,6 @@ module.exports = {
       if (!app) {
         return Promise.reject(Boom.badRequest('invalid app'))
       }
-
-      grant.scope = makeArrayUnique(grant.scope);
-      // Keep only the scopes allowed in the app scope.
-      grant.scope = grant.scope.filter(i => app.scope.indexOf(i) > -1);
 
       const update = {
         $set: grant
@@ -331,6 +330,13 @@ module.exports = {
 
 
   deleteApplicationGrant: function (request, reply) {
+
+    const ticket = request.auth.credentials;
+
+    if (ticket.grant === request.params.grantId){
+      return reply(Boom.forbidden('You cannot delete your own grant'));
+    }
+
     MongoDB.collection('grants').removeOne({
       app: request.params.id,
       id: request.params.grantId

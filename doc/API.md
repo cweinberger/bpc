@@ -74,8 +74,15 @@ See each endpoint for details on required authorization.
 * [`POST /applications/{id}/grants`](#post-applicationsidgrants)
 * [`POST /applications/{id}/grants/{grantId}`](#post-applicationsidgrantsgrantid)
 * [`DELETE /applications/{id}/grants/{grantId}`](#delete-applicationsidgrantsgrantid)
-* [`POST /superadmin/{id}`](#) TODO
-* [`DELETE /superadmin/{id}`](#) TODO
+* [`POST /applications/{id}/makeadmin`](#) TODO
+* [`POST /applications/{id}/removeadmin`](#) TODO
+* [`GET /admins`](#) TODO
+* [`POST /admins/{id}/admin/{grantId}`](#) TODO
+* [`DELETE /admins/{id}/admin/{grantId}`](#) TODO
+* [`POST /admins/{id}/superadmin`](#) TODO
+* [`DELETE /admins/{id}/superadmin`](#) TODO
+* [`POST /superadmin/{id}`](#) DEPRECATED
+* [`DELETE /superadmin/{id}`](#) DEPRECATED
 * [`GET /settings/{scope}`](#) TODO
 * [`GET /settings/{scope}/{key}`](#) TODO
 * [`PUT /settings/{scope}/{key}`](#) TODO

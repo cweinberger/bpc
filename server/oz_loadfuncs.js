@@ -1,13 +1,11 @@
 /*jshint node: true */
 'use strict';
 
-if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
-  process.env.ENCRYPTIONPASSWORD = 'random_test_password_that_is_longer_than_32_characters';
-}
+const Config = require('./config');
 
-const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
-const BPC_PUB_HOST = process.env.BPC_PUB_HOST;
-const BPC_PUB_PORT = process.env.BPC_PUB_PORT;
+const ENCRYPTIONPASSWORD = Config.ENCRYPTIONPASSWORD;
+const BPC_PUB_HOST = Config.BPC_PUB_HOST;
+const BPC_PUB_PORT = Config.BPC_PUB_PORT;
 
 
 const Boom = require('boom');

@@ -8,7 +8,7 @@ const Url = require('url');
 const OzLoadFuncs = require('./../oz_loadfuncs');
 const ozOptions = Object.assign({}, OzLoadFuncs.strategyOptions.oz, { hawk: { host: null, port: null } });
 
-const ENCRYPTIONPASSWORD = process.env.ENCRYPTIONPASSWORD;
+const ENCRYPTIONPASSWORD = OzLoadFuncs.ENCRYPTIONPASSWORD;
 
 module.exports.register = function (server, options, next) {
 

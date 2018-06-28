@@ -1,7 +1,6 @@
 /*jshint node: true */
 'use strict';
 
-const Boom = require('boom');
 const Joi = require('joi');
 const Permissions = require('./permissions');
 

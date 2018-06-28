@@ -1,7 +1,6 @@
 /* jshint node: true */
 'use strict';
 
-const Boom = require('boom');
 const app = require('./../../package.json');
 
 const corsRules = {

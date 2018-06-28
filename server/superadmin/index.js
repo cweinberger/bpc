@@ -3,7 +3,6 @@
 
 
 const Boom = require('boom');
-const Joi = require('joi');
 const ObjectID = require('mongodb').ObjectID;
 const MongoDB = require('./../mongo/mongodb_client');
 const EventLog = require('./../audit/eventlog');
@@ -34,6 +33,10 @@ module.exports.register = function (server, options, next) {
     handler: function(request, reply) {
 
       const ticket = request.auth.credentials;
+
+      if (ticket.grant === request.params.id){
+        return reply('No need to promote yourself');
+      }
 
       let query = {
         app: ticket.app

@@ -199,18 +199,14 @@ function findPermissions({user, scope}) {
   };
 
   // The details must only be the dataScopes that are allowed for the application.
-  if (MongoDB.isMock) {
-    // Well, mongo-mock does not support projection of sub-documents
+  if (scope instanceof Array) {
+    scope.forEach(scopeName => {
+      projection['dataScopes.'.concat(scopeName)] = 1;
+    });
+  } else if(typeof scope === 'string'){
+    projection['dataScopes.'.concat(scope)] = 1;
   } else {
-    if (scope instanceof Array) {
-      scope.forEach(scopeName => {
-        projection['dataScopes.'.concat(scopeName)] = 1;
-      });
-    } else if(typeof scope === 'string'){
-      projection['dataScopes.'.concat(scope)] = 1;
-    } else {
-      projection['dataScopes'] = 0;
-    }
+    projection['dataScopes'] = 0;
   }
 
   const options = {
@@ -286,23 +282,9 @@ function setPermissions({user, scope, permissions, provider, useProviderEmailFil
     // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
   };
 
-
-  if (MongoDB.isMock) {
-
-    set.dataScopes = {};
-    set.dataScopes[scope] = permissions;
-
-    // We are adding the $set onto $setOnInsert
-    //   because apparently mongo-mock does not use $set when inserting (upsert=true)
-    Object.assign(setOnInsert, set);
-
-  } else {
-
-    Object.keys(permissions).forEach(function(field){
-      set['dataScopes.'.concat(scope,'.',field)] = permissions[field];
-    });
-
-  }
+  Object.keys(permissions).forEach(function(field){
+    set['dataScopes.'.concat(scope,'.',field)] = permissions[field];
+  });
 
   const update = {
     $currentDate: { 'lastUpdated': { $type: "date" } },

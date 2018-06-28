@@ -3,9 +3,9 @@
 
 // Bootstrap the testing harness.
 const sinon = require('sinon');
-const MongoDB = require('./helpers/mongodb_mock');
+const MongoDB = require('./helpers/mongodb_helper');
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
+const Bpc = require('./helpers/bpc_helper');
 // const Permissions = require('./../server/permissions');
 
 // Test shortcuts.
@@ -28,11 +28,11 @@ describe('scope datafields - integration tests', () => {
 
   // Getting the appTicket
   before((done) => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, bt)
+    Bpc.request({ method: 'POST', url: '/ticket/app' }, bt)
     .then(response => {
       appTicket = response.result;
     })
-    .then(done)
+    .then(() => done())
     .catch(done);
   });
 
@@ -52,7 +52,7 @@ describe('scope datafields - integration tests', () => {
         }
       };
 
-      bpc_helper.request(set_request, appTicket)
+      Bpc.request(set_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -63,7 +63,7 @@ describe('scope datafields - integration tests', () => {
         expect(user.dataScopes.bt.test_integer).to.equal(1);
         lastUpdated = user.lastUpdated;
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -81,7 +81,7 @@ describe('scope datafields - integration tests', () => {
     //     }
     //   };
     //
-    //   bpc_helper.request(inc_request, appTicket)
+    //   Bpc.request(inc_request, appTicket)
     //   .then(response => {
     //     expect(response.statusCode).to.equal(200);
     //     return Promise.resolve();

@@ -265,11 +265,6 @@ function upsertUser (accountInfo) {
     dataScopes: {}
   };
 
-  // mongo-mock does not do upset the same way as MongoDB.
-  // $set is ignored when doing upsert in mongo-mock
-  if (MongoDB.isMock) {
-    setOnInsert = Object.assign(setOnInsert, set);
-  }
 
   let operators = {
     $currentDate: { 'lastUpdated': { $type: "date" } },
@@ -299,7 +294,8 @@ function deleteUser ({ id }){
     ]
   };
 
-  return MongoDB.collection('users').findOneAndDelete(selector)
+  return MongoDB.collection('users')
+  .findOneAndDelete(selector)
   .then(result => {
     let user = result.value;
     if (user === null) {

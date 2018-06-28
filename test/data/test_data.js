@@ -1,12 +1,17 @@
 /* jshint node: true */
 'use strict';
 
+const ObjectID = require('mongodb').ObjectID;
+
 module.exports = {
 
+  
   users: {
     simple_first_user: {
+      _id: new ObjectID("5b3211fd4e094108d0e8a781"),
       id: '3218736128736123215732',
       email: 'first_user@berlingskemedia.dk',
+      provider: 'gigya',
       gigya: {
         UID: '3218736128736123215732',
         email: 'first_user@berlingskemedia.dk'
@@ -24,8 +29,10 @@ module.exports = {
       }
     },
     simple_second_user: {
+      _id: new ObjectID("5b3211fd4e094108d0e8a782"),
       id: '5347895384975934842757',
       email: 'second_user@berlingskemedia.dk',
+      provider: 'gigya',
       gigya: {
         UID: '5347895384975934842757',
         email: 'second_user@berlingskemedia.dk'
@@ -43,8 +50,10 @@ module.exports = {
       }
     },
     simple_third_user: {
+      _id: new ObjectID("5b3212844e094108d0e8a783"),
       id: 'third_user@berlingskemedia.dk',
       email: 'third_user@berlingskemedia.dk',
+      provider: 'gigya',
       gigya: {
         UID: '5347895384975934842758',
         email: 'third_user@berlingskemedia.dk'
@@ -63,8 +72,10 @@ module.exports = {
       }
     },
     user_with_no_datascopes: {
+      _id: new ObjectID("5b32128d4e094108d0e8a784"),
       id: 'user_with_no_datascopes',
       email: 'user_with_no_datascopes@berlingskemedia.dk',
+      provider: 'gigya',
       gigya: {
         UID: '5347895384975934842759',
         email: 'user_with_no_datascopes@berlingskemedia.dk'
@@ -74,37 +85,55 @@ module.exports = {
       }
     },
     mkoc_user: {
+      _id: new ObjectID("5b3212954e094108d0e8a785"),
       id: '117880216634946654515',
+      email: 'mkoc@berlingskemedia.dk',
+      provider: 'gigya',
       gigya: {
-        UID: '5347895384975934842757',
+        UID: '117880216634946654515',
         email: 'mkoc@berlingskemedia.dk'
       },
       lastLogin: new Date(),
       dataScopes: {}
     },
     xyz_user: {
+      _id: new ObjectID("5b32129f4e094108d0e8a786"),
       id: '137802111134346654517',
       email: 'xyx@berlingskemedia.dk',
+      provider: 'gigya',
       gigya: {
-        UID: '5347895384975934842757',
+        UID: '137802111134346654517',
         email: 'xyx@berlingskemedia.dk'
       },
       lastLogin: new Date(),
       dataScopes: {}
     },
     console_admin: {
+      _id: new ObjectID("5b32129f4e094108d0e8a787"),
       id: '6765636276327632763517531',
       email: 'console_admin@berlingskemedia.dk',
+      provider: 'google',
       lastLogin: new Date(),
       dataScopes: {}
     },
     console_user: {
+      _id: new ObjectID("5b32129f4e094108d0e8a788"),
       id: '4378638756232438756874365',
       email: 'console_user@berlingskemedia.dk',
+      provider: 'google',
+      lastLogin: new Date(),
+      dataScopes: {}
+    },
+    console_user_two: {
+      _id: new ObjectID("5b32129f4e094108d0e8a789"),
+      id: '4378638756232438756874366',
+      email: 'console_user2@berlingskemedia.dk',
+      provider: 'google',
       lastLogin: new Date(),
       dataScopes: {}
     }
   },
+
 
   applications: {
     console: {
@@ -235,11 +264,12 @@ module.exports = {
     }
   },
 
+
   grants: {
     console_superadmin_google_user__console_grant : {
       id : '7462ydu3jjj3u32uej3mmsi3',
       app : 'console',
-      user : '6765636276327632763517531',
+      user : new ObjectID("5b32129f4e094108d0e8a787"),
       scope : ['admin:*'],
       exp : null,
       createdAt: new Date()
@@ -247,7 +277,15 @@ module.exports = {
     console_google_user__console_grant : {
       id : '7362ydu3kkk3u65uej3mmsi4',
       app : 'console',
-      user : '4378638756232438756874365',
+      user : new ObjectID("5b32129f4e094108d0e8a788"),
+      scope : [],
+      exp : null,
+      createdAt: new Date()
+    },
+    console_google_user_two__console_grant : {
+      id : '7362ydu3kkk3u65uej3mmsi6',
+      app : 'console',
+      user : new ObjectID("5b32129f4e094108d0e8a789"),
       scope : [],
       exp : null,
       createdAt: new Date()
@@ -255,28 +293,44 @@ module.exports = {
     valid_app_grant: {
       id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
       app: 'valid-app',
-      user: '137802111134346654517',
+      user: new ObjectID("5b32129f4e094108d0e8a786"),
       scope: []
     },
     delete_me_app_grant: {
       id: 'jhfgs294723ijsdhfsdfhskjh329423798animal',
       app: 'delete-me-app',
-      user: '137802111134346654517',
+      user: new ObjectID("5b32129f4e094108d0e8a786"),
       scope: []
     },
     simple_first_user_bt_grant: {
       id: 'somerandomsdhjfkjlhsdfkjhsd',
       app: 'bt',
-      user: '3218736128736123215732',
+      user: new ObjectID("5b3211fd4e094108d0e8a781"),
+      scope: []
+    },
+    simple_second_user_bt_grant: {
+      id: 'somerandomsdhjydhddkxhdbhsd',
+      app: 'bt',
+      user: new ObjectID("5b3211fd4e094108d0e8a782"),
+      scope: []
+    },
+    simple_second_user_berlingske_grant: {
+      id: 'somerandomsdhjydhddkxhdbhse',
+      app: 'berlingske',
+      user: new ObjectID("5b3211fd4e094108d0e8a782"),
       scope: []
     },
     user_with_no_datascopes_grant: {
       id: 'sdsadasdfvcxdfsfsd',
       app: 'app_with_no_scopes',
-      user: 'user_with_no_datascopes',
+      user: new ObjectID("5b32128d4e094108d0e8a784"),
       scope: []
     }
   },
 
-  deleted_users: {}
+
+  deleted_users: {},
+
+
+  audit: {}
 };

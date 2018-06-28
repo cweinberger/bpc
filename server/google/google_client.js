@@ -1,12 +1,14 @@
 /*jshint node: true */
 'use strict';
 
-if (module.parent.exports.lab !== undefined || process.env.NODE_ENV === 'test') {
+if (process.env.NODE_ENV === 'test') {
   module.exports = require('../../test/helpers/google_stub.js');
   return;
 }
 
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const Config = require('./../config');
+
+const GOOGLE_API_KEY = Config.GOOGLE_API_KEY;
 
 
 const google = require('googleapis');

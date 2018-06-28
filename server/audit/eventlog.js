@@ -1,9 +1,9 @@
 /* jshint node: true */
 'use strict';
 
+const Config = require('./../config');
 
-const disableLog = ['yes', 'true', '1'].includes(process.env.DISABLE_LOG) || false;
-
+const disableLog = Config.DISABLE_LOG;
 
 const MongoDB = require('./../mongo/mongodb_client');
 

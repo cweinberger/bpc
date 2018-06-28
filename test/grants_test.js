@@ -6,8 +6,8 @@ const sinon = require('sinon');
 const crypto = require('crypto');
 const Boom = require('boom');
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./helpers/mongodb_mock');
+const Bpc = require('./helpers/bpc_helper');
+const MongoDB = require('./helpers/mongodb_helper');
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
@@ -21,11 +21,13 @@ describe('grants tests', () => {
   var consoleUserTicket;
   const consoleSuperAdminGrant = test_data.grants.console_superadmin_google_user__console_grant;
   var consoleSuperAdminUserTicket;
+  var grantIdToUpdate;
 
-
+  
   before(done => {
     MongoDB.reset().then(done);
   });
+
 
   after(done => {
     MongoDB.clear().then(done);
@@ -34,43 +36,42 @@ describe('grants tests', () => {
 
   // Getting the consoleAppTicket
   before(done => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, consoleApp)
+    Bpc.request({ method: 'POST', url: '/ticket/app' }, consoleApp)
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleAppTicket = response.result;
     })
-    .then(done)
+    .then(() => done())
     .catch(done);
   });
 
 
   // Getting the consoleUserTicket
   before(done => {
-    bpc_helper.generateRsvp(consoleApp, consoleGrant)
-    .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+    Bpc.generateRsvp(consoleApp, consoleGrant)
+    .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleUserTicket = response.result;
-      done();
-    });
+    })
+    .then(() => done())
+    .catch(done);
   });
 
 
   // Getting the consoleSuperAdminUserTicket
   before(done => {
-    bpc_helper.generateRsvp(consoleApp, consoleSuperAdminGrant)
-    .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+    Bpc.generateRsvp(consoleApp, consoleSuperAdminGrant)
+    .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleSuperAdminUserTicket = response.result;
-      done();
-    });
+    })
+    .then(() => done())
+    .catch(done);
   });
 
-
-
-  var grantIdToUpdate;
-
+  
   describe('create', () => {
 
     it('badRequest for nonexisting app id', done => {
@@ -83,11 +84,11 @@ describe('grants tests', () => {
         ]
       };
 
-      bpc_helper.request({ url: '/applications/invalid-app/grants', method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/invalid-app/grants', method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(400);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -103,17 +104,17 @@ describe('grants tests', () => {
         ]
       };
 
-      bpc_helper.request({ url: '/applications/valid-app/grants', method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/valid-app/grants', method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.app).to.equal('valid-app');
         // expect(response.result.user).to.equal(grant.user);
         expect(response.result.scope).to.be.an.array();
-        expect(response.result.scope).to.have.length(2);
+        expect(response.result.scope).to.have.length(0);
         expect(response.result.scope).not.to.contain('aok:all');
         grantIdToUpdate = response.result.id;
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
@@ -134,19 +135,18 @@ describe('grants tests', () => {
         ]
       };
 
-      bpc_helper.request({ url: '/applications/valid-app/grants/'.concat(grantIdToUpdate), method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/valid-app/grants/'.concat(grantIdToUpdate), method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.object();
         expect(response.result.scope).to.be.an.array();
-        expect(response.result.scope).to.have.length(2);
+        expect(response.result.scope).to.have.length(0);
         expect(response.result.scope).not.to.contain('b:all');
         expect(response.result.scope).not.to.contain('aok:all');
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
-
 
 });

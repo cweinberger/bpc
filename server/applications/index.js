@@ -173,7 +173,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.string().required(),
           exp: Joi.date().timestamp('unix').raw().allow(null),
-          scope: scopeValidation
+          scope: Joi.strip()
         }
       }
     },
@@ -199,7 +199,7 @@ module.exports.register = function (server, options, next) {
           app: Joi.strip(),
           user: Joi.strip(),
           exp: Joi.date().timestamp('unix').raw().allow(null),
-          scope: scopeValidation
+          scope: Joi.strip()
         }
       }
     },

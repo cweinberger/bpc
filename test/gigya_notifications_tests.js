@@ -4,8 +4,8 @@
 // Bootstrap the testing harness.
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./helpers/mongodb_mock');
+const Bpc = require('./helpers/bpc_helper');
+const MongoDB = require('./helpers/mongodb_helper');
 const Gigya = require('./helpers/gigya_stub');
 const gigya_helper = require('./helpers/gigya_helper');
 
@@ -46,7 +46,7 @@ describe('gigya notifications', () => {
 
     it('getting accountRegistered test 1', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -75,12 +75,11 @@ describe('gigya notifications', () => {
         "timestamp": 1450011477
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -91,7 +90,6 @@ describe('gigya notifications', () => {
         expect(result[0]).not.to.be.null();
         expect(result[0].gigya.email).to.equal('1@test.nl');
         expect(result[0].createdAt).to.be.a.date();
-        return Promise.resolve();
       })
       .then(() => MongoDB.collection('users').find({id: '2'}).toArray())
       .then(result => {
@@ -99,21 +97,15 @@ describe('gigya notifications', () => {
         expect(result[0]).not.to.be.null();
         expect(result[0].gigya.email).to.equal('2@test.nl');
         expect(result[0].createdAt).to.be.a.date();
-
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
 
     it('getting accountDeleted test 1', (done) => {
 
-      if(MongoDB.isMock){
-        // mongo-mock does not support selection from subdocuments and other stuff
-        return done();
-      }
-
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -142,12 +134,11 @@ describe('gigya notifications', () => {
         "timestamp": 1450011477
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -155,22 +146,20 @@ describe('gigya notifications', () => {
       .then(() => MongoDB.collection('users').find({id: '1'}).toArray())
       .then(result => {
         expect(result.length).to.equal(0);
-        return Promise.resolve();
       })
       .then(() => MongoDB.collection('deleted_users').find({id: '1'}).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0].deletedAt).to.be.a.date();
-
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
 
     it('getting multiple identical accountRegistered events', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -199,9 +188,9 @@ describe('gigya notifications', () => {
         "timestamp": 1450011477
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         return Promise.resolve();
@@ -214,9 +203,8 @@ describe('gigya notifications', () => {
         expect(result.length).to.equal(1);
         expect(result[0].gigya.UID).to.equal('3');
         expect(result[0].gigya.email).to.equal('3@test.nl');
-
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
@@ -241,7 +229,7 @@ describe('gigya notifications', () => {
 
     it('getting accountRegistered', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -262,9 +250,10 @@ describe('gigya notifications', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
+      
 
-      bpc_helper.request(notifications_request, null)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
       })
@@ -280,14 +269,14 @@ describe('gigya notifications', () => {
         expect(result[0].gigya.email).to.equal('five@test.nl');
         expect(result[0].createdAt).to.be.a.date();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
 
     it('getting accountUpdated with a new email', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -308,9 +297,9 @@ describe('gigya notifications', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
       })
@@ -324,9 +313,8 @@ describe('gigya notifications', () => {
         expect(result[0].id).to.be.equal('5');
         expect(result[0].gigya.email).to.equal('five_o@test.nl');
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
-
     });
   });
 });

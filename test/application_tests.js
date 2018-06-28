@@ -2,8 +2,8 @@
 'use strict';
 
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./helpers/mongodb_mock');
+const Bpc = require('./helpers/bpc_helper');
+const MongoDB = require('./helpers/mongodb_helper');
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
@@ -32,37 +32,37 @@ describe('application tests', () => {
 
   // Getting the consoleAppTicket
   before(done => {
-    bpc_helper.request({ method: 'POST', url: '/ticket/app' }, consoleApp)
+    Bpc.request({ method: 'POST', url: '/ticket/app' }, consoleApp)
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleAppTicket = response.result;
-      done();
     })
+    .then(() => done())
     .catch(done);
   });
 
 
   // Getting the consoleUserTicket
   before(done => {
-    bpc_helper.generateRsvp(consoleApp, consoleGrant)
-    .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+    Bpc.generateRsvp(consoleApp, consoleGrant)
+    .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleUserTicket = response.result;
-      done();
-    });
+    })
+    .then(() => done());
   });
 
 
   // Getting the consoleSuperAdminUserTicket
   before(done => {
-    bpc_helper.generateRsvp(consoleApp, consoleSuperAdminGrant)
-    .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+    Bpc.generateRsvp(consoleApp, consoleSuperAdminGrant)
+    .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
     .then(response => {
       expect(response.statusCode).to.equal(200);
       consoleSuperAdminUserTicket = response.result;
-      done();
-    });
+    })
+    .then(() => done());
   });
 
 
@@ -71,11 +71,7 @@ describe('application tests', () => {
 
     it('returns at least one app', done => {
 
-      if(MongoDB.isMock){
-        return done();
-      }
-
-      bpc_helper.request({ url: '/applications' }, consoleUserTicket)
+      Bpc.request({ url: '/applications' }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.array();
@@ -83,8 +79,8 @@ describe('application tests', () => {
         response.result.forEach(function(app){
           expect(app.key).to.not.exist();
         });
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
@@ -94,35 +90,35 @@ describe('application tests', () => {
 
     it('returns 403 for normal admin user', done => {
 
-      bpc_helper.request({ url: '/applications/valid-app' }, consoleUserTicket)
+      Bpc.request({ url: '/applications/valid-app' }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(403);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
 
     it('returns the correct app', done => {
-      bpc_helper.request({ url: '/applications/valid-app' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/valid-app' }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.object();
         expect(response.result).to.part.include({
           id: 'valid-app', key: 'something_long_and_random'
         });
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
 
 
     it('returns empty response for invalid app ids', done => {
-      bpc_helper.request({ url: '/applications/invalid-app' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/invalid-app' }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
-        done();
       })
+      .then(() => done())
       .catch(done);
     });
   });
@@ -140,47 +136,40 @@ describe('application tests', () => {
 
     it('create new app by console user', done => {
 
-      bpc_helper.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.id).to.equal(newApp.id);
         expect(response.result.scope).to.equal(newApp.scope);
         expect(response.result.delegate).to.equal(newApp.delegate);
         expect(response.result.algorithm).to.equal(newApp.algorithm);
-        return Promise.resolve();
       })
-      .then(() => MongoDB.collection('applications').find({id: 'new-app'}).toArray())
+      .then(() => MongoDB.collection('applications').find({ id: 'new-app' }).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0]).to.part.include(newApp); // There will be "_id" field etc.
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
 
     it('console user can get own app', done => {
 
-      if(MongoDB.isMock){
-        return done();
-      }
-
       // Getting a new ticket, since the old ticket does not have the new admin:new-app scope
-      bpc_helper.generateRsvp(consoleApp, consoleGrant)
-      .then(rsvp => bpc_helper.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
+      Bpc.generateRsvp(consoleApp, consoleGrant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
       .then(response => {
         expect(response.result.scope).to.include('admin:new-app');
         return Promise.resolve(response.result);
       })
-      .then(newConsoleUserTicket => bpc_helper.request({ url: '/applications/new-app' }, newConsoleUserTicket))
+      .then(newConsoleUserTicket => Bpc.request({ url: '/applications/new-app' }, newConsoleUserTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.id).to.equal(newApp.id);
         expect(response.result.scope).to.equal(newApp.scope);
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -195,15 +184,14 @@ describe('application tests', () => {
         algorithm: 'sha256'
       };
 
-      bpc_helper.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.object();
         expect(response.result.id).to.not.be.empty();
         expect(response.result.id).to.not.equal('valid-app'); // Different id's.
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
   });
@@ -211,38 +199,52 @@ describe('application tests', () => {
 
   describe('update', () => {
 
-    // TODO: Test is currently skipped due to lacking support in mongo-mock:
-    // findOneAndUpdate().
-    /* it('updates the correct app', done => {
+    it('update not allowed for non-admin user', done => {
+      
+      var app = test_data.applications.valid_app;
 
-      MongoDB.collection('applications').findOne({id: 'valid-app'}).then(app => {
+      const updateRequest = {
+        url: `/applications/${app.id}`,
+        method: 'PUT',
+        payload: JSON.stringify(app)
+      };
 
-        expect(app).to.be.an.object();
-        expect(app.id).to.equal('valid-app');
-        expect(app.delegate).to.equal(false);
+      Bpc.request(updateRequest, consoleUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
 
-        // Change the app.
-        app.delegate = true;
 
-        Applications.updateApp('valid-app', app).then(res => {
+    it('duplicates in scope are removed and key is ignored', done => {
 
-          expect(res).to.be.an.object();
-          expect(res.id).to.equal('valid-app');
+      var app = test_data.applications.valid_app;
+      app.scope.push('test_scope');
+      app.scope.push('test_scope');
+      app.key = 'somenewkeythatisignored';
 
-          MongoDB.collection('applications').findOne({id: 'valid-app'}).then(_app => {
+      const updateRequest = {
+        url: `/applications/${app.id}`,
+        method: 'PUT',
+        payload: JSON.stringify(app)
+      };
 
-            expect(_app).to.be.an.object();
-            expect(_app.id).to.equal('valid-app');
-            expect(_app.delegate).to.equal(true);
-            done();
-
-          });
-
-        });
-
-      });
-
-    }); */
+      Bpc.request(updateRequest, consoleSuperAdminUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.status).to.equal('ok');
+      })
+      .then(() => MongoDB.collection('applications').findOne({ id: app.id}))
+      .then(savedApp => {
+        expect(savedApp.scope).to.be.an.array();
+        expect(savedApp.scope).to.once.include('test_scope');
+        expect(savedApp.key).to.not.be.equal('somenewkeythatisignored');
+      })
+      .then(() => done())
+      .catch(done);
+    });
 
   });
 
@@ -251,42 +253,39 @@ describe('application tests', () => {
   describe('delete', () => {
 
     it('nonexisting app forbidden for regular console app user', done => {
-      bpc_helper.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleUserTicket)
+      Bpc.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(403);
-        done();
-      });
+      })
+      .then(() => done())
+      .catch(done);
     });
 
 
     it(' nonexisting app for superadmin user return not found', done => {
-      bpc_helper.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/nonexisting-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
-        done();
-      });
+      })
+      .then(() => done())
+      .catch(done);
     });
 
 
     it('existing app forbidden for non-admin console app user', done => {
 
-      bpc_helper.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleUserTicket)
+      Bpc.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleUserTicket)
       .then(response => {
-
         expect(response.statusCode).to.equal(403);
-        done();
-
-      });
+      })
+      .then(() => done())
+      .catch(done);
     });
 
 
     it('superadmin delete app', done => {
 
-      if(MongoDB.isMock){
-        return done();
-      }
-
-      bpc_helper.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
       .then(response => {
 
         expect(response.statusCode).to.equal(200);
@@ -300,11 +299,9 @@ describe('application tests', () => {
           expect(res).to.have.length(2);
           expect(res[0]).to.be.null();
           expect(res[1]).to.be.null();
-          done();
-
         })
+        .then(() => done())
         .catch(done);
-
       });
     });
   });

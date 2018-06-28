@@ -124,11 +124,11 @@ function createAnonymousTicket(request, reply) {
   let auid = request.state.auid;
   let auid_generated = false;
 
-  console.log('host', request.info.host);
-  console.log('hostname', request.info.hostname);
-  console.log('referrer', request.info.referrer);
-  console.log('origin', request.headers.origin);
-  console.log('user-agent', request.headers['user-agent']);
+  // console.log('host', request.info.host);
+  // console.log('hostname', request.info.hostname);
+  // console.log('referrer', request.info.referrer);
+  // console.log('origin', request.headers.origin);
+  // console.log('user-agent', request.headers['user-agent']);
 
   if (request.headers['user-agent']){
 

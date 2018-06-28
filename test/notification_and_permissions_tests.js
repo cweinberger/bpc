@@ -4,8 +4,8 @@
 // Bootstrap the testing harness.
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
-const bpc_helper = require('./helpers/bpc_helper');
-const MongoDB = require('./helpers/mongodb_mock');
+const Bpc = require('./helpers/bpc_helper');
+const MongoDB = require('./helpers/mongodb_helper');
 const Gigya = require('./helpers/gigya_stub');
 const gigya_helper = require('./helpers/gigya_helper');
 
@@ -16,11 +16,11 @@ const { expect, describe, it, before, after } = exports.lab = require('lab').scr
 describe('gigya notifications - integration tests', () => {
 
   before(done => {
-    MongoDB.reset().then(done);
+    MongoDB.reset().then(() => done());
   });
 
   after(done => {
-    MongoDB.clear().then(done);
+    MongoDB.clear().then(() => done());
   });
 
 
@@ -31,12 +31,12 @@ describe('gigya notifications - integration tests', () => {
     var appTicket;
 
     before(done => {
-      bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app)
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
       .then(response => {
         appTicket = response.result;
         return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -67,11 +67,10 @@ describe('gigya notifications - integration tests', () => {
         }
       };
 
-      bpc_helper.request(permissions_request, appTicket)
+      Bpc.request(permissions_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         // expect(response.payload.status).to.equal('ok');
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -84,16 +83,15 @@ describe('gigya notifications - integration tests', () => {
         expect(result[0].createdAt).to.be.a.date();
         // expect(result[0].lastUpdated).to.be.a.date();
         expect(result[0].dataScopes.profile['sso-id']).to.be.equal('12345');
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
 
     it('getting accountRegistered', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -114,12 +112,11 @@ describe('gigya notifications - integration tests', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -132,21 +129,16 @@ describe('gigya notifications - integration tests', () => {
         expect(result[0].gigya.UID).to.equal('4');
         expect(result[0].gigya.email).to.equal('four@test.nl');
         expect(result[0].createdAt).to.be.a.date();
-        // Testing the data scope using this key, since mongo-mock does not support sub-documents
-        // https://github.com/williamkapke/mongo-mock/issues/26
-        // expect(result[0]['dataScopes.profile.sso-id']).to.be.equal('12345');
-        // OK, now we can test is better, because I'm doing mock manipulation in the permissions.js file
-        //  in the "if (MongoDB.isMock)" code
         expect(result[0].dataScopes.profile['sso-id']).to.be.equal('12345');
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
 
     it('getting accountUpdated with a new email', (done) => {
-      const notifications_request = {
+
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -167,12 +159,11 @@ describe('gigya notifications - integration tests', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -183,9 +174,8 @@ describe('gigya notifications - integration tests', () => {
         expect(result.length).to.equal(1);
         expect(result[0].id).to.equal('4');
         expect(result[0].gigya.email).to.equal('four_new_email@test.nl');
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
 
     });
@@ -200,11 +190,11 @@ describe('gigya notifications - integration tests', () => {
     var appTicket;
 
     before(done => {
-      bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app)
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
       .then(response => {
         appTicket = response.result;
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -233,11 +223,10 @@ describe('gigya notifications - integration tests', () => {
         }
       };
 
-      bpc_helper.request(permissions_request, appTicket)
+      Bpc.request(permissions_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         // expect(response.payload.status).to.equal('ok');
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -250,16 +239,15 @@ describe('gigya notifications - integration tests', () => {
         expect(result[0].email).to.equal('six@test.nl');
         expect(result[0].createdAt).to.be.a.date();
         expect(result[0].dataScopes.profile.some_value).to.equal("767676");
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
 
     it('getting accountRegistered', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -280,12 +268,11 @@ describe('gigya notifications - integration tests', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      Bpc.request(notifications_request)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -298,9 +285,8 @@ describe('gigya notifications - integration tests', () => {
         expect(result[0].email).to.equal('six@test.nl');
         expect(result[0].gigya.UID).to.equal('6');
         expect(result[0].gigya.email).to.equal('six@test.nl');
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -315,11 +301,10 @@ describe('gigya notifications - integration tests', () => {
         }
       };
 
-      bpc_helper.request(permissions_request, appTicket)
+      Bpc.request(permissions_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         // expect(response.payload.status).to.equal('ok');
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -332,9 +317,8 @@ describe('gigya notifications - integration tests', () => {
         expect(result[0].gigya.UID).to.equal('6');
         expect(result[0].gigya.email).to.equal('six@test.nl');
         expect(result[0].dataScopes.profile.some_value).to.equal("totally_new_value");
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
   });
@@ -346,11 +330,11 @@ describe('gigya notifications - integration tests', () => {
     var appTicket;
 
     before(done => {
-      bpc_helper.request({ method: 'POST', url: '/ticket/app' }, app)
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
       .then(response => {
         appTicket = response.result;
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -379,11 +363,10 @@ describe('gigya notifications - integration tests', () => {
         }
       };
 
-      bpc_helper.request(permissions_request, appTicket)
+      Bpc.request(permissions_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         // expect(response.payload.status).to.equal('ok');
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -396,16 +379,15 @@ describe('gigya notifications - integration tests', () => {
         expect(result[0].email).to.equal('seven@test.nl');
         expect(result[0].createdAt).to.be.a.date();
         expect(result[0].dataScopes.profile.some_value).to.equal("788787");
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
 
     it('getting accountRegistered', (done) => {
 
-      const notifications_request = {
+      var notifications_request = {
         method: 'POST',
         url: '/gigya/notifications',
         headers: {
@@ -426,12 +408,11 @@ describe('gigya notifications - integration tests', () => {
         "timestamp": 1450011479
       };
 
-      notifications_request.headers['x-gigya-sig-hmac-sha1'] = gigya_helper.generateGigyaSigHmax(notifications_request);
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
 
-      bpc_helper.request(notifications_request, null)
+      Bpc.request(notifications_request, null)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -444,9 +425,8 @@ describe('gigya notifications - integration tests', () => {
         expect(result[0].email).to.equal('seven@test.nl');
         expect(result[0].gigya.UID).to.equal('7');
         expect(result[0].gigya.email).to.equal('seven@test.nl');
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
 
@@ -461,11 +441,10 @@ describe('gigya notifications - integration tests', () => {
         }
       };
 
-      bpc_helper.request(permissions_request, appTicket)
+      Bpc.request(permissions_request, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         // expect(response.payload.status).to.equal('ok');
-        return Promise.resolve();
       })
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
@@ -479,9 +458,8 @@ describe('gigya notifications - integration tests', () => {
         expect(result[0].gigya.UID).to.equal('7');
         expect(result[0].gigya.email).to.equal('seven@test.nl');
         expect(result[0].dataScopes.profile.some_value).to.equal("new_value");
-        return Promise.resolve();
       })
-      .then(done)
+      .then(() => done())
       .catch(done);
     });
   });

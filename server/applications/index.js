@@ -17,7 +17,6 @@ module.exports.register = function (server, options, next) {
   };
 
 
-  // Note to self: Refactored!
   server.route({
     method: 'GET',
     path: '/',
@@ -239,5 +238,5 @@ const scopeValidation = Joi.array().items(
   // they are reserved.
   Joi.string()
     .regex(/^(?!admin).*$/, { name: 'admin', invert: false })
-    .invalid([])
+    .invalid([':read'])
 );

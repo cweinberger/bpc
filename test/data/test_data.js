@@ -164,6 +164,15 @@ module.exports = {
         provider: 'gigya'
       }
     },
+    berlingske_read_app: {
+      id: 'berlingske_read_app',
+      scope: ['berlingske:read'],
+      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
+      algorithm: 'sha256',
+      settings: {
+        provider: 'gigya'
+      }
+    },
     valid_app: {
       id: 'valid-app',
       scope: [
@@ -324,6 +333,12 @@ module.exports = {
       id: 'sdsadasdfvcxdfsfsd',
       app: 'app_with_no_scopes',
       user: new ObjectID("5b32128d4e094108d0e8a784"),
+      scope: []
+    },
+    simple_first_user_of_berlingske_readonly_app_grant: {
+      id: 'vbcplvxpclpvlxcjkf',
+      app: 'berlingske_read_app',
+      user: new ObjectID("5b3211fd4e094108d0e8a781"),
       scope: []
     }
   },

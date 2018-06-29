@@ -136,8 +136,8 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['admin'],
-          entity: 'any'
+          scope: ['+admin:*'],
+          entity: 'user' // Only superadmins users are allows to delete a user
         }
       },
       cors: stdCors

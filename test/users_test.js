@@ -58,12 +58,12 @@ describe('users - integration tests', () => {
 
   describe('deleting user using an application with admin scope', () => {
 
-    const app_with_admin_scope = test_data.applications.app_with_admin_scope;
+    const app = test_data.applications.app_with_admin_scope;
     let appTicket;
 
     // Getting the appTicket
     before(done => {
-      Bpc.request({ method: 'POST', url: '/ticket/app' }, app_with_admin_scope)
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
       .then((response) => {
         expect(response.statusCode).to.equal(200);
         appTicket = response.result;
@@ -73,7 +73,7 @@ describe('users - integration tests', () => {
     });
 
 
-    it('delete user succeeds', done => {
+    it('delete user fails', done => {
 
       const simple_second_user = test_data.users.simple_second_user;
 
@@ -83,6 +83,59 @@ describe('users - integration tests', () => {
       };
 
       Bpc.request(request, appTicket)
+      .then((response) => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+  });
+
+
+  describe('deleting user using an application with superadmin scope', () => {
+
+    const app = test_data.applications.console;
+    let appTicket;
+    const simple_second_user = test_data.users.simple_second_user;
+    const deleteUserRequest = {
+      method: 'DELETE',
+      url: `/users/${simple_second_user.id}`
+    };
+
+    // Getting the appTicket
+    before(done => {
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
+      .then((response) => {
+        expect(response.statusCode).to.equal(200);
+        appTicket = response.result;
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('delete user with appTicket fails', done => {
+      Bpc.request(deleteUserRequest, appTicket)
+      .then((response) => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('delete user with userTicket succeeds', done => {
+
+      const grant = test_data.grants.console_superadmin_google_user__console_grant;
+      var userTicket;
+
+      Bpc.generateRsvp(app, grant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        userTicket = response.result;
+      })
+      .then(() => Bpc.request(deleteUserRequest, userTicket))
       .then((response) => {
         expect(response.statusCode).to.equal(200);
       })

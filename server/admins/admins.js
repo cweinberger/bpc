@@ -10,20 +10,6 @@ const EventLog = require('./../audit/eventlog');
 module.exports = {
 
 
-  getAdmins: function(request, reply) {
-
-    reply(Boom.notImplemented())
-
-  },
-
-
-  getSuperadmin: function(request, reply) {
-
-    reply(Boom.notImplemented())
-
-  },
-
-
   postSuperadmin: function (request, reply) {
 
     const ticket = request.auth.credentials;

@@ -19,38 +19,6 @@ module.exports.register = function (server, options, next) {
 
 
   server.route({
-    method: 'GET',
-    path: '/',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
-        }
-      },
-      cors: stdCors
-    },
-    handler: Admins.getAdmins
-  });
-
-
-  server.route({
-    method: 'GET',
-    path: '/superadmin',
-    config: {
-      auth: {
-        access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
-        }
-      },
-      cors: stdCors
-    },
-    handler: Admins.getSuperadmin
-  });
-
-
-  server.route({
     method: 'POST',
     path: '/superadmin/{id}',
     config: {

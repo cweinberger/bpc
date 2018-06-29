@@ -258,4 +258,47 @@ describe('permissions - integration tests', () => {
     });
 
   });
+
+
+  describe('scope:read will allow the app to read but not write permissions', () => {
+
+    const app = test_data.applications.berlingske_read_app;
+    var appTicket;
+    const simple_first_user = test_data.users.simple_first_user;
+
+    before(done => {
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        appTicket = response.result;
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+    
+    it('reading from berlingske scope is allowed', (done) => {
+      Bpc.request({ url: '/permissions/' + simple_first_user.id + '/berlingske' }, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.berlingske_subscription_tier).to.equal('premium');
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('writing to berlingske scope is disallowed', (done) => {
+      const payload = {
+        a_new_field_that_will_not_be_saved: 12
+      };
+
+      Bpc.request({ url: '/permissions/' + simple_first_user.id + '/berlingske', method: 'POST', payload: payload }, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(403);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+  });
 });

@@ -41,7 +41,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['{params.scope}'],
+          scope: ['{params.scope}', '{params.scope}:read'],
           entity: 'user' // <-- Important. Apps cannot request permissions with specifying what {user} to get
         }
       },
@@ -78,7 +78,7 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['{params.scope}', 'admin'],
+          scope: ['{params.scope}', '{params.scope}:read', 'admin'],
           entity: 'app' // <-- Important. Users must not be allowed to get permissions from other users
         }
       },

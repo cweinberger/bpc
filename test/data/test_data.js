@@ -164,6 +164,15 @@ module.exports = {
         provider: 'gigya'
       }
     },
+    berlingske_read_app: {
+      id: 'berlingske_read_app',
+      scope: ['berlingske:read'],
+      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
+      algorithm: 'sha256',
+      settings: {
+        provider: 'gigya'
+      }
+    },
     valid_app: {
       id: 'valid-app',
       scope: [

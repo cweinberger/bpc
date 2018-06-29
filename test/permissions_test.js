@@ -276,9 +276,9 @@ describe('permissions - integration tests', () => {
       .catch(done);
     });
 
-    
-    it('reading from berlingske scope is allowed', (done) => {
-      Bpc.request({ url: '/permissions/' + simple_first_user.id + '/berlingske' }, appTicket)
+
+    it('reading from berlingske scope using an appTicket is allowed', (done) => {
+      Bpc.request({ url: `/permissions/${simple_first_user.id}/berlingske` }, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.berlingske_subscription_tier).to.equal('premium');
@@ -299,6 +299,33 @@ describe('permissions - integration tests', () => {
       })
       .then(() => done())
       .catch(done);
+    });
+
+
+    it('reading from berlingske scope using a userTicket is also allowed', done => {
+
+      const grant = test_data.grants.simple_first_user_of_berlingske_readonly_app_grant;
+      var userTicket;
+      const readBerlingkeRequest = {
+        url: `/permissions/berlingske`
+      };
+
+      Bpc.generateRsvp(app, grant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        userTicket = response.result;
+      })
+      .then(() => {
+        expect(userTicket.scope).to.include('berlingske:read');
+      })
+      .then(() => Bpc.request({ url: `/permissions/berlingske`}, userTicket))
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.berlingske_subscription_tier).to.equal('premium');
+      })
+      .then(() => done())
+      .catch(done);      
     });
   });
 });

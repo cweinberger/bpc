@@ -334,6 +334,12 @@ module.exports = {
       app: 'app_with_no_scopes',
       user: new ObjectID("5b32128d4e094108d0e8a784"),
       scope: []
+    },
+    simple_first_user_of_berlingske_readonly_app_grant: {
+      id: 'vbcplvxpclpvlxcjkf',
+      app: 'berlingske_read_app',
+      user: new ObjectID("5b3211fd4e094108d0e8a781"),
+      scope: []
     }
   },
 

@@ -42,7 +42,7 @@ var authorizationHeader = Hawk.client.header(
 ```
 
 
-<ID> and <SECRET_KEY> is the `id` and `key` from the ticket - either app or user ticket. The only exception is when requesting an app ticket using [`POST /ticket/app`](#post-ticketapp). In this case it's the App ID and Secret repectively from the [`application registration`](../README.md#application).
+\<ID> and <SECRET_KEY> is the `id` and `key` from the ticket - either app or user ticket. The only exception is when requesting an app ticket using [`POST /ticket/app`](#post-ticketapp). In this case it's the App ID and Secret repectively from the [`application registration`](../README.md#application).
 
 
 The `field` attribute can be inserted into the _Authorization_ header of the HTTP request.

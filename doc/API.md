@@ -14,7 +14,13 @@ part of the endpoint in question.
 
 ## Making authorized requests
 
-If an API endpoint requires authorization, this means that the request must be signed with a Hawk _Authorization_ header.
+If an API endpoint requires authorization, this means that the request must be signed with a Hawk _Authorization_ header. The headers are generated using either an app or user ticket.
+
+To get an app ticket, use the endpoint [`POST /ticket/app`](#post-ticketapp).
+
+To get a user ticket, use the endpoints [`GET /rsvp`](#get-rsvp) and [`POST /ticket/user`](#post-ticketuser).
+
+See the documenation for each endpoint for details on the required authorization.
 
 To generate a Hawk _Authorization_ header, see the following code example:
 
@@ -35,17 +41,15 @@ var authorizationHeader = Hawk.client.header(
 ).field;
 ```
 
-Now the `field` attribute can be inserted into the _Authorization_ header of the HTTP request.
+
+<ID> and <SECRET_KEY> is the `id` and `key` from the ticket - either app or user ticket. The only exception is when requesting an app ticket using [`POST /ticket/app`](#post-ticketapp). In this case it's the App ID and Secret repectively from the [`application registration`](../README.md#application).
+
+
+The `field` attribute can be inserted into the _Authorization_ header of the HTTP request.
 
 Most endpoints requires the authorization to be generated using a [ticket](../README.md#ticket).
 Some endpoints requires a ticket issued to an `app`. Some endpoints requires a `user` ticket. And others take both (`any`).
 In these cases, use respective ticket to genereate the Hawk _Authorization_ header, by setting the ticket in the `credentials` attribute.
-
-To get an app ticket, use the endpoint [`POST /ticket/app`](#post-ticketapp).
-
-To get a user ticket, use the endpoints [`GET /rsvp`](#get-rsvp) and [`POST /ticket/user`](#post-ticketuser).
-
-See each endpoint for details on required authorization.
 
 
 ## Table of contents

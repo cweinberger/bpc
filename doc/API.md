@@ -17,10 +17,14 @@ part of the endpoint in question.
 If an API endpoint requires authorization, this means that the request must be signed with a Hawk _Authorization_ header. The headers are generated using either an app or user ticket.
 
 To get an app ticket, use the endpoint [`POST /ticket/app`](#post-ticketapp).
+Used in server-to-server communication.
 
 To get a user ticket, use the endpoints [`GET /rsvp`](#get-rsvp) and [`POST /ticket/user`](#post-ticketuser).
+Used primarily in client-to-server communication.
 
-See the documenation for each endpoint for details on the required authorization.
+For more on tickets, see [`Tickets`](../README.md#ticket).
+
+See the documentation for each endpoint for details on the required authorization.
 
 To generate a Hawk _Authorization_ header, see the following code example:
 

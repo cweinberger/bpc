@@ -13,11 +13,8 @@ the previous BOND-based SSO solution.
 
 ## Description
 
-Single Sign-On (SSO) is implemented using Gigya Registration-as-a-Service (RaaS) and Site Groups. Websites
-and apps use the Gigya Web SDK log users in and interact with user profile data.
-
-Gigya RaaS means our Gigya platform is a
-cloud-hosted platform.
+Berlingskes Single Sign-On (SSO) is implemented using Gigya Registration-as-a-Service (RaaS) and Site Groups. (*RaaS* means our Gigya platform is a cloud-hosted platform.)
+Websites and apps use the Gigya Web SDK log users in and interact with user profile data.
 
 Gigya Site Groups enables one unified user account database in Gigya across
 multiple sites and apps. This means the user only needs one account to access
@@ -41,6 +38,8 @@ authentication foundation.
 After the user has signed in with Gigya on the website, the website request user
 permission securely from BPC. The secure exchange of permissions is done by
 encrypted tickets.
+
+BPC also support Google Accounts and Google Sign-in.
 
 Beyond storing user permissions, BPC has additional functionality:
 
@@ -76,7 +75,7 @@ The workflow goes like this:
      permissions using the user ticket with BPC.
 
 
-### Application
+## Application
 
 An application is a website or mobile app.
 
@@ -84,22 +83,25 @@ Each application must be registered in BPC. By registering, the app is given an
 App ID and a Secret. These must stored in the application itself.
 
 
-### User
+## User
 
 A user is a customer and/reader of a Berlingske Media brand. He/she is
-identified by an email or social media login.
+identified by an ID, email or social media login.
 
 
-### Permission
+## Permission
 
+A permissions is data inside a scope.
 A permission is an indication of whether or not the user is entitled to a given
-artifact. A permissions is bound within a scope to the user account. The
-permissions and artifact is defined in the domain of the application. BPC has no
-knowledge about permissions or it's usage. It can be a string, boolean, date,
-integer. Or an array or object.
+artifact or resource. The permissions, artifacts and resources is defined in the domain of the application. BPC has no
+knowledge about permissions or it's usage. BPC is basically just a secure storage of these data.
+
+It can be a string, boolean, date, integer. Or it can be an array or object containing these datatypes.
+
+Using the [PATCH](doc/API.md#patch-permissionsuserscope) it is possible to perform operations on the data.
 
 
-### Scope
+## Scope
 
 Each application registeret with BPC can be assigned one or more arbitrary
 scopes e.g. "berlingske", "bt" or "marketinganalytics". When a website validates
@@ -119,13 +121,13 @@ the console app.
 The reserved scope "admin:\*" is used for superadmins.
 
 
-### Grant
+## Grant
 
 A grant is created to give a user access to a specific application.
 These can be set to have an expiration time.
 
 
-### Ticket
+## Ticket
 
 A ticket is a time-limited token to access permissions in BPC.
 All protected resources in BPC must be accessed using a ticket.
@@ -133,15 +135,22 @@ All protected resources in BPC must be accessed using a ticket.
 There are two types of tickets: `app` and `user`. (`any` means both types).
 
 An `app` ticket is generated to an application in exchange for a set of
-application credentials.
+application credentials. This type of ticket can be used to both read and write data in a scope, and is primarely used in server-to-server communication.
 
-A `user` ticket is generated to a user in exhange for an RSVP.
+A `user` ticket is generated to a user in exhange for an RSVP. This type of ticket can only read data from a scope.
+But it allows to be used directly from the users brower using [JavaScript](https://github.com/hueniverse/hawk/blob/master/dist) ie. client-to-server communication.
+Also, since the ticket works as a "session-token" (and includes the user's ID), the application can store the user ticket on the client in a session-only state, eliminating the need to store state nor information about the user on the server.
 
 
-### RSVP
+## RSVP
 
 When BPC gives authorization for a user to access a specific application, the
 user receives an RSVP which must be returned to the application.
+
+This is escpeially useful if the application has a restricted userbase ie. only allows access by users with an existing grant.
+
+If a user does not have a grant, the user will be denied the RSVP.
+For applications that may be accessed by all users, a setting allows for a grants to be created automatically the first time the user requests a RSVP.
 
 
 # Oz, OAuth and BPC

@@ -167,7 +167,7 @@ module.exports = {
     berlingske_read_app: {
       id: 'berlingske_read_app',
       scope: ['berlingske:read'],
-      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
+      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyy',
       algorithm: 'sha256',
       settings: {
         provider: 'gigya'
@@ -183,6 +183,7 @@ module.exports = {
       key: 'something_long_and_random',
       algorithm: 'sha256',
       settings: {
+        provider: 'gigya',
         allowAutoCreationGrants: true,
         includeScopeInPrivatExt: true
       }
@@ -215,6 +216,7 @@ module.exports = {
       key: 'something_long_and_random',
       algorithm: 'sha256',
       settings: {
+        provider: 'gigya',
         allowAutoCreationGrants: false
       }
     },
@@ -236,6 +238,7 @@ module.exports = {
       key: '90835fgfgfjtregjefre34jvcxvxkjfed89043lkgle',
       algorithm: 'sha256',
       settings: {
+        provider: 'gigya',
         allowAnonymousUsers: true
       }
     },

@@ -107,7 +107,10 @@ describe('admin tests', () => {
         id: 'new-app-to-simple-user',
         scope: [ ],
         delegate: false,
-        algorithm: 'sha256'
+        algorithm: 'sha256',
+        settings: {
+          provider: 'gigya'
+        }
       };
 
       Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, userTicket)

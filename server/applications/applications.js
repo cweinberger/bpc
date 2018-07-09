@@ -30,13 +30,9 @@ module.exports = {
       key: crypto.randomBytes(25).toString('hex'),
       algorithm: request.payload.algorithm,
       scope: makeArrayUnique(request.payload.scope),
-      delegate: request.payload.delegate ? request.payload.delegate : false,
-      settings: request.payload.settings || {}
+      delegate: request.payload.delegate,
+      settings: request.payload.settings
     };
-
-    if (!application.settings.provider){
-      application.settings.provider = 'gigya';
-    }
 
     // Ensure that the id is unique before creating the application.
     convertToUniqueid(application.id)
@@ -93,7 +89,7 @@ module.exports = {
 
   putApplication: function (request, reply) {
     let application = request.payload;
-
+console.log('aa', application)
     if (!application.settings) {
       application.settings = {};
     }

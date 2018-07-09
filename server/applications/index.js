@@ -51,9 +51,10 @@ module.exports.register = function (server, options, next) {
           id: Joi.string().required(),
           scope: scopeValidation,
           algorithm: Joi.string().default('sha256'),
-          delegate: Joi.boolean(),
-          callbackurl: Joi.string().uri(),
-          settings: Joi.object()
+          delegate: Joi.boolean().default(false),
+          settings: Joi.object().keys({
+            provider: Joi.string().valid(['gigya', 'google']).required()
+          }).required().unknown(true)
         }
       }
     },
@@ -66,8 +67,8 @@ module.exports.register = function (server, options, next) {
     path: '/{id}',
     config: {
       auth: {
-        scope: ['admin:{params.id}', 'admin:*'],
-        entity: 'user'
+        scope: ['admin:{params.id}', 'admin:{params.id}:app', 'admin:*'],
+        entity: 'any'
       },
       cors: stdCors
     },
@@ -80,8 +81,8 @@ module.exports.register = function (server, options, next) {
     path: '/{id}',
     config: {
       auth: {
-        scope: ['admin:{params.id}', 'admin:*'],
-        entity: 'user'
+        scope: ['admin:{params.id}', 'admin:{params.id}:app', 'admin:*'],
+        entity: 'any'
       },
       cors: stdCors,
       validate: {
@@ -92,8 +93,9 @@ module.exports.register = function (server, options, next) {
           scope: scopeValidation,
           algorithm: Joi.string().default('sha256'),
           delegate: Joi.boolean(),
-          callbackurl: Joi.string().uri(),
-          settings: Joi.object()
+          settings: Joi.object().keys({
+            provider: Joi.strip()
+          }).required().unknown(true)
         }
       }
     },
@@ -106,8 +108,8 @@ module.exports.register = function (server, options, next) {
     path: '/{id}',
     config: {
       auth: {
-        scope: ['admin:{params.id}', 'admin:*'],
-        entity: 'user'
+        scope: ['admin:{params.id}', 'admin:{params.id}:app', 'admin:*'],
+        entity: 'any'
       },
       cors: stdCors
     },
@@ -121,8 +123,8 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
+          scope: ['admin:{params.id}', 'admin:{params.id}:app', 'admin:*'],
+          entity: 'any'
         }
       },
       cors: stdCors,
@@ -138,14 +140,15 @@ module.exports.register = function (server, options, next) {
     handler: Applications.getApplicationGrants
   });
 
+
   server.route({
     method: 'GET',
     path: '/{id}/grantscount',
     config: {
       auth: {
         access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
+          scope: ['admin:{params.id}', 'admin:{params.id}:app', 'admin:*'],
+          entity: 'any'
         }
       },
       cors: stdCors
@@ -160,8 +163,8 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
+          scope: ['admin:{params.id}', 'admin:{params.id}:app', 'admin:*'],
+          entity: 'any'
         }
       },
       cors: stdCors,
@@ -186,8 +189,8 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
+          scope: ['admin:{params.id}', 'admin:{params.id}:app', 'admin:*'],
+          entity: 'any'
         }
       },
       cors: stdCors,
@@ -212,8 +215,8 @@ module.exports.register = function (server, options, next) {
     config: {
       auth: {
         access: {
-          scope: ['admin:{params.id}', 'admin:*'],
-          entity: 'user'
+          scope: ['admin:{params.id}', 'admin:{params.id}:app', 'admin:*'],
+          entity: 'any'
         }
       },
       cors: stdCors

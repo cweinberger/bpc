@@ -131,7 +131,10 @@ describe('application tests', () => {
       id: 'new-app',
       scope: [ 'funscope' ],
       delegate: false,
-      algorithm: 'sha256'
+      algorithm: 'sha256',
+      settings: {
+        provider: 'gigya'
+      }
     };
 
     it('create new app by console user', done => {
@@ -181,7 +184,10 @@ describe('application tests', () => {
         scope: [],
         delegate: false,
         key: 'something_long_and_random',
-        algorithm: 'sha256'
+        algorithm: 'sha256',
+        settings: {
+          provider: 'gigya'
+        }
       };
 
       Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
@@ -190,6 +196,47 @@ describe('application tests', () => {
         expect(response.result).to.be.an.object();
         expect(response.result.id).to.not.be.empty();
         expect(response.result.id).to.not.equal('valid-app'); // Different id's.
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('create without settings is not allowed', done => {
+
+      const newApp = {
+        id: 'djkhfksh',
+        scope: [],
+        delegate: false,
+        key: 'something_long_and_random',
+        algorithm: 'sha256'
+      };
+
+      Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(400);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('create without provider is not allowed', done => {
+
+      const newApp = {
+        id: 'fjhsdkj',
+        scope: [],
+        delegate: false,
+        key: 'something_long_and_random',
+        algorithm: 'sha256',
+        settings: {
+          someSetting: true
+        }
+      };
+
+      Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(400);
       })
       .then(() => done())
       .catch(done);
@@ -304,5 +351,107 @@ describe('application tests', () => {
         .catch(done);
       });
     });
+  });
+
+
+  describe('get appTicket and perform admin tasks', () => {
+
+    const app = test_data.applications.bt;
+    const adminAppScope = `admin:${app.id}:app`;
+    var appTicket;
+
+    it('appTicket has admin:{id} scope', done => {
+
+      expect(app.scope).to.not.include(adminAppScope);
+
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        appTicket = response.result;
+      })
+      .then(() => {
+        expect(appTicket.scope).to.include(adminAppScope);
+        expect(appTicket.scope).to.not.include('admin:*');
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('userTicket must NOT have admin-scope', done => {
+      const grant = test_data.grants.simple_first_user_bt_grant;
+      Bpc.generateRsvp(app, grant)
+      .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.scope).to.not.include(adminAppScope);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('gettings app settings using regular appTicket succeeds', done => {
+      const getAppRequest = {
+        url: `/applications/${app.id}`
+      };
+
+      Bpc.request(getAppRequest, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.key).to.equal(app.key);
+        expect(response.result.settings.provider).to.equal(app.settings.provider);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('updating app settings using regular appTicket succeeds', done => {
+      const updateAppRequest = {
+        url: `/applications/${app.id}`,
+        method: 'PUT',
+        payload: {
+          settings: {
+            someNewSetting: true
+          }
+        }
+      };
+
+      Bpc.request(updateAppRequest, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => MongoDB.collection('applications').findOne({id: app.id}))
+      .then(appInDatabase => {
+        console.log(appInDatabase);
+        expect(appInDatabase.settings.provider).to.equal('gigya');
+        expect(appInDatabase.settings.someNewSetting).to.equal(true);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('deleting app using regular appTicket fails', done => {
+      done();
+    });
+
+
+    it('adding grants using regular appTicket succeeds', done => {
+      done();
+    });
+
+
+    it('deleting grants using regular appTicket succeeds', done => {
+      done();
+    });
+
+    
+    console.log('TODO: make sure adding using /admins endpoint using standard appTicket, will go to the console');
+    it('adding admins using standard appTicket will TODO', done => {
+      done();
+    });
+
   });
 });

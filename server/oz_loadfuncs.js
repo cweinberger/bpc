@@ -59,6 +59,14 @@ function loadAppFunc(id, callback) {
       return Promise.reject(Boom.unauthorized('Unknown application'));
     }
 
+    // The scope admin:{id}:app is added to the appTicket. This way the app can admin itself.
+    // Note: The scope will be filtered out when creating the userTicket.
+    const adminAppScope = `admin:${app.id}:app`;
+    const hasAppAdminScope = app.scope.some(s => s === adminAppScope);
+    if(!hasAppAdminScope) {
+      app.scope.push(adminAppScope);
+    }
+
     if(callback !== undefined && typeof callback === 'function'){
       return callback(null, app);
     } else {

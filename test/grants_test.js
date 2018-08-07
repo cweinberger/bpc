@@ -84,7 +84,7 @@ describe('grants tests', () => {
         ]
       };
 
-      Bpc.request({ url: '/applications/invalid-app/grants', method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/invalid_app/grants', method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(400);
       })
@@ -104,10 +104,10 @@ describe('grants tests', () => {
         ]
       };
 
-      Bpc.request({ url: '/applications/valid-app/grants', method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/valid_app/grants', method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        expect(response.result.app).to.equal('valid-app');
+        expect(response.result.app).to.equal('valid_app');
         // expect(response.result.user).to.equal(grant.user);
         expect(response.result.scope).to.be.an.array();
         expect(response.result.scope).to.have.length(0);
@@ -125,7 +125,7 @@ describe('grants tests', () => {
     it('only keeps the app scopes', done => {
 
       const grant = {
-        app: 'valid-app',
+        app: 'valid_app',
         user: '117880216634946654515',
         scope: [
           'business:all',
@@ -135,7 +135,7 @@ describe('grants tests', () => {
         ]
       };
 
-      Bpc.request({ url: '/applications/valid-app/grants/'.concat(grantIdToUpdate), method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/valid_app/grants/'.concat(grantIdToUpdate), method: 'POST', payload: grant }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.object();

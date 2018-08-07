@@ -22,7 +22,7 @@ Used in server-to-server communication.
 To get a user ticket, use the endpoints [`GET /rsvp`](#get-rsvp) and [`POST /ticket/user`](#post-ticketuser).
 Used primarily in client-to-server communication.
 
-For more on tickets, see [`Tickets`](../README.md#ticket).
+For more on tickets, see section [`Ticket`](../README.md#ticket).
 
 See the documentation for each endpoint for details on the required authorization.
 

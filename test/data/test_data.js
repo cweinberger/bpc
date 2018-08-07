@@ -167,14 +167,14 @@ module.exports = {
     berlingske_read_app: {
       id: 'berlingske_read_app',
       scope: ['berlingske:read'],
-      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
+      key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyy',
       algorithm: 'sha256',
       settings: {
         provider: 'gigya'
       }
     },
     valid_app: {
-      id: 'valid-app',
+      id: 'valid_app',
       scope: [
         'business:all',
         'bt:all'
@@ -183,12 +183,13 @@ module.exports = {
       key: 'something_long_and_random',
       algorithm: 'sha256',
       settings: {
+        provider: 'gigya',
         allowAutoCreationGrants: true,
         includeScopeInPrivatExt: true
       }
     },
     valid_google_app: {
-      id: 'valid-google-app',
+      id: 'valid_google_app',
       scope: [
         'business:all',
         'bt:all'
@@ -202,7 +203,7 @@ module.exports = {
       }
     },
     delete_me_app: {
-      id: 'delete-me-app',
+      id: 'delete_me_app',
       scope: [],
       delegate: false,
       key: 'something_long_and_random',
@@ -215,6 +216,7 @@ module.exports = {
       key: 'something_long_and_random',
       algorithm: 'sha256',
       settings: {
+        provider: 'gigya',
         allowAutoCreationGrants: false
       }
     },
@@ -236,6 +238,7 @@ module.exports = {
       key: '90835fgfgfjtregjefre34jvcxvxkjfed89043lkgle',
       algorithm: 'sha256',
       settings: {
+        provider: 'gigya',
         allowAnonymousUsers: true
       }
     },
@@ -301,13 +304,13 @@ module.exports = {
     },
     valid_app_grant: {
       id: 'jhfgs294723ijsdhfsdfhskjh329423798wsdyre',
-      app: 'valid-app',
+      app: 'valid_app',
       user: new ObjectID("5b32129f4e094108d0e8a786"),
       scope: []
     },
     delete_me_app_grant: {
       id: 'jhfgs294723ijsdhfsdfhskjh329423798animal',
-      app: 'delete-me-app',
+      app: 'delete_me_app',
       user: new ObjectID("5b32129f4e094108d0e8a786"),
       scope: []
     },

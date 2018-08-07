@@ -71,6 +71,8 @@ module.exports = {
     }
   },
 
+  
+  // Getting all the scopes that the ticket allows
   getPermissionsUserAllScopes: function(request, reply) {
     const ticket = request.auth.credentials;
 

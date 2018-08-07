@@ -89,7 +89,7 @@ describe('rsvp unit tests', () => {
         UIDSignature:'UIDSignature_random',
         signatureTimestamp:'signatureTimestamp_random',
         email: 'some@email.com',
-        app: 'invalid-app'
+        app: 'invalid_app'
       })
       .then(result => done(new Error('RSVP must not be issued')))
       .catch(err => {
@@ -108,7 +108,7 @@ describe('rsvp unit tests', () => {
         UIDSignature:'UIDSignature_random',
         signatureTimestamp:'signatureTimestamp_random',
         email: 'some@email.com',
-        app: 'valid-app'
+        app: 'valid_app'
       })
       .then(result => {
         expect(result.rsvp).to.be.a.string();
@@ -154,7 +154,7 @@ describe('rsvp unit tests', () => {
         UIDSignature:'UIDSignature_random',
         signatureTimestamp:'signatureTimestamp_random',
         email: 'userwithnopreviousgrant@email.com',
-        app: 'valid-app'
+        app: 'valid_app'
       })
       .then(result => {
         expect(result.rsvp).to.be.a.string();
@@ -171,11 +171,11 @@ describe('rsvp unit tests', () => {
         expect(user.provider).to.be.equal('gigya');
         return Promise.resolve(user);
       })
-      .then(user => MongoDB.collection('grants').findOne({user: user._id, app: 'valid-app'}))
+      .then(user => MongoDB.collection('grants').findOne({user: user._id, app: 'valid_app'}))
       .then(grant => {
         expect(grant).to.not.be.null();
         expect(grant.id).to.have.length(40);
-        expect(grant.app).to.be.equal('valid-app');
+        expect(grant.app).to.be.equal('valid_app');
       })
       .then(() => done())
       .catch(err => {
@@ -248,7 +248,7 @@ describe('rsvp integration test - gigya', () => {
       provider: 'gigya',
       UID: 'doensnotexists',
       email: 'doensnotexists@test.nl',
-      app: 'valid-app',
+      app: 'valid_app',
       UIDSignature: 'UIDSignature_random',
       signatureTimestamp: 'signatureTimestamp_random'
     };
@@ -308,7 +308,7 @@ describe('rsvp integration test - google', () => {
     let payload = {
       ID: 'doesnotexistsatgoogle',
       email: 'doensnotexists@testgoogle.nl',
-      app: 'valid-google-app',
+      app: 'valid_google_app',
       id_token: 'random_id_token_hdjshjdhs',
       access_token: 'random_access_token_kfjsdhkjfhsdwe'
     };

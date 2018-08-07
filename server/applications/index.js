@@ -48,7 +48,7 @@ module.exports.register = function (server, options, next) {
         payload: {
           _id: Joi.strip(),
           key: Joi.strip(),
-          id: Joi.string().required(),
+          id: Joi.string().token().min(3).max(30).required(),
           scope: scopeValidation,
           algorithm: Joi.string().default('sha256'),
           delegate: Joi.boolean().default(false),

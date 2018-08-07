@@ -90,7 +90,7 @@ describe('application tests', () => {
 
     it('returns 403 for normal admin user', done => {
 
-      Bpc.request({ url: '/applications/valid-app' }, consoleUserTicket)
+      Bpc.request({ url: '/applications/valid_app' }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(403);
       })
@@ -100,12 +100,12 @@ describe('application tests', () => {
 
 
     it('returns the correct app', done => {
-      Bpc.request({ url: '/applications/valid-app' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/valid_app' }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.object();
         expect(response.result).to.part.include({
-          id: 'valid-app', key: 'something_long_and_random'
+          id: 'valid_app', key: 'something_long_and_random'
         });
       })
       .then(() => done())
@@ -114,7 +114,7 @@ describe('application tests', () => {
 
 
     it('returns empty response for invalid app ids', done => {
-      Bpc.request({ url: '/applications/invalid-app' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/invalid_app' }, consoleSuperAdminUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
       })
@@ -128,7 +128,7 @@ describe('application tests', () => {
   describe('create', () => {
 
     const newApp = {
-      id: 'new-app',
+      id: 'new_app',
       scope: [ 'funscope' ],
       delegate: false,
       algorithm: 'sha256',
@@ -147,7 +147,7 @@ describe('application tests', () => {
         expect(response.result.delegate).to.equal(newApp.delegate);
         expect(response.result.algorithm).to.equal(newApp.algorithm);
       })
-      .then(() => MongoDB.collection('applications').find({ id: 'new-app' }).toArray())
+      .then(() => MongoDB.collection('applications').find({ id: 'new_app' }).toArray())
       .then(result => {
         expect(result.length).to.equal(1);
         expect(result[0]).to.part.include(newApp); // There will be "_id" field etc.
@@ -163,10 +163,10 @@ describe('application tests', () => {
       Bpc.generateRsvp(consoleApp, consoleGrant)
       .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, consoleAppTicket))
       .then(response => {
-        expect(response.result.scope).to.include('admin:new-app');
+        expect(response.result.scope).to.include('admin:new_app');
         return Promise.resolve(response.result);
       })
-      .then(newConsoleUserTicket => Bpc.request({ url: '/applications/new-app' }, newConsoleUserTicket))
+      .then(newConsoleUserTicket => Bpc.request({ url: '/applications/new_app' }, newConsoleUserTicket))
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.id).to.equal(newApp.id);
@@ -180,7 +180,7 @@ describe('application tests', () => {
     it('creates a new id when app id is taken', done => {
 
       const newApp = {
-        id: 'valid-app',
+        id: 'valid_app',
         scope: [],
         delegate: false,
         key: 'something_long_and_random',
@@ -195,7 +195,7 @@ describe('application tests', () => {
         expect(response.statusCode).to.equal(200);
         expect(response.result).to.be.an.object();
         expect(response.result.id).to.not.be.empty();
-        expect(response.result.id).to.not.equal('valid-app'); // Different id's.
+        expect(response.result.id).to.not.equal('valid_app'); // Different id's.
       })
       .then(() => done())
       .catch(done);
@@ -235,6 +235,48 @@ describe('application tests', () => {
       };
 
       Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(400);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('create with invalid app id *', done => {
+      const invalidAppId = {
+        id: '*',
+        scope: [],
+        delegate: false,
+        key: 'something_long_and_random',
+        algorithm: 'sha256',
+        settings: {
+          provider: 'gigya'
+        }
+      };
+
+      Bpc.request({ url: '/applications', method: 'POST', payload: invalidAppId }, consoleUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(400);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('create with a too short app id', done => {
+      const invalidAppId = {
+        id: 'a',
+        scope: [],
+        delegate: false,
+        key: 'something_long_and_random',
+        algorithm: 'sha256',
+        settings: {
+          provider: 'gigya'
+        }
+      };
+
+      Bpc.request({ url: '/applications', method: 'POST', payload: invalidAppId }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(400);
       })
@@ -321,7 +363,7 @@ describe('application tests', () => {
 
     it('existing app forbidden for non-admin console app user', done => {
 
-      Bpc.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleUserTicket)
+      Bpc.request({ url: '/applications/delete_me_app', method: 'DELETE' }, consoleUserTicket)
       .then(response => {
         expect(response.statusCode).to.equal(403);
       })
@@ -332,14 +374,14 @@ describe('application tests', () => {
 
     it('superadmin delete app', done => {
 
-      Bpc.request({ url: '/applications/delete-me-app', method: 'DELETE' }, consoleSuperAdminUserTicket)
+      Bpc.request({ url: '/applications/delete_me_app', method: 'DELETE' }, consoleSuperAdminUserTicket)
       .then(response => {
 
         expect(response.statusCode).to.equal(200);
 
         Promise.all([
-          MongoDB.collection('applications').findOne({id: 'delete-me-app'}),
-          MongoDB.collection('grants').findOne({app: 'delete-me-app'})
+          MongoDB.collection('applications').findOne({id: 'delete_me_app'}),
+          MongoDB.collection('grants').findOne({app: 'delete_me_app'})
         ]).then(res => {
 
           expect(res).to.be.an.array();
@@ -424,7 +466,6 @@ describe('application tests', () => {
       })
       .then(() => MongoDB.collection('applications').findOne({id: app.id}))
       .then(appInDatabase => {
-        console.log(appInDatabase);
         expect(appInDatabase.settings.provider).to.equal('gigya');
         expect(appInDatabase.settings.someNewSetting).to.equal(true);
       })

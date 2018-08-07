@@ -104,7 +104,7 @@ describe('admin tests', () => {
     it('create new app by console user', done => {
 
       const newApp = {
-        id: 'new-app-to-simple-user',
+        id: 'new_app_to_simple_user',
         scope: [ ],
         delegate: false,
         algorithm: 'sha256',
@@ -128,7 +128,7 @@ describe('admin tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         userTicket = response.result;
-        expect(userTicket.scope).to.include('admin:new-app-to-simple-user');
+        expect(userTicket.scope).to.include('admin:new_app_to_simple_user');
       })
       .then(() => done())
       .catch(done);
@@ -146,7 +146,7 @@ describe('admin tests', () => {
       })
       .then(user => Bpc.request(
         {
-          url: '/admins/new-app-to-simple-user/admin',
+          url: '/admins/new_app_to_simple_user/admin',
           method: 'POST',
           payload: { user: user._id}
         },
@@ -169,7 +169,7 @@ describe('admin tests', () => {
       .then(response => {
         expect(response.statusCode).to.equal(200);
         expect(response.result.scope).to.include('admin');
-        expect(response.result.scope).to.include('admin:new-app-to-simple-user');
+        expect(response.result.scope).to.include('admin:new_app_to_simple_user');
       })
       .then(() => done())
       .catch(done);
@@ -261,7 +261,7 @@ describe('admin tests', () => {
 
         expect(grant).to.be.an.object();
         expect(grant.exp).to.equal(null);
-        expect(grant.scope).to.include('admin:new-app-to-simple-user');
+        expect(grant.scope).to.include('admin:new_app_to_simple_user');
 
         grant.exp = Date.now();
 
@@ -278,13 +278,13 @@ describe('admin tests', () => {
         const updatedGrant = response.result;
         expect(updatedGrant).to.be.an.object();
         expect(updatedGrant.exp).to.not.equal(null);
-        expect(updatedGrant.scope).to.include('admin:new-app-to-simple-user');
+        expect(updatedGrant.scope).to.include('admin:new_app_to_simple_user');
       })
       .then(() => MongoDB.collection('grants').findOne({ app: app.id, user: user._id }))
       .then(dbGrant => {
         expect(dbGrant).to.be.an.object();
         expect(dbGrant.exp).to.not.equal(null);
-        expect(dbGrant.scope).to.include('admin:new-app-to-simple-user');
+        expect(dbGrant.scope).to.include('admin:new_app_to_simple_user');
       })
       .then(() => done())
       .catch(done);

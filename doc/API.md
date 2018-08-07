@@ -238,15 +238,22 @@ Returns all scope data allowed by ticket.
 
 Gets the user permissions. The user is the ticket, with which the request has been signed.
 
-If a querystring is given, specific fields can be queried for at value.
-If valid, the HTTP response code is 200.
-If invalid, the HTTP response code is 404.
+If a querystring is given, this will work as a projection. I.e. specified fields will be returned in or suppressed from the response.
+
+See MongoDB [Project Fields to Return from Query](https://docs.mongodb.com/manual/tutorial/project-fields-from-query-results/).
+
+If the value is 1, the field will be returned.
+If the value is 0, the field will be supressed.
+
+Use the MongoDB _Embedded Document_ syntax style (see [Dot Notation](https://docs.mongodb.com/manual/core/document/#document-dot-notation)) to specify fields in objects or arrays.
 
 Example query:
 
 ```
-GET /permissions/berlingske?bdk_apps=yes
+GET /permissions/berlingske?bdk_apps=1&bdk_paywall=1&roles.0=1
 ```
+
+This will only return the fields `bdk_apps`, `bdk_paywall` and the first element of array `roles`.
 
 
 
@@ -325,7 +332,7 @@ The resulting data will be like:
 { "test_integer": 3, "test_float": 3.5, "test_object": { "test_array": [ 100 ] } }
 ```
 
-Fields and arrays inside objects can also to used in operators. To do this, use the MongoDB _Embedded Document_ syntax style.
+Fields and arrays inside objects can also to used in operators. To do this, use the MongoDB _Embedded Document_ syntax style (see [Dot Notation](https://docs.mongodb.com/manual/core/document/#document-dot-notation)).
 
 Example:
 

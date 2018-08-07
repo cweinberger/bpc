@@ -63,7 +63,6 @@ module.exports.register = function (server, options, next) {
           entity: 'app' // <-- Important. Users must not be allowed to get permissions from other users
         }
       },
-      cors: stdCors,
       state: {
         parse: true,
         failAction: 'log'
@@ -82,7 +81,6 @@ module.exports.register = function (server, options, next) {
           entity: 'app' // <-- Important. Users must not be allowed to get permissions from other users
         }
       },
-      cors: stdCors,
       state: {
         parse: true,
         failAction: 'log'
@@ -102,7 +100,6 @@ module.exports.register = function (server, options, next) {
           entity: 'app' // <-- Important. Users must not be allowed to set permissions
         }
       },
-      cors: stdCors,
       state: {
         parse: true,
         failAction: 'log'
@@ -125,7 +122,6 @@ module.exports.register = function (server, options, next) {
           entity: 'app' // <-- Important. Users must not be allowed to set permissions
         }
       },
-      cors: stdCors,
       state: {
         parse: true,
         failAction: 'log'

@@ -89,7 +89,7 @@ module.exports = {
 
   putApplication: function (request, reply) {
     let application = request.payload;
-console.log('aa', application)
+
     if (!application.settings) {
       application.settings = {};
     }

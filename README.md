@@ -91,9 +91,10 @@ identified by an ID, email or social media login.
 
 ## Permission
 
-A permissions is data inside a scope.
 A permission is an indication of whether or not the user is entitled to a given
-artifact or resource. The permissions, artifacts and resources is defined in the domain of the application. BPC has no
+artifact or resource.
+In BPC a permission is just some arbitrary data inside a scope.
+The permissions, artifacts and resources is defined in the domain of the application. BPC has no
 knowledge about permissions or it's usage. BPC is basically just a secure storage of these data.
 
 It can be a string, boolean, date, integer. Or it can be an array or object containing these datatypes.
@@ -104,21 +105,23 @@ Using the [PATCH](doc/API.md#patch-permissionsuserscope) it is possible to perfo
 ## Scope
 
 Each application registeret with BPC can be assigned one or more arbitrary
-scopes e.g. "berlingske", "bt" or "marketinganalytics". When a website validates
-a user ticket with BPC, only permissions that are within that specific
-applications scope are accessible. This means that only applications with e.g.
-the "berlingske" scope are allowed to read or make changes to the permissions
-within that scope. Other scopes are restricted.
+scopes e.g. `berlingske`, `bt` or `marketinganalytics`.
+Each scope gives access to the data inside that scope for each user.
 
-Scopes cannot be named starting with "admin". There is a reserves scope named be
-the convention "admin:<client ID>". These are used to promote specific users as
-an admin for that application in the BPC console.
+All scopes on the app ticket, will automatically be transferred to the user ticket. See section [`Ticket`](#ticket)
 
-The reserved scope "admin" is used for users that are allowed to see and create
-apps. This scope will be added automatically to the ticket, if the grant is to
-the console app.
+If the scope ends with `:read`, e.g. `berlingske:read`, then a ticket can only read data and not write.
+This has mostly only an effect on app tickets, because user tickets cannot write data.
 
-The reserved scope "admin:\*" is used for superadmins.
+Scopes cannot start with `admin`, since it is reserved and is used for apps and users that are allowed to see and create
+apps. This scope is used by the _BPC Console_ application.
+For each app, the scope `admin:<app ID>` is created. This scope allows for specific users to be assigned as
+an admin for that application in the _BPC Console_.
+
+The reserved scope `admin:\*` is used for superadmins - users that have admin priviliges on all apps.
+
+The scope `admin:{id}:app` is dynamically added to any app ticket. This allows the app to admin ifself e.g. change settings, without access to the *BPC Console*.
+This scope will _not_ be transferred to the user ticket.
 
 
 ## Grant

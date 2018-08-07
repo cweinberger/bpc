@@ -283,6 +283,69 @@ describe('application tests', () => {
       .then(() => done())
       .catch(done);
     });
+
+
+    it('create with a too long app id', done => {
+      const invalidAppId = {
+        id: 'fdsjhkjsdfhgkfjsdhgkjsdfhgkljhsdfgkjhsdfgkhs',
+        scope: [],
+        delegate: false,
+        key: 'something_long_and_random',
+        algorithm: 'sha256',
+        settings: {
+          provider: 'gigya'
+        }
+      };
+
+      Bpc.request({ url: '/applications', method: 'POST', payload: invalidAppId }, consoleUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(400);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('create with a too short scope name', done => {
+      const invalidAppId = {
+        id: 'abcsdsdfjksdh',
+        scope: ['a'],
+        delegate: false,
+        key: 'something_long_and_random',
+        algorithm: 'sha256',
+        settings: {
+          provider: 'gigya'
+        }
+      };
+
+      Bpc.request({ url: '/applications', method: 'POST', payload: invalidAppId }, consoleUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(400);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('create with a too long scope name', done => {
+      const invalidAppId = {
+        id: 'abcsdsdfjksdh',
+        scope: ['fsdkjhfkjsdhfkjsdhfklsjhdfkhsdkfhsdkvcxnbvmnxbc'],
+        delegate: false,
+        key: 'something_long_and_random',
+        algorithm: 'sha256',
+        settings: {
+          provider: 'gigya'
+        }
+      };
+
+      Bpc.request({ url: '/applications', method: 'POST', payload: invalidAppId }, consoleUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(400);
+      })
+      .then(() => done())
+      .catch(done);
+    });
   });
 
 

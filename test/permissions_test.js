@@ -183,29 +183,6 @@ describe('permissions - integration tests', () => {
       .catch(done);
     });
 
-    it('validating by query all correct', (done) => {
-
-      var queryPermissions = '?bt_subscription_tier=free&bt_paywall=true'
-      Bpc.request({ url: '/permissions/bt' + queryPermissions }, simple_first_user_ticket)
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-      })
-      .then(() => done())
-      .catch(done);
-    });
-
-
-    it('validating by query one false', (done) => {
-
-      var queryPermissions = '?bt_subscription_tier=free&bt_paywall=false'
-
-      Bpc.request({ url: '/permissions/bt' + queryPermissions }, simple_first_user_ticket)
-      .then(response => {
-        expect(response.statusCode).to.equal(404);
-      })
-      .then(() => done())
-      .catch(done);
-    });
 
     it('validating scope that is not saved/persisten to the profile in MongoDB', (done) => {
 
@@ -306,9 +283,6 @@ describe('permissions - integration tests', () => {
 
       const grant = test_data.grants.simple_first_user_of_berlingske_readonly_app_grant;
       var userTicket;
-      const readBerlingkeRequest = {
-        url: `/permissions/berlingske`
-      };
 
       Bpc.generateRsvp(app, grant)
       .then(rsvp => Bpc.request({ method: 'POST', url: '/ticket/user', payload: { rsvp: rsvp } }, appTicket))
@@ -327,5 +301,86 @@ describe('permissions - integration tests', () => {
       .then(() => done())
       .catch(done);      
     });
+  });
+
+
+  describe('query permissions with projection (using app ticket)', () => {
+
+    const app = test_data.applications.berlingske;
+    const user = test_data.users.xyz_user;
+    var appTicket;
+
+    before(done => {
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        appTicket = response.result;
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('return specific fields from berlingske scope', (done) => {
+      const projectionRequest = {
+        url: `/permissions/${user.id}/berlingske?fieldA=1&fieldC=1`
+      };
+      Bpc.request(projectionRequest, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.fieldA).to.equal(5);
+        expect(response.result.fieldB).to.not.exist();
+        expect(response.result.fieldC).to.equal([ 'A', 'B', 'C' ]);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('suppress specific fields from berlingske scope', (done) => {
+      const projectionRequest = {
+        url: `/permissions/${user.id}/berlingske?fieldA=0`
+      };
+      Bpc.request(projectionRequest, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.fieldA).to.not.exist();
+        expect(response.result.fieldB).to.equal(8);
+        expect(response.result.fieldC).to.equal([ 'A', 'B', 'C' ]);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('suppress more specific fields from berlingske scope', (done) => {
+      const projectionRequest = {
+        url: `/permissions/${user.id}/berlingske?fieldA=0&fieldB=0`
+      };
+      Bpc.request(projectionRequest, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.fieldA).to.not.exist();
+        expect(response.result.fieldB).to.not.exist();
+        expect(response.result.fieldC).to.equal([ 'A', 'B', 'C' ]);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('suppress specific fields from berlingske scope', (done) => {
+      const projectionRequest = {
+        url: `/permissions/${user.id}/berlingske?fieldD.E=1`
+      };
+      Bpc.request(projectionRequest, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.fieldD).to.equal([{"E": 15}, {"E": 17}]);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
   });
 });

@@ -238,17 +238,42 @@ Returns all scope data allowed by ticket.
 
 Gets the user permissions. The user is the ticket, with which the request has been signed.
 
-If a querystring is given, specific fields can be queried for at value.
-If valid, the HTTP response code is 200.
-If invalid, the HTTP response code is 404.
+Example query:
+
+```
+GET /permissions/berlingske
+```
+
+Example reponse:
+
+```
+{"roles":[{"type": "A", "name": "B"},{"type": "C","name": "D"}],"bdk_apps":false,"bdk_paywall":true}
+```
+
+If a querystring is given, this will work as a projection. I.e. specified fields will be returned in or suppressed from the response.
+
+See MongoDB [Project Fields to Return from Query](https://docs.mongodb.com/manual/tutorial/project-fields-from-query-results/).
+
+If the value is 1, the field will be returned.
+If the value is 0, the field will be supressed.
+
+Use the MongoDB _Embedded Document_ syntax style (see [Dot Notation](https://docs.mongodb.com/manual/core/document/#document-dot-notation)) to specify fields in objects or objects in arrays.
+
+Important: Projection cannot have a mix of inclusion and exclusion.
 
 Example query:
 
 ```
-GET /permissions/berlingske?bdk_apps=yes
+GET /permissions/berlingske?bdk_paywall=1&roles.type=1
 ```
 
+This will only return the field `bdk_paywall` and field `type` from the objects in array `roles`.
 
+Example reponse:
+
+```
+{"roles":[{"type": "A"},{"type": "C"}],"bdk_paywall":true}
+```
 
 
 ## [GET /permissions/{user}/{scope}]
@@ -260,18 +285,8 @@ GET /permissions/berlingske?bdk_apps=yes
 
 Gets the user permissions. The users ID is in the request parameters.
 
-Example request headers:
+Equivalent to 
 
-```
-Authorization: Hawk id="Fe26.2**a8e77f19e4bf53c0cf91aa0a0bd260b2bc1f8e58038a2fa3fb74c1983b682b1b*q58kU3GyjVeRgOK_BubnpA*ppOoKyzukvBpjaGISGxQx71CmrcINj6lFge7L1Hg86A73AAfgHtuDp-Rfy78GZl1qaiOLGJmw-zwpMpCPDW6vWeWgWyFY4JZcoXsYqya8luUvndJSz2vwoZSAAXMJcgF63zQ-doesv_k1AA0PZVH2LN4G6BsvABykVPPmYNTH78**74a69aba09a199933b2264e1d62f5182b0f8e34949fc36dab70de85e49456196*_vuEhEwl-Vlm2q-XMCGiVC0boZW8mKIFuMA2rFVTM4w", ts="1507038697", nonce="g1Vsvz", mac="jWWUrEWhYfji7x2NSCTe3DhDw4CPeVYJEx1P6HyhPD8=", app="bt_test"
-Content-Type: application/json
-```
-
-Example reponse_
-
-```
-{"sso_uid":"3050037","permission_113":false,"permission_130":false,"PAID_ARTILCE":true}
-```
 
 ## [POST /permissions/{user}/{scope}]
 
@@ -325,7 +340,7 @@ The resulting data will be like:
 { "test_integer": 3, "test_float": 3.5, "test_object": { "test_array": [ 100 ] } }
 ```
 
-Fields and arrays inside objects can also to used in operators. To do this, use the MongoDB _Embedded Document_ syntax style.
+Fields and arrays inside objects can also to used in operators. To do this, use the MongoDB _Embedded Document_ syntax style (see [Dot Notation](https://docs.mongodb.com/manual/core/document/#document-dot-notation)).
 
 Example:
 

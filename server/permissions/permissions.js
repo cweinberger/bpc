@@ -29,34 +29,15 @@ module.exports = {
     // But we need to find out how we should handle any changes to the scope (by POST/PATCH). Should we then reissue the ticket with new ticket.ext.private?
     if (true) {
 
-      if (Object.keys(request.query).length > 0) {
-
-        countPermissions({
-          user: ticket.user,
-          scope: request.params.scope,
-          query: request.query
-        })
-        .then(result => {
-          if(result === 1) {
-            reply({ status: 'OK' });
-          } else {
-            reply(Boom.notFound());
-          }
-        })
-        .catch(err => reply(err));
-
-      } else {
-
-        findPermissions({
-          user: ticket.user,
-          scope: request.params.scope
-        })
-        .then(dataScopes => reply(dataScopes[request.params.scope]
-          ? dataScopes[request.params.scope]
-          : {}))
-        .catch(err => reply(err));
-      }
-
+      findPermissions({
+        user: ticket.user,
+        scope: request.params.scope,
+        scopeProjection: request.query
+      })
+      .then(dataScopes => reply(dataScopes[request.params.scope]
+        ? dataScopes[request.params.scope]
+        : {}))
+      .catch(err => reply(err));
 
     } else {
 
@@ -86,36 +67,19 @@ module.exports = {
 
 
   getPermissionsUserScope: function(request, reply) {
-    if (Object.keys(request.query).length > 0) {
 
-      countPermissions({
-        user: request.params.user,
-        scope: request.params.scope,
-        query: request.query
-      })
-      .then(result => {
-        if(result === 1) {
-          reply({ status: 'OK' });
-        } else {
-          reply(Boom.notFound());
-        }
-      })
-      .catch(err => reply(err));
-
-    } else {
-
-      findPermissions({
-        user: request.params.user,
-        scope: request.params.scope
-      })
-      .then(dataScopes => {
-        reply(dataScopes[request.params.scope]
-          ? dataScopes[request.params.scope]
-          : {}
-        );
-      })
-      .catch(err => reply(err));
-    }
+    findPermissions({
+      user: request.params.user,
+      scope: request.params.scope,
+      scopeProjection: request.query
+    })
+    .then(dataScopes => {
+      reply(dataScopes[request.params.scope]
+        ? dataScopes[request.params.scope]
+        : {}
+      );
+    })
+    .catch(err => reply(err));
   },
 
 
@@ -182,7 +146,7 @@ module.exports = {
 
 
 
-function findPermissions({user, scope}) {
+function findPermissions({user, scope, scopeProjection}) {
 
   if (!user || !scope) {
     return Promise.reject(Boom.badRequest('user or scope missing'));
@@ -206,7 +170,13 @@ function findPermissions({user, scope}) {
       projection['dataScopes.'.concat(scopeName)] = 1;
     });
   } else if(typeof scope === 'string'){
-    projection['dataScopes.'.concat(scope)] = 1;
+    if (scopeProjection && Object.keys(scopeProjection).length > 0) {
+      Object.keys(scopeProjection).forEach((key) => {
+        projection[`dataScopes.${scope}.${key}`] = scopeProjection[key];
+      });
+    } else {
+      projection['dataScopes.'.concat(scope)] = 1;
+    }
   } else {
     projection['dataScopes'] = 0;
   }

@@ -84,6 +84,11 @@ module.exports.register = function (server, options, next) {
       state: {
         parse: true,
         failAction: 'log'
+      },
+      validate: {
+        // We allow any key, but the value has to be 0 or 1
+        // TODO: Projection cannot have a mix of inclusion and exclusion. This must be validated
+        query: Joi.object().pattern(/.+/, Joi.number().min(0).max(1))
       }
     },
     handler: Permissions.getPermissionsUserScope

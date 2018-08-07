@@ -106,7 +106,14 @@ module.exports = {
         email: 'xyx@berlingskemedia.dk'
       },
       lastLogin: new Date(),
-      dataScopes: {}
+      dataScopes: {
+        'berlingske': {
+          fieldA: 5,
+          fieldB: 8,
+          fieldC: ["A", "B", "C"],
+          fieldD: [{"E": 15, "F": 16}, {"E": 17, "F": 18}]
+        }
+      }
     },
     console_admin: {
       _id: new ObjectID("5b32129f4e094108d0e8a787"),

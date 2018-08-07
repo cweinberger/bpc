@@ -68,38 +68,88 @@ describe('scope datafields - integration tests', () => {
     });
 
 
-    // Command findOneAndUpdate not supported by mongo-mock
 
-    // it('increase int by 1', (done) => {
-    //   const inc_request = {
-    //     method: 'PATCH',
-    //     url: '/permissions/' + user.id + '/bt',
-    //     headers: {},
-    //     payload: {
-    //       $inc: { "test_integer": 2 },
-    //       $mul: { "test_float": 0.5 }
-    //     }
-    //   };
-    //
-    //   Bpc.request(inc_request, appTicket)
-    //   .then(response => {
-    //     expect(response.statusCode).to.equal(200);
-    //     return Promise.resolve();
-    //   })
-    //   .then(() => MongoDB.collection('users').findOne({id: user.id}))
-    //   .then(user => {
-    //     expect(user.dataScopes.bt.test_integer).to.equal(3);
-    //
-    //     // Operator $mul not supported by mongo-mock yet
-    //     // expect(user.dataScopes.bt.test_float).to.equal(3.5);
-    //
-    //     // Operator $currentDate not supported by mongo-mock yet
-    //     // expect(user.lastUpdated).not.to.equal(lastUpdated);
-    //   })
-    //   .then(done)
-    //   .catch(done);
-    // });
+    it('increase and multiply int', (done) => {
+      const inc_request = {
+        method: 'PATCH',
+        url: '/permissions/' + user.id + '/bt',
+        headers: {},
+        payload: {
+          $inc: { "test_integer": 2 },
+          $mul: { "test_float": 0.5 }
+        }
+      };
+    
+      Bpc.request(inc_request, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        return Promise.resolve();
+      })
+      .then(() => MongoDB.collection('users').findOne({id: user.id}))
+      .then(user => {
+        expect(user.dataScopes.bt.test_integer).to.equal(3);
+        expect(user.dataScopes.bt.test_float).to.equal(3.5);    
+        expect(user.lastUpdated).not.to.equal(lastUpdated);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+
+    it('increase and multiply int once again', (done) => {
+      const inc_request = {
+        method: 'PATCH',
+        url: '/permissions/' + user.id + '/bt',
+        headers: {},
+        payload: {
+          $inc: { "test_integer": 4 },
+          $mul: { "test_float": 2 }
+        }
+      };
+    
+      Bpc.request(inc_request, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        return Promise.resolve();
+      })
+      .then(() => MongoDB.collection('users').findOne({id: user.id}))
+      .then(user => {
+        expect(user.dataScopes.bt.test_integer).to.equal(7);
+        expect(user.dataScopes.bt.test_float).to.equal(7);    
+        expect(user.lastUpdated).not.to.equal(lastUpdated);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+
+    it('increase on a non-existing nested object', (done) => {
+      const inc_request = {
+        method: 'PATCH',
+        url: '/permissions/' + user.id + '/bt',
+        headers: {},
+        payload: {
+          $inc: {
+            "newObject.newValueA": 2,
+            "newObject.newValueB": 5
+          }
+        }
+      };
+    
+      Bpc.request(inc_request, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        return Promise.resolve();
+      })
+      .then(() => MongoDB.collection('users').findOne({id: user.id}))
+      .then(user => {
+        expect(user.dataScopes.bt.newObject).to.be.an.object();
+        expect(user.dataScopes.bt.newObject.newValueA).to.equal(2);
+        expect(user.dataScopes.bt.newObject.newValueB).to.equal(5);
+      })
+      .then(done)
+      .catch(done);
+    });
 
   });
-
 });

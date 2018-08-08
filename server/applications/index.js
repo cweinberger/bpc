@@ -239,7 +239,7 @@ module.exports.register.attributes = {
 const scopeValidation = Joi.array().items(
   // Scopes starting with 'admin' e.g. admin:app are not allowed because
   // they are reserved.
-  Joi.string().min(3).max(30)
+  Joi.string().min(2).max(30)
     .regex(/^[a-zA-Z0-9_:]*$/, {name: 'alphanumeric'}) // Allow alphanumeric, underscore and colon
     .regex(/^(?!admin).*$/, { name: 'admin', invert: false }) // Disallow if starts with "admin"
     .invalid([':read'])

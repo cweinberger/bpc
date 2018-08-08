@@ -171,6 +171,15 @@ function findPermissions({user, scope, scopeProjection}) {
     });
   } else if(typeof scope === 'string'){
     if (scopeProjection && Object.keys(scopeProjection).length > 0) {
+
+      const temp = Object.keys(scopeProjection).map(k => scopeProjection[k]);
+      const anyInclusion = temp.some(v => v === 1);
+      const anyExclusion = temp.some(v => v === 0);
+
+      if(anyInclusion && anyExclusion) {
+        return Promise.reject(Boom.badRequest('cannot have a mix of inclusion and exclusion'));
+      }
+
       Object.keys(scopeProjection).forEach((key) => {
         projection[`dataScopes.${scope}.${key}`] = scopeProjection[key];
       });

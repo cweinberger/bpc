@@ -382,5 +382,17 @@ describe('permissions - integration tests', () => {
       .catch(done);
     });
 
+    it('projection cannot have a mix of inclusion and exclusion', (done) => {
+      const projectionRequest = {
+        url: `/permissions/${user.id}/berlingske?fieldA=1&fieldB=0`
+      };
+      Bpc.request(projectionRequest, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(400);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
   });
 });

@@ -241,7 +241,7 @@ module.exports = {
     },
     app_with_anonymous_scope: {
       id: 'app_with_anonymous_scope',
-      scope: ['anonymous', 'anothernotanonynmousscope'],
+      scope: ['anonymous', 'a_private_scope'],
       key: '90835fgfgfjtregjefre34jvcxvxkjfed89043lkgle',
       algorithm: 'sha256',
       settings: {

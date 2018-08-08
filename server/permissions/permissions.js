@@ -264,7 +264,7 @@ function setPermissions({user, scope, permissions, provider, useProviderEmailFil
   };
 
   Object.keys(permissions).forEach(function(field){
-    set['dataScopes.'.concat(scope,'.',field)] = permissions[field];
+    set[`dataScopes.${scope}.${field}`] = permissions[field];
   });
 
   const update = {

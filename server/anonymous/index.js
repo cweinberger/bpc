@@ -120,7 +120,7 @@ module.exports.register.attributes = {
 
 
 function createAnonymousTicket(request, reply) {
-  let app_id = request.method === 'get' ? request.query.app : request.payload.app;
+  let app_id = request.query.app;
   let auid = request.state.auid;
   let auid_generated = false;
 

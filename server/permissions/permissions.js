@@ -250,22 +250,22 @@ function setPermissions({user, scope, permissions, provider, useProviderEmailFil
 
   let set = {};
 
+  Object.keys(permissions).forEach(function(field){
+    set['dataScopes.'.concat(scope,'.',field)] = permissions[field];
+  });
+
   const valid_email = Joi.validate({ email: user }, { email: Joi.string().email() });
 
   // We are setting 'id' = 'user'.
   // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
   // Otherwise, getting an RSVP also updates the id to Gigya UID or Google ID
-  let setOnInsert = {
+  const setOnInsert = {
     id: user.toLowerCase(),
     email: valid_email.error === null ? user.toLowerCase() : null,
     provider: provider,
     createdAt: new Date()
     // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
   };
-
-  Object.keys(permissions).forEach(function(field){
-    set['dataScopes.'.concat(scope,'.',field)] = permissions[field];
-  });
 
   const update = {
     $currentDate: { 'lastUpdated': { $type: "date" } },

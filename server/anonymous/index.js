@@ -278,7 +278,7 @@ function getAnonymousPermissions({user}) {
       'lastFetched': { $type: "date" }
     },
     $setOnInsert: {
-      type: 'anonymous'
+      provider: 'anonymous'
     },
     $set: {
       'expiresAt': new Date(new Date().setMonth(new Date().getMonth() + 6))

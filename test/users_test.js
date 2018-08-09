@@ -79,7 +79,7 @@ describe('users - integration tests', () => {
 
       const request = {
         method: 'DELETE',
-        url: `/users/${simple_second_user.id}`
+        url: `/users/${simple_second_user._id}`
       };
 
       Bpc.request(request, appTicket)
@@ -99,7 +99,7 @@ describe('users - integration tests', () => {
     const simple_second_user = test_data.users.simple_second_user;
     const deleteUserRequest = {
       method: 'DELETE',
-      url: `/users/${simple_second_user.id}`
+      url: `/users/${simple_second_user._id}`
     };
 
     // Getting the appTicket

@@ -149,6 +149,7 @@ function handleEvents(events){
 
   });
 
+
   function handleEvent(event){
 
     switch (event.type) {
@@ -238,7 +239,7 @@ function upsertUser (accountInfo) {
     // We are resolving, because we don't need a lot of errors in the log because of these users.
     return Promise.resolve('User has no email');
   }
-  const selector = {
+  const filter = {
     $or: [
       { 'gigya.UID': accountInfo.UID },
       { id: accountInfo.UID },
@@ -260,13 +261,13 @@ function upsertUser (accountInfo) {
     }
   };
 
-  let setOnInsert = {
+  const setOnInsert = {
     createdAt: new Date(),
     dataScopes: {}
   };
 
 
-  let operators = {
+  const update = {
     $currentDate: { 'lastUpdated': { $type: "date" } },
     $set: set,
     $setOnInsert: setOnInsert
@@ -279,7 +280,8 @@ function upsertUser (accountInfo) {
     upsert: true
   };
 
-  return MongoDB.collection('users').updateOne(selector, operators, options);
+  return MongoDB.collection('users')
+  .updateOne(filter, update, options);
 };
 
 

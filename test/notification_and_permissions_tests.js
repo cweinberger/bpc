@@ -24,6 +24,70 @@ describe('gigya notifications - integration tests', () => {
   });
 
 
+  describe('updating existing user email (which is already properly registered and created)', () => {
+
+    before(done => {
+      Gigya.callApi.withArgs('/accounts.getAccountInfo', {UID: '137802111134346654517', include: 'profile,emails'})
+      .onFirstCall().resolves({body: {UID: '137802111134346654517', profile: { email: 'newemail@berlingskemedia.dk'}}})
+      done();
+    });
+
+
+    after(done => {
+      Gigya.callApi.reset();
+      done();
+    });
+
+    it('getting accountUpdated gigya notification', (done) => {
+
+      var notifications_request = {
+        method: 'POST',
+        url: '/gigya/notifications',
+        headers: {
+        },
+        payload: {
+          "events": [
+            {
+              "type": "accountUpdated",
+              "id": "b6s95b42-5798-59a7-842a-40c0f183d656",
+              "timestamp": 1450011177,
+              "data": {
+                "uid": "137802111134346654517"
+              }
+            }
+          ]
+        },
+        "nonce": "8693aa10-9c75-48c9-a959-6ef1ae2b6b54",
+        "timestamp": 1450011177
+      };
+
+      notifications_request = gigya_helper.setGigyaSigHmax(notifications_request);
+
+      Bpc.request(notifications_request)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => {
+        return new Promise(resolve => setTimeout(resolve, 1000));
+      })
+      .then(() => MongoDB.collection('users')
+        // We search by both old and new email, to verify we only have one email
+        .find({$or: [ { email: 'xyx@berlingskemedia.dk'}, {email: 'newemail@berlingskemedia.dk'}]})
+        .toArray()
+      )
+      .then(result => {
+        expect(result).not.to.be.null();
+        expect(result.length).to.equal(1);
+        expect(result[0].id).to.equal('137802111134346654517');
+        expect(result[0].gigya.UID).to.equal('137802111134346654517');
+        expect(result[0].gigya.email).to.equal('newemail@berlingskemedia.dk');
+        expect(result[0].dataScopes.berlingske.fieldA).to.be.equal(5);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+  });
+
 
   describe('setting permissions before the user is registered and the updating email', () => {
 
@@ -57,7 +121,8 @@ describe('gigya notifications - integration tests', () => {
     });
 
 
-    it('setting permissions for a new user', done => {
+    it('setting permissions for a new user (upsert)', done => {
+
       const permissions_request = {
         method: 'POST',
         url: '/permissions/four@test.nl/profile',
@@ -75,7 +140,10 @@ describe('gigya notifications - integration tests', () => {
       .then(() => {
         return new Promise(resolve => setTimeout(resolve, 1000));
       })
-      .then(() => MongoDB.collection('users').find({$or: [{id: '4'}, {id: 'four@test.nl'}, {id: 'FOUR@test.nl'}, {email: 'four@test.nl'}]}).toArray())
+      .then(() => MongoDB.collection('users')
+        .find({ $or: [ { id: '4' }, { id: 'four@test.nl' }, { id: 'FOUR@test.nl' }, { email: 'four@test.nl' } ] } )
+        .toArray()
+      )
       .then(result => {
         expect(result).not.to.be.null();
         expect(result.length).to.equal(1);
@@ -89,7 +157,7 @@ describe('gigya notifications - integration tests', () => {
     });
 
 
-    it('getting accountRegistered', (done) => {
+    it('getting accountRegistered gigya notification', (done) => {
 
       var notifications_request = {
         method: 'POST',
@@ -213,7 +281,7 @@ describe('gigya notifications - integration tests', () => {
     });
 
 
-    it('setting permissions for a new user', done => {
+    it('setting permissions for a new user (upsert) lowercase email', done => {
       const permissions_request = {
         method: 'POST',
         url: '/permissions/six@test.nl/profile',
@@ -245,7 +313,7 @@ describe('gigya notifications - integration tests', () => {
     });
 
 
-    it('getting accountRegistered', (done) => {
+    it('getting accountRegistered gigya notification uppercase email', (done) => {
 
       var notifications_request = {
         method: 'POST',
@@ -291,7 +359,7 @@ describe('gigya notifications - integration tests', () => {
     });
 
 
-    it('setting updated permissions for a the user', done => {
+    it('setting updated permissions for the user', done => {
       const permissions_request = {
         method: 'POST',
         url: '/permissions/six@test.nl/profile',
@@ -353,7 +421,7 @@ describe('gigya notifications - integration tests', () => {
     });
 
 
-    it('setting new permissions for a new user', done => {
+    it('setting new permissions for a new user (upsert) uppercase email', done => {
       const permissions_request = {
         method: 'POST',
         url: '/permissions/SEVEN@test.nl/profile',
@@ -385,7 +453,7 @@ describe('gigya notifications - integration tests', () => {
     });
 
 
-    it('getting accountRegistered', (done) => {
+    it('getting accountRegistered gigya notification lowercase email', (done) => {
 
       var notifications_request = {
         method: 'POST',
@@ -431,7 +499,7 @@ describe('gigya notifications - integration tests', () => {
     });
 
 
-    it('setting updated permissions for a the user', done => {
+    it('setting updated permissions for the user', done => {
       const permissions_request = {
         method: 'POST',
         url: '/permissions/SEVEN@test.nl/profile',

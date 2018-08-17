@@ -273,6 +273,8 @@ function setPermissions({user, scope, permissions, provider, useProviderEmailFil
     $setOnInsert: setOnInsert
   };
 
+  // If the user does not exists, the response should be a 404. But we have upsert because of legacy support.
+  // But logic could be changed to only have upsert when the user param is an email (useProviderEmailFilter === true).
   const options = {
     upsert: true
     //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/

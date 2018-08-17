@@ -166,22 +166,21 @@ function validateEmailMask(email, emailMask) {
 function findUser(user) {
   return MongoDB.collection('users')
   .findOneAndUpdate(
-    { $and:
-      [
-        { $or:
-          [
-            { provider: { $eq: user.provider }},
-            { provider: { $exists: false }},
-            { provider: null }
-          ]
+    {
+      $or: [
+        {
+          // This will find the user if it has been created properly (eg. by the webhook handler)
+          id: user.id,
+          provider: { $eq: user.provider }
         },
-        { $or:
-          [
-            { id: user.id },
-            { id: user.email },
-            { 'gigya.UID': user.id },
-            { 'gigya.email': user.email },
-            { email: user.email }
+        {
+          // This will find the user if it was created (upsert) from a POST /permissions/{email}
+          id: user.email,
+          email: user.email,
+          $or: [
+            { provider: 'gigya' }, // The usual/most records will have provider set.
+            { provider: { $exists: false } } // But there's still some old records without provider.
+            // These old records must be updated sooner or later
           ]
         }
       ]

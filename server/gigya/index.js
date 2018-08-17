@@ -149,6 +149,7 @@ function handleEvents(events){
 
   });
 
+
   function handleEvent(event){
 
     switch (event.type) {
@@ -238,12 +239,24 @@ function upsertUser (accountInfo) {
     // We are resolving, because we don't need a lot of errors in the log because of these users.
     return Promise.resolve('User has no email');
   }
-  const selector = {
+
+  const filter = {
     $or: [
-      { 'gigya.UID': accountInfo.UID },
-      { id: accountInfo.UID },
-      { id: accountInfo.profile.email.toLowerCase() },
-      { email: accountInfo.profile.email.toLowerCase() }
+      {
+        // This will find the user if she/he has been created properly (eg. by this webhook handler)
+        id: accountInfo.UID,
+        provider: 'gigya'
+      },
+      {
+        // This will find the user if it was created (upsert) from a POST /permissions/{email}
+        id: accountInfo.profile.email.toLowerCase(),
+        email: accountInfo.profile.email.toLowerCase(),
+        $or: [
+          { provider: 'gigya' }, // The usual/most records will have provider set.
+          { provider: { $exists: false } } // But there's still some old records without provider.
+          // These old records must be updated sooner or later
+        ]
+      },
     ]
   };
 
@@ -260,13 +273,13 @@ function upsertUser (accountInfo) {
     }
   };
 
-  let setOnInsert = {
+  const setOnInsert = {
     createdAt: new Date(),
     dataScopes: {}
   };
 
 
-  let operators = {
+  const update = {
     $currentDate: { 'lastUpdated': { $type: "date" } },
     $set: set,
     $setOnInsert: setOnInsert
@@ -279,30 +292,35 @@ function upsertUser (accountInfo) {
     upsert: true
   };
 
-  return MongoDB.collection('users').updateOne(selector, operators, options);
+  return MongoDB.collection('users')
+  .updateOne(filter, update, options);
 };
 
 
-
-// TODO: Should we do more? Eg. expire grants?
 function deleteUser ({ id }){
 
   const selector = {
     $or: [
-      { 'gigya.UID': id },
-      { id: id }
+      { id: id, provider: 'gigya' },
+      { 'gigya.UID': id }
     ]
   };
 
   return MongoDB.collection('users')
   .findOneAndDelete(selector)
   .then(result => {
-    let user = result.value;
-    if (user === null) {
+
+    if (result.ok !== 1) {
       return Promise.reject();
     }
-    user.deletedAt = new Date();
-    return MongoDB.collection('deleted_users').insert(user);
-  });
 
+    var user = result.value;
+
+    var deleteGrants = MongoDB.collection('grants').remove({ user: user._id });
+
+    user.deletedAt = new Date();
+    var insertDeletedUser = MongoDB.collection('deleted_users').insert(user);
+
+    return Promise.all([deleteGrants, insertDeletedUser]);
+  });
 };

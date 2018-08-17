@@ -136,7 +136,7 @@ describe('permissions - integration tests', () => {
         $inc: { "test_integer": 2 }
       };
 
-      Bpc.request({ url: '/permissions/thisuserdoesnotexist/bt', method: 'PATCH', payload: payload}, appTicket)
+      Bpc.request({ url: '/permissions/thisuserdoesnotexist@test.nl/bt', method: 'PATCH', payload: payload}, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(404);
       })
@@ -149,13 +149,14 @@ describe('permissions - integration tests', () => {
         "test_integer": 2
       };
 
-      Bpc.request({ url: '/permissions/thisuserdoesnotexisteither/bt', method: 'POST', payload: payload}, appTicket)
+      Bpc.request({ url: '/permissions/thisuserdoesnotexisteither@test.nl/bt', method: 'POST', payload: payload}, appTicket)
       .then(response => {
         expect(response.statusCode).to.equal(200);
       })
-      .then(() => MongoDB.collection('users').findOne({id: 'thisuserdoesnotexisteither'}))
+      .then(() => MongoDB.collection('users').findOne({id: 'thisuserdoesnotexisteither@test.nl'}))
       .then(user => {
         expect(user.dataScopes.bt.test_integer).to.equal(2);
+        expect(user.provider).to.equal('gigya');
         expect(user.createdAt).to.exist();
         // expect(user.lastUpdated).to.exist();
         // expect(user.lastUpdated).to.equal(user.createdAt);

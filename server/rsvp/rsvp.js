@@ -190,7 +190,7 @@ function findUser(user) {
       $currentDate: { 'lastLogin': { $type: "date" } },
       $set: {
         id: user.id,
-        email: user.email,
+        email: user.email.toLowerCase(),
         provider: user.provider
       },
       $setOnInsert: {

@@ -250,12 +250,16 @@ function setPermissions({user, scope, permissions, provider, useProviderEmailFil
 
   let set = {};
 
+  Object.keys(permissions).forEach(function(field){
+    set[`dataScopes.${scope}.${field}`] = permissions[field];
+  });
+
   const valid_email = Joi.validate({ email: user }, { email: Joi.string().email() });
 
   // We are setting 'id' = 'user'.
   // When the user registered with e.g. Gigya, the webhook notification will update 'id' to UID.
   // Otherwise, getting an RSVP also updates the id to Gigya UID or Google ID
-  let setOnInsert = {
+  const setOnInsert = {
     id: user.toLowerCase(),
     email: valid_email.error === null ? user.toLowerCase() : null,
     provider: provider,
@@ -263,16 +267,14 @@ function setPermissions({user, scope, permissions, provider, useProviderEmailFil
     // expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6)) // - in 6 months
   };
 
-  Object.keys(permissions).forEach(function(field){
-    set[`dataScopes.${scope}.${field}`] = permissions[field];
-  });
-
   const update = {
     $currentDate: { 'lastUpdated': { $type: "date" } },
     $set: set,
     $setOnInsert: setOnInsert
   };
 
+  // If the user does not exists, the response should be a 404. But we have upsert because of legacy support.
+  // But logic could be changed to only have upsert when the user param is an email (useProviderEmailFilter === true).
   const options = {
     upsert: true
     //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/

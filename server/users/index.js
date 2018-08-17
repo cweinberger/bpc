@@ -93,22 +93,15 @@ module.exports.register = function (server, options, next) {
     },
     handler: function(request, reply) {
 
-      var match = {
-        $or: [
-          { id: request.params.id },
-          { email: request.params.id }
-        ]
-      };
-
-      if(ObjectID.isValid(request.params.id)) {
-        match.$or = [{ _id: new ObjectID(request.params.id) }].concat(match.$or);
+      if(!ObjectID.isValid(request.params.id)) {
+        return reply(Boom.badRequest('Invalid user id'));
       }
 
       MongoDB.collection('users')
       .aggregate(
         [
           {
-            $match: match
+            $match: { _id: new ObjectID(request.params.id) }
           },
           {
             $lookup: {
@@ -144,14 +137,12 @@ module.exports.register = function (server, options, next) {
     },
     handler: (request, reply) => {
 
-      const ticket = request.auth.credentials;
-
-      if (ticket.user === request.params.id){
-        return reply(Boom.badRequest('You cannot delete yourself'));
+      if(!ObjectID.isValid(request.params.id)) {
+        return reply(Boom.badRequest('Invalid user id'));
       }
 
       MongoDB.collection('users')
-      .findOneAndDelete({ id: request.params.id })
+      .findOneAndDelete({ _id: new ObjectID(request.params.id) })
       .then(result => {
 
         if (result.ok !== 1) {

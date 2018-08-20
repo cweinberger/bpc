@@ -8,6 +8,8 @@ const Boom = require('boom');
 const test_data = require('./data/test_data');
 const Bpc = require('./helpers/bpc_helper');
 const MongoDB = require('./helpers/mongodb_helper');
+const Gigya = require('./helpers/gigya_stub');
+const ObjectID = require('mongodb').ObjectID;
 
 // Test shortcuts.
 const { expect, describe, it, before, after } = exports.lab = require('lab').script();
@@ -147,6 +149,61 @@ describe('grants tests', () => {
       .then(() => done())
       .catch(done);
     });
+  });
+
+
+  describe('convert old grant type to new', () => {
+
+    const old_type_grant = {
+      id: 'kfjhsdkjfhsdklh234789jkhsdfs8',
+      app: 'bt',
+      user: 'xyx@berlingskemedia.dk',
+      scope: [],
+      exp: null
+    };
+
+    before(done => {
+      MongoDB.collection('grants')
+      .insert(old_type_grant)
+      .then(() => done());
+    });
+
+    before(done => {
+      Gigya.callApi.resolves({body: {UID: '137802111134346654517', profile: {email: 'xyx@berlingskemedia.dk'}}});
+      done();
+    });
+
+    it('get RSVP converts the grant.user to ObjectID', done => {
+      const rsvp_request = {
+        method: 'POST',
+        url: '/rsvp',
+        payload: {
+          UID: '137802111134346654517',
+          UIDSignature:'UIDSignature_random',
+          signatureTimestamp:'signatureTimestamp_random',
+          app: 'bt'
+        }
+      };
+     
+      Bpc.request(rsvp_request)
+      .then(response => {
+        expect(response.statusCode).to.be.equal(200);
+        expect(response.result.rsvp).to.be.a.string();
+      })
+      .then(() => {
+        // Wating a second to make sure the grant is saved to MongoDB
+        return new Promise(resolve => setTimeout(resolve, 1000));
+      })
+      .then(() => MongoDB.collection('grants').findOne({ id: old_type_grant.id }))
+      .then(grant => {
+        expect(grant).to.not.be.null();
+        expect(grant.user).to.not.be.equal('xyx@berlingskemedia.dk');
+        expect(grant.user).to.be.equal(new ObjectID("5b32129f4e094108d0e8a786"));
+        expect(grant.app).to.be.equal('bt');
+      })
+      .then(() => done())
+      .catch(done);
+    })
   });
 
 });

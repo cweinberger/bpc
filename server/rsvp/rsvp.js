@@ -6,6 +6,7 @@ const Boom = require('boom');
 const Joi = require('joi');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
+const ObjectID = require('mongodb').ObjectID;
 const Gigya = require('./../gigya/gigya_client');
 const Google = require('./../google/google_client');
 const OzLoadFuncs = require('./../oz_loadfuncs');
@@ -216,14 +217,16 @@ function findUser(user) {
 
 
 function findGrant({app, user}) {
-
-  // Trying to find a grant the old way - to keep compatibility
+  
   return MongoDB.collection('grants')
   .findOne({
     app: app.id,
     $or: [
-      {user: user.id},
-      {user: user.email}
+      // Trying to find a grant the new way - by using user._id
+      { user: user._id },
+      // Trying to find a grant the old way - to keep compatibility
+      { user: user.id },
+      { user: user.email }
     ]
   })
   .then(grant => {
@@ -231,48 +234,29 @@ function findGrant({app, user}) {
     if (grant) {
 
       // Converting to new grant.user value
-      grant.user = user._id;
-      MongoDB.collection('grants').save(grant);
-
+      if(!ObjectID.isValid(grant.user)) {
+        grant.user = user._id;
+        MongoDB.collection('grants').save(grant);
+      }
+      
       if (OzLoadFuncs.grantIsExpired(grant)) {
         return Promise.reject(Boom.forbidden('Grant expired'));
       } else {
         return Promise.resolve(grant);
       }
-
+      
     } else {
 
-      // Trying to find a grant the new way - by using user._id
+      if (app.settings &&
+        app.settings.allowAutoCreationGrants) {
 
-      return MongoDB.collection('grants')
-      .findOne({
-        app: app.id,
-        user: user._id
-      })
-      .then(grant => {
+          return createGrant(app, user);
 
-        if(grant) {
+      } else {
+            
+        return Promise.reject(Boom.forbidden());
 
-          if (OzLoadFuncs.grantIsExpired(grant)) {
-            return Promise.reject(Boom.forbidden('Grant expired'));
-          } else {
-            return Promise.resolve(grant);
-          }
-
-        } else {
-
-          if (app.settings &&
-            app.settings.allowAutoCreationGrants) {
-
-              return createGrant(app, user);
-
-          } else {
-                
-            return Promise.reject(Boom.forbidden());
-
-          }
-        }
-      })
+      }
     }
   });
 }

@@ -6,6 +6,7 @@ const Boom = require('boom');
 const Joi = require('joi');
 const crypto = require('crypto');
 const MongoDB = require('./../mongo/mongodb_client');
+const ObjectID = require('mongodb').ObjectID;
 const Gigya = require('./../gigya/gigya_client');
 const Google = require('./../google/google_client');
 const OzLoadFuncs = require('./../oz_loadfuncs');
@@ -187,10 +188,13 @@ function findUser(user) {
     },
     {
       $currentDate: { 'lastLogin': { $type: "date" } },
+      // We use operator $set for these values, because:
       $set: {
-        id: user.id,
-        email: user.email.toLowerCase(),
-        provider: user.provider
+        id: user.id,                        //  1) in case the user was created (upsert) from a POST /permissions/{email}
+        email: user.email.toLowerCase(),    //  2) update the email to the newest. Always useful.
+        provider: user.provider             //  3) in case the record is an old record without provider.
+                                            // When we no longer get {email} in POST /permission and all records have a provider,
+                                            //  we can move "id" and "provider" to operator @setOnInsert
       },
       $setOnInsert: {
         createdAt: new Date(),
@@ -216,14 +220,16 @@ function findUser(user) {
 
 
 function findGrant({app, user}) {
-
-  // Trying to find a grant the old way - to keep compatibility
+  
   return MongoDB.collection('grants')
   .findOne({
     app: app.id,
     $or: [
-      {user: user.id},
-      {user: user.email}
+      // Trying to find a grant the new way - by using user._id
+      { user: user._id },
+      // Trying to find a grant the old way - to keep compatibility
+      { user: user.id },
+      { user: user.email }
     ]
   })
   .then(grant => {
@@ -231,48 +237,29 @@ function findGrant({app, user}) {
     if (grant) {
 
       // Converting to new grant.user value
-      grant.user = user._id;
-      MongoDB.collection('grants').save(grant);
-
+      if(!ObjectID.isValid(grant.user)) {
+        grant.user = user._id;
+        MongoDB.collection('grants').save(grant);
+      }
+      
       if (OzLoadFuncs.grantIsExpired(grant)) {
         return Promise.reject(Boom.forbidden('Grant expired'));
       } else {
         return Promise.resolve(grant);
       }
-
+      
     } else {
 
-      // Trying to find a grant the new way - by using user._id
+      if (app.settings &&
+        app.settings.allowAutoCreationGrants) {
 
-      return MongoDB.collection('grants')
-      .findOne({
-        app: app.id,
-        user: user._id
-      })
-      .then(grant => {
+          return createGrant(app, user);
 
-        if(grant) {
+      } else {
+            
+        return Promise.reject(Boom.forbidden());
 
-          if (OzLoadFuncs.grantIsExpired(grant)) {
-            return Promise.reject(Boom.forbidden('Grant expired'));
-          } else {
-            return Promise.resolve(grant);
-          }
-
-        } else {
-
-          if (app.settings &&
-            app.settings.allowAutoCreationGrants) {
-
-              return createGrant(app, user);
-
-          } else {
-                
-            return Promise.reject(Boom.forbidden());
-
-          }
-        }
-      })
+      }
     }
   });
 }

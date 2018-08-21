@@ -85,9 +85,9 @@ module.exports = {
 
   postPermissionsUserScope: function(request, reply) {
 
-    // DENNNE HVIS user ER EN EMAIL
-
     const input_is_email = Joi.validate({ email: request.params.user }, { email: Joi.string().email() });
+
+    // DENNNE HVIS user ER EN EMAIL
     if(input_is_email.error === null) {
 
       MongoDB.collection('applications')
@@ -107,7 +107,7 @@ module.exports = {
           provider: provider,
           useProviderEmailFilter: true
         })
-        .then(result => reply({'status': 'ok'}))
+        .then(result => replyResult(result))
         .catch(err => reply(err));
 
       });
@@ -120,8 +120,16 @@ module.exports = {
         permissions: request.payload,
         useProviderEmailFilter: false
       })
-      .then(result => reply({'status': 'ok'}))
+      .then(result => replyResult(result))
       .catch(err => reply(err));
+    }
+
+    function replyResult(result){
+      if (result.result.n === 0) {
+        reply(Boom.notFound());
+      } else {
+        reply({'status': 'ok'});
+      }
     }
   },
 
@@ -213,31 +221,6 @@ function findPermissions({user, scope, scopeProjection}) {
 };
 
 
-function countPermissions({user, scope, query}) {
-
-  if (!user || !scope) {
-    return Promise.reject(Boom.badRequest('user or scope missing'));
-  }
-
-  if (typeof scope !== 'string') {
-    return Promise.reject(Boom.badRequest('scope must be a string'));
-  }
-
-  let filter = stdFilter({ input: user });
-
-  Object.keys(query).forEach(key => {
-    try {
-      filter['dataScopes.'.concat(scope,".",key)] = JSON.parse(query[key]);
-    } catch(ex) {
-      filter['dataScopes.'.concat(scope,".",key)] = query[key];
-    }
-  });
-
-  return MongoDB.collection('users')
-  .count(filter, {limit: 1});
-};
-
-
 function setPermissions({user, scope, permissions, provider, useProviderEmailFilter}) {
 
   if (!user || !scope) {
@@ -251,7 +234,7 @@ function setPermissions({user, scope, permissions, provider, useProviderEmailFil
   let set = {};
 
   Object.keys(permissions).forEach(function(field){
-    set['dataScopes.'.concat(scope,'.',field)] = permissions[field];
+    set[`dataScopes.${scope}.${field}`] = permissions[field];
   });
 
   const valid_email = Joi.validate({ email: user }, { email: Joi.string().email() });
@@ -276,7 +259,7 @@ function setPermissions({user, scope, permissions, provider, useProviderEmailFil
   // If the user does not exists, the response should be a 404. But we have upsert because of legacy support.
   // But logic could be changed to only have upsert when the user param is an email (useProviderEmailFilter === true).
   const options = {
-    upsert: true
+    upsert: useProviderEmailFilter
     //  writeConcern: <document>, // Perhaps using writeConcerns would be good here. See https://docs.mongodb.com/manual/reference/write-concern/
     //  collation: <document>
   };
@@ -334,13 +317,15 @@ function updatePermissions({user, scope, permissions}) {
 
 
 function stdFilter({input}){
+  // We only allow filter by fields _id and id - not field email.
   return ObjectID.isValid(input)
   ? { _id: new ObjectID(input) }
   : { $or:
       [
         { id: input },
-        { 'gigya.UID': input },
-        { id: input.toLowerCase() } // In case the user was created using POST /permissions/THIRD_USER@berlingskemedia.dk and still not logged in
+        // In case the user was created using POST /permissions/THIRD_USER@berlingskemedia.dk and still not logged in,
+        //  user.id would be an email (and some requests from KU uses uppercase letters in {email})
+        { id: input.toLowerCase() }
       ]
     };
 }
@@ -352,17 +337,13 @@ function providerEmailFilter({input, provider}){
       { $or:
         [
           { provider: { $eq: provider }},
-          { provider: { $eq: "" }},
-          { provider: { $exists: false }},
-          { provider: null }
+          { provider: { $exists: false }}
         ]
       },
       { $or:
         [
           { id: input },
           { id: input.toLowerCase() },
-          { 'gigya.UID': input },
-          { 'gigya.email': input.toLowerCase() },
           { email: input.toLowerCase() }
         ]
       }

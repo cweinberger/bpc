@@ -94,27 +94,7 @@ describe('permissions - integration tests', () => {
   });
 
 
-  describe('getting user, whose id is an email, permissions with an app ticket', () => {
-
-    it('getting third users bt permissions by lowercase email', (done) => {
-      Bpc.request({ url: '/permissions/third_user@berlingskemedia.dk/bt' }, appTicket)
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-        expect(response.result.third_user).to.equal(true);
-      })
-      .then(() => done())
-      .catch(done);
-    });
-
-    it('getting third users bt permissions by uppercase email', (done) => {
-      Bpc.request({ url: '/permissions/THIRD_USER@berlingskemedia.dk/bt' }, appTicket)
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-        expect(response.result.third_user).to.equal(true);
-      })
-      .then(() => done())
-      .catch(done);
-    });
+  describe('getting user data an app ticket', () => {
 
     it('getting third users bt permissions by gigya UID', (done) => {
       Bpc.request({ url: '/permissions/5347895384975934842758/bt' }, appTicket)
@@ -131,6 +111,15 @@ describe('permissions - integration tests', () => {
 
   describe('non-existing user permissions with an app ticket', () => {
 
+    it('getting will result in not found', (done) => {
+      Bpc.request({ url: '/permissions/thisuserdoesnotexist@test.nl/bt', method: 'GET'}, appTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(404);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
     it('updating will result in not found', (done) => {
       const payload = {
         $inc: { "test_integer": 2 }
@@ -143,6 +132,7 @@ describe('permissions - integration tests', () => {
       .then(() => done())
       .catch(done);
     });
+
 
     it('setting will result in being created', (done) => {
       const payload = {

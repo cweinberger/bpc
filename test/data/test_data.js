@@ -51,7 +51,7 @@ module.exports = {
     },
     simple_third_user: {
       _id: new ObjectID("5b3212844e094108d0e8a783"),
-      id: 'third_user@berlingskemedia.dk',
+      id: '5347895384975934842758',
       email: 'third_user@berlingskemedia.dk',
       provider: 'gigya',
       gigya: {
@@ -73,7 +73,7 @@ module.exports = {
     },
     user_with_no_datascopes: {
       _id: new ObjectID("5b32128d4e094108d0e8a784"),
-      id: 'user_with_no_datascopes',
+      id: '5347895384975934842759',
       email: 'user_with_no_datascopes@berlingskemedia.dk',
       provider: 'gigya',
       gigya: {
@@ -241,7 +241,7 @@ module.exports = {
     },
     app_with_anonymous_scope: {
       id: 'app_with_anonymous_scope',
-      scope: ['anonymous', 'anothernotanonynmousscope'],
+      scope: ['anonymous', 'a_private_scope'],
       key: '90835fgfgfjtregjefre34jvcxvxkjfed89043lkgle',
       algorithm: 'sha256',
       settings: {
@@ -353,6 +353,7 @@ module.exports = {
     }
   },
 
+  anonymous_users: {},
 
   deleted_users: {},
 

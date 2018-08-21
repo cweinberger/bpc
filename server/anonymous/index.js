@@ -33,6 +33,7 @@ module.exports.register = function (server, options, next) {
     strictHeader: false // don't allow violations of RFC 6265
   });
 
+
   server.route({
     method: 'GET',
     path: '/ticket',
@@ -50,7 +51,7 @@ module.exports.register = function (server, options, next) {
         }
       }
     },
-    handler: createAnonymousTicket
+    handler: getAnonymousTicket
   });
 
 
@@ -70,6 +71,7 @@ module.exports.register = function (server, options, next) {
     }
   });
 
+
   server.route({
     method: 'GET',
     path: '/ticket/exists',
@@ -84,9 +86,10 @@ module.exports.register = function (server, options, next) {
     handler: hasAnonymousUserId
   });
 
+
   server.route({
     method: 'GET',
-    path: '/audata',
+    path: '/data',
     config: {
       auth: {
         access: {
@@ -100,14 +103,8 @@ module.exports.register = function (server, options, next) {
         failAction: 'log'
       }
     },
-    handler: function(request, reply){
-      const ticket = request.auth.credentials;
-
-      getAnonymousPermissions(ticket)
-      .then(result => reply(result))
-      .catch(err => reply(err));
-    }
-  })
+    handler: getAnonymousData
+  });
 
   next();
 };
@@ -119,10 +116,14 @@ module.exports.register.attributes = {
 };
 
 
-function createAnonymousTicket(request, reply) {
-  let app_id = request.method === 'get' ? request.query.app : request.payload.app;
-  let auid = request.state.auid;
+function getAnonymousTicket(request, reply) {
+  let app_id = request.query.app;
   let auid_generated = false;
+  let auid = request.state.auid
+    ? request.state.auid
+    : request.headers['x-bpc-auid']
+      ? request.headers['x-bpc-auid']
+      : null;
 
   // console.log('host', request.info.host);
   // console.log('hostname', request.info.hostname);
@@ -151,6 +152,8 @@ function createAnonymousTicket(request, reply) {
     reply.state('auid', auid);
   }
 
+  createAnonymousUser({auid: auid});
+
   // The client wants a redirect. We don't need the ticket in this case. We got the auid cookie already.
   if (request.query.returnUrl) {
     return reply
@@ -158,8 +161,47 @@ function createAnonymousTicket(request, reply) {
     .header('X-AUID-GENERATED', auid_generated ? 'true' : 'false');
   }
 
-  // The client has not given an app id. This means we cannot issue a ticket. But the auid cookie is still relevant.
-  if (!app_id) {
+  if (app_id) {
+
+    findApplication(app_id)
+    .then(app => {
+  
+      // We are fixing/preventing the scope on an anonymous ticket to be anything else than "anonymous"
+      app.scope = ['anonymous'];
+  
+      // Dynamic grant. Will not be stored anywhere.
+      // But can be parsed in loadGrantFunc using the id.
+      let grant = {
+        app: app.id,
+        user: auid,
+        exp: null,
+        scope: ['anonymous']
+      };
+  
+      const oneHour = 1000 * 60 * 60;
+      const oneYear = oneHour * 24 * 354;
+      grant.exp = Oz.hawk.utils.now() + oneHour;
+      // grant.exp = Oz.hawk.utils.now() + oneYear;
+  
+      grant.id = 'agid**' + new Buffer(JSON.stringify(grant)).toString('base64');
+  
+      Oz.ticket.issue(app, grant, ENCRYPTIONPASSWORD, {}, (err, ticket) => {
+        if (err) {
+          console.error(err);
+          return reply(err);
+        } else {
+          return reply(ticket)
+          .header('X-AUID-GENERATED', auid_generated ? 'true' : 'false');
+        }
+      });
+    })
+    .catch(err => {
+      reply(err);
+    });
+
+  } else {
+    // The client has not given an app id. This means we cannot issue a ticket. But the auid cookie is still relevant.
+    
     // If we have a referrer, we redirect to that.
     if (request.info.referrer) {
       return reply
@@ -168,46 +210,10 @@ function createAnonymousTicket(request, reply) {
     // Otherwise a simple 200 OK with the user id.
     } else {
       return reply
-      .response({user: auid})
+      .response({ user: auid })
       .header('X-AUID-GENERATED', auid_generated ? 'true' : 'false');
     }
   }
-
-  return findApplication(app_id)
-  .then(app => {
-
-    // We are fixing/preventing the scope on an anonymous ticket to be anything else than "anonymous"
-    app.scope = ['anonymous'];
-
-    // Dynamic grant. Will not be stored anywhere.
-    // But can be parsed in loadGrantFunc using the id.
-    let grant = {
-      app: app.id,
-      user: auid,
-      exp: null,
-      scope: ['anonymous']
-    };
-
-    const oneHour = 1000 * 60 * 60;
-    const oneYear = oneHour * 24 * 354;
-    grant.exp = Oz.hawk.utils.now() + oneHour;
-    // grant.exp = Oz.hawk.utils.now() + oneYear;
-
-    grant.id = 'agid**' + new Buffer(JSON.stringify(grant)).toString('base64');
-
-    Oz.ticket.issue(app, grant, ENCRYPTIONPASSWORD, {}, (err, ticket) => {
-      if (err) {
-        console.error(err);
-        return reply(err);
-      } else {
-        return reply(ticket)
-        .header('X-AUID-GENERATED', auid_generated ? 'true' : 'false');
-      }
-    });
-  })
-  .catch(err => {
-    reply(err);
-  });
 }
 
 
@@ -263,30 +269,58 @@ function hasAnonymousUserId(request, reply) {
 }
 
 
-function getAnonymousPermissions({user}) {
+function createAnonymousUser({auid}){
 
-  if (!user) {
-    return Promise.reject(Boom.badRequest('user missing'));
+  if(!validAUID(auid)){
+    return Promise.reject();
   }
 
   const filter = {
-    id: user
+    id: auid    
   };
 
   const update = {
     $currentDate: {
-      'lastFetched': { $type: "date" }
-    },
-    $setOnInsert: {
-      provider: 'anonymous'
+      lastLogin: { $type: "date" }
     },
     $set: {
-      'expiresAt': new Date(new Date().setMonth(new Date().getMonth() + 6))
+      expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6))
+    },
+    $setOnInsert: {
+      provider: 'anonymous',
+      createdAt: new Date(),
+      dataScopes: {}
     }
   };
 
   const options = {
-    upsert: true,
+    upsert: true
+  };
+
+  return MongoDB.collection('users')
+  .updateOne(filter, update, options);
+}
+
+
+function getAnonymousData(request, reply){
+
+  const ticket = request.auth.credentials;
+
+  const filter = {
+    id: ticket.user
+  };
+
+  const update = {
+    $currentDate: {
+      lastFetched: { $type: "date" }
+    },
+    $set: {
+      expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6))
+    }
+  };
+
+  const options = {
+    upsert: false,
     projection: {
       _id: 0,
       'dataScopes.anonymous': 1
@@ -296,17 +330,11 @@ function getAnonymousPermissions({user}) {
   return MongoDB.collection('users')
   .findOneAndUpdate(filter, update, options)
   .then(result => {
-    if (result.n === 0 || result.value === null) {
-      return Promise.resolve(null);
-    }
-
-    const user = result.value;
-
-    if (user.dataScopes === undefined || user.dataScopes === null) {
-      return Promise.resolve(null);
+    if (result.lastErrorObject.updatedExisting) {
+      return reply(result.value.dataScopes.anonymous);
     } else {
-      return Promise.resolve(user.dataScopes.anonymous);
+      return reply(Boom.notFound());
     }
-
-  });
-};
+  })
+  .catch(err => reply(err));
+}

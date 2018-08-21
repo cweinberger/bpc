@@ -141,7 +141,7 @@ module.exports = {
       permissions: request.payload
     })
     .then(result => {
-      if (result.value === null || result.n === 0) {
+      if (result.value === null || result.lastErrorObject.n === 0) {
         reply(Boom.notFound());
       } else {
         reply(result.value.dataScopes[request.params.scope]);
@@ -300,7 +300,8 @@ function updatePermissions({user, scope, permissions}) {
 
   const options = {
     projection: projection,
-    returnOriginal: false
+    returnNewDocument: true, // MongoDB
+    returnOriginal: false // Node-driver
   };
 
   return MongoDB.collection('users')

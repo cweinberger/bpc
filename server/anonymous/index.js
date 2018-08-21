@@ -106,6 +106,46 @@ module.exports.register = function (server, options, next) {
     handler: getAnonymousData
   });
 
+
+  server.route({
+    method: 'POST',
+    path: '/data',
+    config: {
+      auth: {
+        access: {
+          scope: ['anonymous'],
+          entity: 'user' // <-- Important. Apps cannot request permissions with specifying what {user} to get
+        }
+      },
+      cors: corsRules,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: postAnonymousData
+  });
+
+
+  server.route({
+    method: 'PATCH',
+    path: '/data',
+    config: {
+      auth: {
+        access: {
+          scope: ['anonymous'],
+          entity: 'user' // <-- Important. Apps cannot request permissions with specifying what {user} to get
+        }
+      },
+      cors: corsRules,
+      state: {
+        parse: true,
+        failAction: 'log'
+      }
+    },
+    handler: patchAnonymousData
+  });
+
   next();
 };
 
@@ -276,7 +316,8 @@ function createAnonymousUser({auid}){
   }
 
   const filter = {
-    id: auid    
+    id: auid,
+    provider: 'anonymous'
   };
 
   const update = {
@@ -287,9 +328,8 @@ function createAnonymousUser({auid}){
       expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 6))
     },
     $setOnInsert: {
-      provider: 'anonymous',
       createdAt: new Date(),
-      dataScopes: {}
+      dataUser: {}
     }
   };
 
@@ -307,7 +347,8 @@ function getAnonymousData(request, reply){
   const ticket = request.auth.credentials;
 
   const filter = {
-    id: ticket.user
+    id: ticket.user,
+    provider: 'anonymous'
   };
 
   const update = {
@@ -323,7 +364,7 @@ function getAnonymousData(request, reply){
     upsert: false,
     projection: {
       _id: 0,
-      'dataScopes.anonymous': 1
+      'dataUser.anonymous': 1
     }
   };
 
@@ -331,10 +372,52 @@ function getAnonymousData(request, reply){
   .findOneAndUpdate(filter, update, options)
   .then(result => {
     if (result.lastErrorObject.updatedExisting) {
-      return reply(result.value.dataScopes.anonymous);
+      return reply(result.value.dataUser.anonymous);
     } else {
       return reply(Boom.notFound());
     }
   })
   .catch(err => reply(err));
+}
+
+
+function postAnonymousData(request, reply){
+
+  const ticket = request.auth.credentials;
+  const userData = request.payload;
+
+  const filter = {
+    id: ticket.user,
+    provider: 'anonymous'
+  };
+
+  let set = {};
+
+  Object.keys(userData).forEach(function(field){
+    set[`dataUser.anonymous.${field}`] = userData[field];
+  });
+
+  const update = {
+    $currentDate: { 'lastUpdated': { $type: "date" } },
+    $set: set
+  };
+
+  const options = {
+    upsert: false
+  };
+
+  return MongoDB.collection('users')
+  .updateOne(filter, update, options)
+  .then(result => {
+    if (result.result.n === 0) {
+      reply(Boom.notFound());
+    } else {
+      reply({'status': 'ok'});
+    }
+  });
+}
+
+
+function patchAnonymousData(request, reply){
+  reply(Boom.notImplemented());
 }

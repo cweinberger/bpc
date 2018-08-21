@@ -141,7 +141,7 @@ describe('anonymous users - integration tests', () => {
           expect(result.length).to.equal(1);
           expect(result[0].lastLogin).to.be.a.date();
           expect(result[0].expiresAt).to.be.a.date();
-          expect(result[0].dataScopes).to.be.an.object();
+          expect(result[0].dataUser).to.be.an.object();
         })
         .then(() => done())
         .catch(done);
@@ -197,6 +197,46 @@ describe('anonymous users - integration tests', () => {
           expect(result.length).to.equal(1);
           expect(result[0].lastFetched).to.be.a.date();
           expect(result[0].expiresAt).to.be.a.date();
+        })
+        .then(() => done())
+        .catch(done);
+      });
+
+
+      it('setting anonymous user permissions with anonymous ticket', (done) => {
+
+        Bpc.request({
+          method: 'POST',
+          url: '/au/data',
+          payload: {
+            some_user_data: 'ABCD'
+          }
+        },
+        anonymousUserTicket)
+        .then(response => {
+          expect(response.statusCode).to.equal(200);
+        })
+        .then(() => MongoDB.collection('users').find({ id: known_auid }).toArray())
+        .then(result => {
+          expect(result.length).to.equal(1);
+          expect(result[0].dataUser).to.be.an.object();
+          expect(result[0].dataUser.anonymous.some_user_data).to.be.equal('ABCD');
+        })
+        .then(() => done())
+        .catch(done);
+      });
+
+
+      it('using the anonymous ticket for allowed anonymous scope - but is empty', (done) => {
+
+        Bpc.request({
+          method: 'GET',
+          url: '/permissions/anonymous'
+        },
+        anonymousUserTicket)
+        .then(response => {
+          expect(response.statusCode).to.equal(200);
+          expect(response.result).to.equal({});
         })
         .then(() => done())
         .catch(done);
@@ -276,22 +316,6 @@ describe('anonymous users - integration tests', () => {
       });
 
 
-      it('getting anonymous user permissions with anonymous ticket', (done) => {
-
-        Bpc.request({
-          method: 'GET',
-          url: '/au/data'
-        },
-        anonymousUserTicket)
-        .then(response => {
-          expect(response.statusCode).to.equal(200);
-          expect(response.result.buy_model).to.equal('A');
-        })
-        .then(() => done())
-        .catch(done);
-      });
-
-
       it('getting anonymous user permissions with app ticket', (done) => {
 
         Bpc.request({
@@ -314,12 +338,18 @@ describe('anonymous users - integration tests', () => {
           method: 'POST',
           url: `/permissions/${known_auid}/a_private_scope`,
           payload: {
-            some_user_data: 'this_is_some_data_in_the_private_scope'
+            sell_model: 'C'
           }
         },
         appTicket)
         .then(response => {
           expect(response.statusCode).to.equal(200);
+        })
+        .then(() => MongoDB.collection('users').find({ id: known_auid }).toArray())
+        .then(result => {
+          expect(result.length).to.equal(1);
+          expect(result[0].dataScopes.a_private_scope).to.be.an.object();
+          expect(result[0].dataScopes.a_private_scope.sell_model).to.be.equal('C');
         })
         .then(() => done())
         .catch(done);
@@ -335,7 +365,7 @@ describe('anonymous users - integration tests', () => {
         appTicket)
         .then(response => {
           expect(response.statusCode).to.equal(200);
-          expect(response.result.some_user_data).to.equal('this_is_some_data_in_the_private_scope');
+          expect(response.result.sell_model).to.equal('C');
         })
         .then(() => done())
         .catch(done);

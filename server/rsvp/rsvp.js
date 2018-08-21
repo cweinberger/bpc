@@ -188,10 +188,13 @@ function findUser(user) {
     },
     {
       $currentDate: { 'lastLogin': { $type: "date" } },
+      // We use operator $set for these values, because:
       $set: {
-        id: user.id,
-        email: user.email.toLowerCase(),
-        provider: user.provider
+        id: user.id,                        //  1) in case the user was created (upsert) from a POST /permissions/{email}
+        email: user.email.toLowerCase(),    //  2) update the email to the newest. Always useful.
+        provider: user.provider             //  3) in case the record is an old record without provider.
+                                            // When we no longer get {email} in POST /permission and all records have a provider,
+                                            //  we can move "id" and "provider" to operator @setOnInsert
       },
       $setOnInsert: {
         createdAt: new Date(),

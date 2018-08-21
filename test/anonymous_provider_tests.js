@@ -5,7 +5,6 @@
 const sinon = require('sinon');
 const test_data = require('./data/test_data');
 const Bpc = require('./helpers/bpc_helper');
-const Gigya = require('./helpers/gigya_stub');
 const MongoDB = require('./helpers/mongodb_helper');
 
 // Test shortcuts.
@@ -24,12 +23,12 @@ describe('anonymous users - integration tests', () => {
 
 
 
-  describe('a new anonymous user', () => {
+  describe('a new anonymous user getting ticket', () => {
 
     const app = test_data.applications.app_with_anonymous_scope;
     let anonymousUserTicket;
 
-    it('getting ticket and gives new auid', (done) => {
+    it('with app id succeeds', (done) => {
 
       Bpc.request({
         method: 'GET',
@@ -51,11 +50,17 @@ describe('anonymous users - integration tests', () => {
         expect(anonymousUserTicket.grant).to.startWith('agid**');
         expect(anonymousUserTicket.app).to.equal(app.id);
       })
+      .then(() => MongoDB.collection('users').find({ id: anonymousUserTicket.user }).toArray())
+      .then(result => {
+        expect(result).not.to.be.null();
+        expect(result.length).to.equal(1);
+      })
       .then(() => done())
       .catch(done);
     });
 
-    it('omitting app id only gives new auid', (done) => {
+
+    it('omitting app id only gives new auid and no ticket', (done) => {
 
       Bpc.request({
         method: 'GET',
@@ -99,79 +104,20 @@ describe('anonymous users - integration tests', () => {
 
     // A random, but valid UUID
     const known_auid = 'auid**e64f340a-84c6-466f-ad72-b5f9966e36fa';
-
-
-    describe('getting data with an app ticket for a known anonymous user', () => {
-
-      const app = test_data.applications.app_with_anonymous_scope;
-      var appTicket;
-
-      // Getting the appTicket
-      before(done => {
-        Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
-        .then(response => {
-          appTicket = response.result;
-        })
-        .then(() => done())
-        .catch(done);
-      });
-
-      it('getting user data fails if the anonymous scope is empty', (done) => {
-
-        Bpc.request({ method: 'GET', url: '/permissions/' + known_auid + '/anonymous'}, appTicket)
-        .then(response => {
-          // console.log('response', response);
-          expect(response.statusCode).to.equal(404);
-        })
-        .then(() => done())
-        .catch(done);
-      });
-
-
-      it('setting new anonymous user data in the anonymous scope', (done) => {
-
-        var payload = {
-          buy_model: 'A'
-        };
-
-        Bpc.request({ method: 'POST', url: '/permissions/' + known_auid + '/anonymous', payload: payload}, appTicket)
-        .then(response => {
-          expect(response.statusCode).to.equal(200);
-        })
-        .then(() => done())
-        // TODO: test for ttl in MongoDB collection
-        .catch(done);
-      });
-
-
-      it('getting anonymous user permissions now returns data', (done) => {
-
-        Bpc.request({ method: 'GET', url: '/permissions/' + known_auid + '/anonymous'}, appTicket)
-        .then(response => {
-          expect(response.statusCode).to.equal(200);
-          expect(response.result.buy_model).to.equal('A');
-        })
-        .then(() => done())
-        .catch(done);
-      });
-    });
-
+    let anonymousUserTicket;
 
     describe('using the auid in a cookie', () => {
 
       const app = test_data.applications.app_with_anonymous_scope;
-      let anonymousUserTicket;
 
-      it('getting anonymous ticket for existing auid', (done) => {
-
-        const headers = {
-          'cookie': 'auid=' + known_auid
-        };
+      it('getting anonymous ticket for existing auid in custom header', (done) => {
 
         Bpc.request({
           method: 'GET',
           url: `/au/ticket?app=${app.id}`,
-          headers: headers
+          headers: {
+            'X-BPC-AUID': known_auid
+          }
         })
         .then(response => {
 
@@ -190,13 +136,153 @@ describe('anonymous users - integration tests', () => {
           expect(anonymousUserTicket.grant).to.startWith('agid**');
           expect(anonymousUserTicket.app).to.equal(app.id);
         })
+        .then(() => MongoDB.collection('users').find({ id: known_auid }).toArray())
+        .then(result => {
+          expect(result.length).to.equal(1);
+          expect(result[0].lastLogin).to.be.a.date();
+          expect(result[0].expiresAt).to.be.a.date();
+          expect(result[0].dataScopes).to.be.an.object();
+        })
         .then(() => done())
         .catch(done);
       });
 
 
-      it('getting data using the anonymous ticket', (done) => {
-        Bpc.request({ method: 'GET', url: '/au/audata'}, anonymousUserTicket)
+      it('getting anonymous ticket for existing auid in cookie', (done) => {
+
+        Bpc.request({
+          method: 'GET',
+          url: `/au/ticket?app=${app.id}`,
+          headers: {
+            'cookie': 'auid=' + known_auid
+          }
+        })
+        .then(response => {
+
+          expect(response.statusCode).to.be.equal(200);
+          expect(response.headers).to.not.include('set-cookie');
+          expect(response.result.exp).to.not.be.null();
+          expect(response.result.exp).to.be.above(0);
+          expect(response.result.scope).to.be.an.array();
+          expect(response.result.scope).to.have.length(1);
+          expect(response.result.scope).to.only.include('anonymous');
+          expect(response.result.user).to.startWith('auid**');
+          expect(response.result.user).to.be.equal(known_auid);
+          expect(response.result.grant).to.startWith('agid**');
+          expect(response.result.app).to.equal(app.id);
+        })
+        .then(() => MongoDB.collection('users').find({ id: known_auid }).toArray())
+        .then(result => {
+          expect(result.length).to.equal(1);
+          expect(result[0].lastLogin).to.be.a.date();
+          expect(result[0].expiresAt).to.be.a.date();
+        })
+        .then(() => done())
+        .catch(done);
+      });
+
+
+      it('getting data using the anonymous ticket creates user in MongoDB', (done) => {
+
+        Bpc.request({
+          method: 'GET',
+          url: '/au/data'
+        },
+        anonymousUserTicket)
+        .then(response => {
+          expect(response.statusCode).to.equal(200);
+        })
+        .then(() => MongoDB.collection('users').find({ id: known_auid }).toArray())
+        .then(result => {
+          expect(result.length).to.equal(1);
+          expect(result[0].lastFetched).to.be.a.date();
+          expect(result[0].expiresAt).to.be.a.date();
+        })
+        .then(() => done())
+        .catch(done);
+      });
+
+
+      it('using the anonymous ticket for unallowed scope', (done) => {
+
+        Bpc.request({
+          method: 'GET',
+          url: '/permissions/a_private_scope'
+        },
+        anonymousUserTicket)
+        .then(response => {
+          expect(response.statusCode).to.equal(403);
+        })
+        .then(() => done())
+        .catch(done);
+      });
+
+    });
+
+
+    describe('getting data with an app ticket for a known anonymous user', () => {
+
+      const app = test_data.applications.app_with_anonymous_scope;
+      var appTicket;
+
+      // Getting the appTicket
+      before(done => {
+        Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
+        .then(response => {
+          appTicket = response.result;
+        })
+        .then(() => done())
+        .catch(done);
+      });
+
+
+      it('getting user data even if the anonymous scope is empty', (done) => {
+
+        Bpc.request({
+          method: 'GET',
+          url: '/permissions/' + known_auid + '/anonymous'
+        },
+        appTicket)
+        .then(response => {
+          expect(response.statusCode).to.equal(200);
+        })
+        .then(() => done())
+        .catch(done);
+      });
+
+
+      it('setting new anonymous user data in the anonymous scope', (done) => {
+
+        Bpc.request({
+          method: 'POST',
+          url: '/permissions/' + known_auid + '/anonymous',
+          payload: {
+            buy_model: 'A'
+          }
+        },
+        appTicket)
+        .then(response => {
+          expect(response.statusCode).to.equal(200);
+        })
+        .then(() => MongoDB.collection('users').find({ id: known_auid }).toArray())
+        .then(result => {
+          expect(result.length).to.equal(1);
+          expect(result[0].dataScopes.anonymous).to.be.an.object();
+          expect(result[0].dataScopes.anonymous.buy_model).to.be.equal('A');
+        })
+        .then(() => done())
+        // TODO: test for ttl in MongoDB collection
+        .catch(done);
+      });
+
+
+      it('getting anonymous user permissions with anonymous ticket', (done) => {
+
+        Bpc.request({
+          method: 'GET',
+          url: '/au/data'
+        },
+        anonymousUserTicket)
         .then(response => {
           expect(response.statusCode).to.equal(200);
           expect(response.result.buy_model).to.equal('A');
@@ -206,86 +292,54 @@ describe('anonymous users - integration tests', () => {
       });
 
 
-      it('using the anonymous ticket for unallowed scope', (done) => {
-        Bpc.request({ method: 'GET', url: '/permissions/a_private_scope'}, anonymousUserTicket)
+      it('getting anonymous user permissions with app ticket', (done) => {
+
+        Bpc.request({
+          method: 'GET',
+          url: '/permissions/' + known_auid + '/anonymous'
+        },
+        appTicket)
         .then(response => {
-          expect(response.statusCode).to.equal(403);
+          expect(response.statusCode).to.equal(200);
+          expect(response.result.buy_model).to.equal('A');
         })
         .then(() => done())
         .catch(done);
       });
 
-    });
-  });
 
+      it('setting new user data in the private scope', (done) => {
 
-  describe('using anonymous users in a private scope', () => {
-
-    const app = test_data.applications.app_with_anonymous_scope;
-    let appTicket;
-    let new_auid;
-    let anonymousUserTicket;
-
-
-    before(done => {
-      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
-      .then(response => {
-        appTicket = response.result;
-      })
-      .then(() => done())
-      .catch(done);
-    });
+        Bpc.request({
+          method: 'POST',
+          url: `/permissions/${known_auid}/a_private_scope`,
+          payload: {
+            some_user_data: 'this_is_some_data_in_the_private_scope'
+          }
+        },
+        appTicket)
+        .then(response => {
+          expect(response.statusCode).to.equal(200);
+        })
+        .then(() => done())
+        .catch(done);
+      });
   
-    it('an unknown user getting ticket and gets new auid', (done) => {
   
-      Bpc.request({
-        method: 'GET',
-        url: `/au/ticket?app=${app.id}`
-      })
-      .then(response => {
-        expect(response.statusCode).to.be.equal(200);
-        new_auid = response.result.user;
-        expect(new_auid).to.startWith('auid**');
-      })
-      .then(() => done())
-      .catch(done);
-    });
+      it('getting the user data from the private scope', (done) => {
 
-
-    it('setting new user data in the private scope', (done) => {
-
-      var payload = {
-        some_user_data: 'this_is_some_data_in_the_private_scope'
-      };
-
-      Bpc.request(
-      {
-        method: 'POST',
-        url: `/permissions/${new_auid}/a_private_scope`,
-        payload: payload
-      },
-      appTicket)
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-      })
-      .then(() => done())
-      .catch(done);
-    });
-
-
-    it('getting the user data from the private scope', (done) => {
-
-      var payload = {
-        some_user_data: 'this_is_some_data_in_the_private_scope'
-      };
-
-      Bpc.request({ url: `/permissions/${new_auid}/a_private_scope` }, appTicket)
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-        expect(response.result.some_user_data).to.equal('this_is_some_data_in_the_private_scope');
-      })
-      .then(() => done())
-      .catch(done);
+        Bpc.request({
+          method: 'GET',
+          url: `/permissions/${known_auid}/a_private_scope`
+        },
+        appTicket)
+        .then(response => {
+          expect(response.statusCode).to.equal(200);
+          expect(response.result.some_user_data).to.equal('this_is_some_data_in_the_private_scope');
+        })
+        .then(() => done())
+        .catch(done);
+      });
     });
   });
 });

@@ -72,7 +72,8 @@ module.exports.register = function (server, options, next) {
         provider: 1,
         createdAt: 1,
         lastUpdated: 1,
-        lastFetched: 1
+        lastFetched: 1,
+        lastLogin: 1
       })
       .toArray(reply);
     }

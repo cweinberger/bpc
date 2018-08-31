@@ -183,7 +183,6 @@ describe('application tests', () => {
         id: 'valid_app',
         scope: [],
         delegate: false,
-        key: 'something_long_and_random',
         algorithm: 'sha256',
         settings: {
           provider: 'gigya'
@@ -202,7 +201,7 @@ describe('application tests', () => {
     });
 
 
-    it('create without settings is not allowed', done => {
+    it('create without settings use default values', done => {
 
       const newApp = {
         id: 'djkhfksh',
@@ -214,20 +213,27 @@ describe('application tests', () => {
 
       Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
       .then(response => {
-        expect(response.statusCode).to.equal(400);
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => MongoDB.collection('applications').findOne({ id: newApp.id}))
+      .then(savedApp => {
+        expect(savedApp.algorithm).to.equal(newApp.algorithm);
+        expect(savedApp.scope).to.equal(newApp.scope);
+        expect(savedApp.key).to.not.equal(newApp.key);
+        expect(savedApp.settings).to.be.an.object();
+        expect(savedApp.settings.provider).to.equal('gigya');
       })
       .then(() => done())
       .catch(done);
     });
 
 
-    it('create without provider is not allowed', done => {
+    it('create without provider will set default value', done => {
 
       const newApp = {
         id: 'fjhsdkj',
         scope: [],
         delegate: false,
-        key: 'something_long_and_random',
         algorithm: 'sha256',
         settings: {
           someSetting: true
@@ -236,7 +242,13 @@ describe('application tests', () => {
 
       Bpc.request({ url: '/applications', method: 'POST', payload: newApp }, consoleUserTicket)
       .then(response => {
-        expect(response.statusCode).to.equal(400);
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => MongoDB.collection('applications').findOne({ id: newApp.id}))
+      .then(savedApp => {
+        expect(savedApp.settings).to.be.an.object();
+        expect(savedApp.settings.provider).to.equal('gigya');
+        expect(savedApp.settings.someSetting).to.equal(true);
       })
       .then(() => done())
       .catch(done);
@@ -393,6 +405,31 @@ describe('application tests', () => {
         expect(savedApp.scope).to.be.an.array();
         expect(savedApp.scope).to.once.include('test_scope');
         expect(savedApp.key).to.not.be.equal('somenewkeythatisignored');
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('update a setting on app does not change setttings.provider to default', done => {
+      var app = test_data.applications.valid_google_app;
+
+      app.settings.allowAnonymousUsers = true;
+
+      const updateRequest = {
+        url: `/applications/${app.id}`,
+        method: 'PUT',
+        payload: JSON.stringify(app)
+      };
+
+      Bpc.request(updateRequest, consoleSuperAdminUserTicket)
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+        expect(response.result.status).to.equal('ok');
+      })
+      .then(() => MongoDB.collection('applications').findOne({ id: app.id}))
+      .then(savedApp => {
+        expect(savedApp.settings.provider).to.equal('google');
       })
       .then(() => done())
       .catch(done);

@@ -90,15 +90,15 @@ module.exports = {
   putApplication: function (request, reply) {
     let application = request.payload;
 
-    if (!application.settings) {
-      application.settings = {};
-    }
-
-    if (!application.settings.provider){
-      application.settings.provider = 'gigya';
-    }
-
     application.scope = makeArrayUnique(application.scope);
+
+    // Changing the settings-object to be dot-notation fields.
+    // This way we don't change the write-protected values e.g. provider, that is ignored in the Joi validation.
+    Object.keys(application.settings).forEach(k => {
+      application[`settings.${k}`] = application.settings[k];
+    });
+
+    delete application.settings;
 
     MongoDB.collection('applications')
     .updateOne(

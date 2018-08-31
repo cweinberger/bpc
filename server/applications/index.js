@@ -53,8 +53,8 @@ module.exports.register = function (server, options, next) {
           algorithm: Joi.string().default('sha256'),
           delegate: Joi.boolean().default(false),
           settings: Joi.object().keys({
-            provider: Joi.string().valid(['gigya', 'google']).required()
-          }).required().unknown(true)
+            provider: Joi.string().valid(['gigya', 'google']).default('gigya')
+          }).unknown(true).default({ provider:'gigya' })
         }
       }
     },
@@ -95,7 +95,7 @@ module.exports.register = function (server, options, next) {
           delegate: Joi.boolean(),
           settings: Joi.object().keys({
             provider: Joi.strip()
-          }).required().unknown(true)
+          }).unknown(true)
         }
       }
     },

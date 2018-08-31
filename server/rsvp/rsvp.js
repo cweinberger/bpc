@@ -221,8 +221,7 @@ function findUser(user) {
 
 function findGrant({app, user}) {
   
-  return MongoDB.collection('grants')
-  .findOne({
+  const filter = {
     app: app.id,
     $or: [
       // Trying to find a grant the new way - by using user._id
@@ -231,10 +230,25 @@ function findGrant({app, user}) {
       { user: user.id },
       { user: user.email }
     ]
-  })
-  .then(grant => {
+  };
 
-    if (grant) {
+  const update = {
+    $currentDate: { 'lastLogin': { $type: "date" } }
+  };
+
+  const options = {
+    projection: {
+      lastLogin: 0
+    }
+  };
+
+  return MongoDB.collection('grants')
+  .findOneAndUpdate(filter, update, options)
+  .then(result => {
+
+    if (result.lastErrorObject.updatedExisting) {
+      
+      let grant = result.value
 
       // Converting to new grant.user value
       if(!ObjectID.isValid(grant.user)) {

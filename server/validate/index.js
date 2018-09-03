@@ -13,6 +13,38 @@ const ENCRYPTIONPASSWORD = OzLoadFuncs.strategyOptions.oz.encryptionPassword;
 module.exports.register = function (server, options, next) {
 
   server.route({
+    method: 'GET',
+    path: '/',
+    config: {
+      auth: {
+        access: {
+          entity: 'any'
+        }
+      }
+    },
+    handler: function(request, reply) {
+      reply();
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/{scope}',
+    config: {
+      auth: {
+        access: {
+          scope: ['{params.scope}'],
+          entity: 'any'
+        }
+      }
+    },
+    handler: function(request, reply) {
+      reply();
+    }
+  });
+
+
+  server.route({
     method: 'POST',
     path: '/',
     config: {

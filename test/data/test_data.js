@@ -115,6 +115,24 @@ module.exports = {
         }
       }
     },
+    calculate_scope_user: {
+      "_id": new ObjectID("5b891733a4da998f2845e025"),
+      "email": "gorb.alexey@gmail.com",
+      "provider": "gigya",
+      "id": "gorb.alexey@gmail.com",
+      "dataScopes": {
+        "weekendavisen": {
+          "roles": [{
+            "access": "calculate",
+            "weekday_rule": "service_type_access",
+            "weekday_pattern": 127,
+            "role": "waa_epaper",
+            "type": "company",
+            "entity_id": "test"
+          }],
+        }
+      }
+    },
     console_admin: {
       _id: new ObjectID("5b32129f4e094108d0e8a787"),
       id: '6765636276327632763517531',
@@ -166,6 +184,15 @@ module.exports = {
       id: 'berlingske',
       scope: ['berlingske'],
       key: 'witf745itwn7ey4otnw7eyi4t7syeir7bytise7rbyi',
+      algorithm: 'sha256',
+      settings: {
+        provider: 'gigya'
+      }
+    },
+    weekendavisen: {
+      id: 'weekendavisen',
+      scope: ['weekendavisen'],
+      key: 'witf745whateverotnw7eyi4t7syeir7bytise7rbyi',
       algorithm: 'sha256',
       settings: {
         provider: 'gigya'

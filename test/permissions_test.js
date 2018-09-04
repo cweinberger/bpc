@@ -386,4 +386,37 @@ describe('permissions - integration tests', () => {
     });
 
   });
-});
+
+  describe('calculate users access object based on roles', () => {
+
+    const app = test_data.applications.weekendavisen;
+    const user = test_data.users.calculate_scope_user;
+    var appTicket;
+
+    before(done => {
+      Bpc.request({ method: 'POST', url: '/ticket/app' }, app)
+        .then(response => {
+          expect(response.statusCode).to.equal(200);
+          appTicket = response.result;
+        })
+        .then(() => done())
+        .catch(done);
+    });
+
+    it('should calculate the user roles and present an access field with boolean values depending on the user data for each role', (done) => {
+      const accessRequest = {
+        url: `/permissions/${user.id}/weekendavisen`
+      };
+      Bpc.request(accessRequest, appTicket)
+        .then(response => {
+          expect(response.statusCode).to.equal(200);
+          expect(response.result.access).to.be.an.object();
+          expect(response.result.access.waa_epaper).to.be.a.boolean();
+          expect(response.result.access.waa_epaper).to.equal(true);
+        })
+        .then(() => done())
+        .catch(done);
+    });
+
+  });
+  });

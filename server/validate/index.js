@@ -103,6 +103,10 @@ module.exports.register = function (server, options, next) {
           return reply(Boom.forbidden());
         }
 
+        if(result.exp <= Oz.hawk.utils.now()) {
+          return reply(Boom.forbidden());
+        }
+
         // If the validator wants the request to be only valid for a specific app
         if (request.payload.app) {
           if (request.payload.app != result.app) {

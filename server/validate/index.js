@@ -84,7 +84,6 @@ module.exports.register = function (server, options, next) {
 
       Oz.server.authenticate(payload, ENCRYPTIONPASSWORD, ozOptions, function(err, result) {
         if (err) {
-          console.error(err);
           return reply(Boom.forbidden());
         }
 

@@ -216,8 +216,8 @@ describe('validate - integration tests', () => {
 
       // This is the code the API would execute to validate the client request
       const validatePayload = {
-        method: externalAPImethod,
         url: externalAPIurl,
+        method: externalAPImethod,
         authorization: authorization
       };
 
@@ -228,6 +228,113 @@ describe('validate - integration tests', () => {
       .then(() => done())
       .catch(done);
     });
+
+
+    it('a simple validation of missing method fails', (done) => {
+
+      // This is the come some client app would execute
+      const externalAPImethod = 'GET';
+      const externalAPIurl = 'http://some.api/resource_a';
+
+      const hawkHeader = Hawk.client.header(
+        externalAPIurl,
+        externalAPImethod,
+        {
+          credentials: appTicketA,
+          app: appTicketA.app
+        }
+      );
+      
+      expect(hawkHeader.field).to.not.be.null()
+      expect(hawkHeader.err).to.be.undefined()
+      
+      let authorization = hawkHeader.field;
+
+      // This is the code the API would execute to validate the client request
+      const validatePayload = {
+        url: externalAPIurl,
+        authorization: authorization
+      };
+
+      Bpc.request({ method: 'POST', url: '/validate', payload: validatePayload }, appTicketB)
+      .then((response) => {
+        expect(response.statusCode).to.equal(400);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+    it('a simple validation of missing url fails', (done) => {
+
+      // This is the come some client app would execute
+      const externalAPImethod = 'GET';
+      const externalAPIurl = 'http://some.api/resource_a';
+
+      const hawkHeader = Hawk.client.header(
+        externalAPIurl,
+        externalAPImethod,
+        {
+          credentials: appTicketA,
+          app: appTicketA.app
+        }
+      );
+      
+      expect(hawkHeader.field).to.not.be.null()
+      expect(hawkHeader.err).to.be.undefined()
+      
+      let authorization = hawkHeader.field;
+
+      // This is the code the API would execute to validate the client request
+      const validatePayload = {
+        method: externalAPImethod,
+        authorization: authorization
+      };
+
+      Bpc.request({ method: 'POST', url: '/validate', payload: validatePayload }, appTicketB)
+      .then((response) => {
+        expect(response.statusCode).to.equal(400);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
+
+
+    it('a simple validation of auth header without url and method succeeds', (done) => {
+
+      // This is the come some client app would execute
+      const externalAPImethod = 'GET';
+      const externalAPIurl = 'http://some.api/resource_a';
+
+      const hawkHeader = Hawk.client.header(
+        externalAPIurl,
+        externalAPImethod,
+        {
+          credentials: appTicketA,
+          app: appTicketA.app
+        }
+      );
+      
+      expect(hawkHeader.field).to.not.be.null()
+      expect(hawkHeader.err).to.be.undefined()
+      
+      let authorization = hawkHeader.field;
+
+      // This is the code the API would execute to validate the client request
+      const validatePayload = {
+        authorization: authorization,
+        scope: ['bt']
+      };
+
+      Bpc.request({ method: 'POST', url: '/validate', payload: validatePayload }, appTicketB)
+      .then((response) => {
+        expect(response.statusCode).to.equal(200);
+      })
+      .then(() => done())
+      .catch(done);
+    });
+
 
 
     it('a simple validation of auth header with false url fails', (done) => {
@@ -253,8 +360,8 @@ describe('validate - integration tests', () => {
 
       // This is the code the API would execute to validate the client request
       const validatePayload = {
-        method: externalAPImethod,
         url: externalAPIurl,
+        method: externalAPImethod,
         authorization: authorization
       };
 
@@ -290,8 +397,8 @@ describe('validate - integration tests', () => {
 
       // This is the code the API would execute to validate the client request
       const validatePayload = {
-        method: externalAPImethod,
         url: externalAPIurl,
+        method: externalAPImethod,
         authorization: authorization
       };
 
@@ -326,8 +433,8 @@ describe('validate - integration tests', () => {
 
       // This is the code the API would execute to validate the client request
       const validatePayload = {
-        method: externalAPImethod,
         url: externalAPIurl,
+        method: externalAPImethod,
         authorization: authorization,
         scope: ['bt']
       };
@@ -363,8 +470,8 @@ describe('validate - integration tests', () => {
 
       // This is the code the API would execute to validate the client request
       const validatePayload = {
-        method: externalAPImethod,
         url: externalAPIurl,
+        method: externalAPImethod,
         authorization: authorization,
         scope: ['berlingske']
       };
@@ -400,8 +507,8 @@ describe('validate - integration tests', () => {
 
       // This is the code the API would execute to validate the client request
       const validatePayload = {
-        method: externalAPImethod,
         url: externalAPIurl,
+        method: externalAPImethod,
         authorization: authorization,
         app: 'bt'
       };
@@ -437,8 +544,8 @@ describe('validate - integration tests', () => {
 
       // This is the code the API would execute to validate the client request
       const validatePayload = {
-        method: externalAPImethod,
         url: externalAPIurl,
+        method: externalAPImethod,
         authorization: authorization,
         app: 'weekendavisen'
       };

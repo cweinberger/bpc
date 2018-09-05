@@ -54,35 +54,51 @@ module.exports.register = function (server, options, next) {
         }
       },
       validate: {
-        payload: {
-           method: Joi.string().uppercase().valid(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']).required(),
-           url: Joi.string().uri().required(),
+        payload: Joi.object().keys({
+           method: Joi.string().uppercase().valid(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']),
+           url: Joi.string().uri(),
            authorization: Joi.string().required(),
            app: Joi.string(),
            user: Joi.string(),
            scope: Joi.array().items(Joi.string()),
            permissions: Joi.any()
-         }
+         }).and('url', 'method') // url and method are either both required or none of them
       }
     },
     handler: function(request, reply) {
 
+      if(request.payload.url) {
 
-      var url = Url.parse(request.payload.url);
+        // This is the case where the clients want to validate the entire header
+        //  including url and method
 
-      var payload = {
-        method: request.payload.method,
-        url: url.path,
-        headers: {
-          host: url.host,
-          authorization: request.payload.authorization
-        },
-        connection: {
-          encrypted: url.protocol === 'https:'
-        }
-      };
+        var url = Url.parse(request.payload.url);
+  
+        var payload = {
+          method: request.payload.method,
+          url: url.path,
+          headers: {
+            host: url.host,
+            authorization: request.payload.authorization
+          },
+          connection: {
+            encrypted: url.protocol === 'https:'
+          }
+        };
+  
+        Oz.server.authenticate(payload, ENCRYPTIONPASSWORD, ozOptions, validateTicket);
 
-      Oz.server.authenticate(payload, ENCRYPTIONPASSWORD, ozOptions, function(err, result) {
+      } else {
+
+        // This is the case where the clients just want to validate the the ticket used to create the auth header
+        //  eg. scope, app, user
+
+        const parsedHeader = Oz.hawk.utils.parseAuthorizationHeader(request.payload.authorization);
+        Oz.ticket.parse(parsedHeader.id, ENCRYPTIONPASSWORD, {}, validateTicket);
+
+      }
+
+      function validateTicket(err, result) {
         if (err) {
           return reply(Boom.forbidden());
         }
@@ -124,7 +140,8 @@ module.exports.register = function (server, options, next) {
         }
 
         reply({'status': 'ok'});
-      });
+      }
+
     }
   });
 

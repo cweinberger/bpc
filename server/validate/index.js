@@ -143,7 +143,13 @@ module.exports.register = function (server, options, next) {
 
         }
 
-        reply({'status': 'ok'});
+        const data = {'status': 'ok'};
+        data.app = result.app;
+        data.user = result.user;
+        data.exp = result.exp;
+        data.scope = result.scope;
+
+        reply(data);
       }
 
     }

@@ -5,6 +5,7 @@ const Boom = require('boom');
 const Joi = require('joi');
 const ObjectID = require('mongodb').ObjectID;
 const MongoDB = require('./../mongo/mongodb_client');
+const Config = require('./../config');
 
 
 module.exports = {
@@ -214,6 +215,14 @@ function findPermissions({user, scope, scopeProjection}) {
     if (user.dataScopes === undefined || user.dataScopes === null) {
       return Promise.resolve({});
     } else {
+
+      Object.keys(user.dataScopes).forEach(function(scopeName) {
+        const scope = user.dataScopes[scopeName];
+        if (scope.roles && scope.roles instanceof Array && scope.roles.length > 0) {
+          scope.access = calculatePermissions(scope.roles);
+        }
+      });
+
       return Promise.resolve(user.dataScopes);
     }
 
@@ -315,6 +324,89 @@ function updatePermissions({user, scope, permissions}) {
     ].indexOf(operator) === -1;
   }
 };
+
+function calculatePermissions(roles) {
+  const access = {};
+  roles.forEach(function(roleData) {
+    if (!access.hasOwnProperty(roleData.role)) {
+      access[roleData.role] = false;
+    }
+    if (roleData.access === 'yes') {
+      access[roleData.role] = true;
+      return;
+    }
+    if (roleData.access === 'calculate') {
+      if (roleData.weekday_rule === 'service_type_access') {
+
+        const day = new Date().getDay();
+        if (check_holiday_pattern(roleData.weekday_pattern)) {
+          const holidayCheck = check_holiday(day);
+          if (holidayCheck) {
+            access[roleData.role] = true;
+            return;
+          }
+        }
+        const check = check_weekday_pattern(roleData.weekday_pattern, day);
+        if (check) {
+          access[roleData.role] = true;
+        }
+      }
+      else {
+        // This covers always and service_type_publication weekday_rule values.
+        access[roleData.role] = true;
+      }
+    }
+  });
+  return access;
+}
+
+function check_holiday() {
+  const today = new Date();
+  return Config.HOLIDAYS_DATES.some(d =>
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate());
+}
+
+function check_holiday_pattern(weekday_pattern) {
+  const holidayIncludedPatterns = [
+    0b1000000, // 64 - Sunday
+    0b1111100, // 124 - Wednesday to Sunday
+    0b1111000, // 120 - Thursday to Sunday
+    0b1110001, // 113 - Fri, Sat, Sun, Mon
+    0b1110000, // 113 - Fri, Sat, Sun
+    0b1100001,  // 97 - Sat, Sun, Mon
+    0b1100000,  // 96 - Sat, Sun
+    0b1000001,  // 65 - Sun, Mon
+    0b1111011, // 123 - Mon, Tue, Thu, Fri, Sat, Sun
+    0b0111011,  // 59 - Mon, Tue, Thu, Fri, Sat
+    // The following doesn't make any sense,
+    // the access is granted every day, so why care about holidays?
+    // 0b1111111, // 127 - All week
+  ];
+
+  return holidayIncludedPatterns.indexOf(weekday_pattern) !== -1;
+}
+
+
+function check_weekday_pattern(weekday_pattern, day) {
+  if (typeof weekday_pattern === 'string') {
+    weekday_pattern = parseInt(weekday_pattern, 10);
+  } else if(typeof weekday_pattern !== 'number') {
+    // throw new Error(`Invalid weekday_pattern`);
+    return false;
+  }
+
+  if (weekday_pattern === NaN) {
+    return false;
+  }
+
+  // Convert JavaScript weekday number to ISO
+  const weekday_in_iso_number = day === 0 ? 7 : day;
+  // Bitwise shi
+  const temp = weekday_pattern >> (weekday_in_iso_number - 1) & 1;
+  return Boolean(temp);
+}
 
 
 function stdFilter({input}){

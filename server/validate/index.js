@@ -122,7 +122,7 @@ module.exports.register = function (server, options, next) {
         }
 
         // If the validator wants the request to be only valid for app/user with a specific scope
-        if (request.payload.scope) {
+        if (request.payload.scope && request.payload.scope.length > 0) {
           var hasScope = request.payload.scope.some((s) => {
             return result.scope.indexOf(s) > -1;
           });

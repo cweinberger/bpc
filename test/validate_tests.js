@@ -510,6 +510,7 @@ describe('validate - integration tests', () => {
         url: externalAPIurl,
         method: externalAPImethod,
         authorization: authorization,
+        scope: [],
         app: 'bt'
       };
 

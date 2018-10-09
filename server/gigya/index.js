@@ -24,40 +24,44 @@ module.exports.register = function (server, options, next) {
       validate: {
         query: Joi.object().keys({
           id: Joi.string(),
-          email: Joi.string(),
+          email: Joi.string().email(),
           UID: Joi.string()
-        }).xor('id', 'email', 'UID') // <-- Only one is required + allowed
+        })
+        .xor('id', 'email', 'UID') // <-- Only one is required + allowed
+        .rename('UID', 'id', { ignoreUndefined: true })
       }
     },
     handler: function(request, reply) {
-      let query;
+      let mongoQuery;
+      let gigyaQuery;
 
       // These are a lot of mixed keys.
       // I'm am in the transition of moving the keys.
       // So this is to be backwards compatible
 
       if(request.query.id) {
-        query = {
+
+        mongoQuery = {
           $or: [
             { id: request.query.id },
             { 'gigya.UID': request.query.id }
           ]
         };
+
+        gigyaQuery = `select * from accounts where UID = "${request.query.id}"`;
+
       } else if (request.query.email) {
-        query = {
+
+        mongoQuery = {
           $or: [
             { 'gigya.email': request.query.email },
             { email: request.query.email.toLowerCase() },
             { id: request.query.email }
           ]
         };
-      } else if (request.query.UID) {
-        query = {
-          $or: [
-            { 'gigya.UID': request.query.UID },
-            { id: request.query.UID }
-          ]
-        };
+
+        gigyaQuery = `select * from accounts where loginIDs.emails contains "${request.query.email}"`;
+
       } else {
         // Based on the Joi validation, this "else" should not be possible
         return reply(Boom.badRequest());
@@ -69,10 +73,43 @@ module.exports.register = function (server, options, next) {
       };
 
       MongoDB.collection('users')
-      .findOne(query, projection)
+      .findOne(mongoQuery, projection)
       .then(result => {
         if(result === null || !result.gigya) {
-          reply(Boom.notFound());
+          
+          // If we do not find the user in BPC, there is a chance that the webhook from Gigya is delayed.
+          // In this case we search Gigya. If found, we upsert the user in BPC.
+          Gigya.callApi('/accounts.search', { query: gigyaQuery })
+          .then(response => {
+
+            const _response = response.body;
+
+            if(_response.totalCount === 0) {
+
+              reply(Boom.notFound());
+            
+            } else if(_response.totalCount === 1) {
+
+              upsertUser(_response.results[0])
+              .then(upsertResult => {
+
+                if(upsertResult.result.n === 1) {
+
+                  reply({
+                    UID: _response.results[0].UID,
+                    loginProvider: _response.results[0].loginProvider,
+                    email: _response.results[0].profile.email
+                  });
+                
+                } else {
+                  reply(Boom.conflict('Error when upserting user in MongoDB'));    
+                }
+              });
+
+            } else {
+              reply(Boom.conflict('Multiple users found in Gigya'));
+            }
+          });
         } else {
           reply(result.gigya);
         }
@@ -232,7 +269,15 @@ function getAccountInfo(uid) {
 }
 
 
-function upsertUser (accountInfo) {
+function searchByEmail(email) {
+  const query = `select * from accounts where loginIDs.emails contains "${email}"`;
+  return Gigya.callApi('/accounts.search', {
+    query: query
+  });
+}
+
+
+function upsertUser(accountInfo) {
 
   // We have cases where the profile does not have an email
   if (!accountInfo.profile || !accountInfo.profile.email){
@@ -277,7 +322,6 @@ function upsertUser (accountInfo) {
     createdAt: new Date(),
     dataScopes: {}
   };
-
 
   const update = {
     $currentDate: { 'lastUpdated': { $type: "date" } },

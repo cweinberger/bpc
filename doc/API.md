@@ -329,8 +329,8 @@ Example payload:
 
 ```
 {
-  $inc: { "test_integer": 2 },
-  $mul: { "test_float": 0.5 }
+  "$inc": { "test_integer": 2 },
+  "$mul": { "test_float": 0.5 }
 }
 ```
 
@@ -345,7 +345,7 @@ Fields and arrays inside objects can also to used in operators. To do this, use 
 Example:
 
 ```
-{ $addToSet: { "test_object.test_array": 200 } }
+{ "$addToSet": { "test_object.test_array": 200 } }
 ```
 
 The resulting data will be like:
